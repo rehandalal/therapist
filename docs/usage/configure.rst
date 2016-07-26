@@ -34,7 +34,7 @@ There are several parameters that you can set for a command. They are:
 
 run
     This is the actual command to be run. You may use the named placeholder
-    ``{fields}`` which be replaced with a space-separated list of files that
+    ``{files}`` which be replaced with a space-separated list of files that
     were modified and added to the commit.
 
 description
@@ -47,11 +47,11 @@ include
     *(Optional)*
     This can be a single string or list strings of UNIX filename patterns.
     Files that match *any* of the patterns will be passed through to the
-    command through ``{fields}`` unless they match a pattern in the exclude
+    command through ``{files}`` unless they match a pattern in the exclude
     parameter.
 
 exclude
     *(Optional)*
     This can be a single string or a list of strings of UNIX filename patterns.
     Files that match *any* of the patterns will never be passed through to the
-    command through ``{fields}``.
+    command through ``{files}``.
