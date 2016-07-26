@@ -36,7 +36,7 @@ def cli():
 @cli.command()
 def install():
     """Install the pre-commit hook."""
-    srchook = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'hooks', 'pre-commit')
+    srchook = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'hooks', 'pre-commit.py')
     gitdirpath = find_git_dir()
 
     if gitdirpath is None:

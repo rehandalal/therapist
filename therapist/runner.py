@@ -1,3 +1,4 @@
+import re
 import subprocess
 
 from therapist.printer import Printer
@@ -7,18 +8,15 @@ printer = Printer()
 
 
 def execute_command(command):
-    """Executes a therapist command."""
-    if 'run' in command:
-        pipes = subprocess.Popen(command.get('run'), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        std_out, std_err = pipes.communicate()
+    """Executes a command."""
+    pipes = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    std_out, std_err = pipes.communicate()
 
-        if len(std_err):
-            return std_err, Runner.FAILURE
-        else:
-            status = Runner.SUCCESS if pipes.returncode == 0 else Runner.FAILURE
-            return std_out, status
+    if len(std_err):
+        return std_err, Runner.FAILURE
     else:
-        return None, Runner.SKIPPED
+        status = Runner.SUCCESS if pipes.returncode == 0 else Runner.FAILURE
+        return std_out, status
 
 
 class Runner(object):
@@ -26,8 +24,20 @@ class Runner(object):
     FAILURE = 1
     SKIPPED = 2
 
-    def __init__(self, commands):
+    def __init__(self, commands=[], files=[]):
         self.commands = commands
+        self.files = files
+
+    def run_command(self, command):
+        """Runs a single command."""
+        if 'filter' in command:
+            files = [file for file in self.files if re.search(command['filter'], file)]
+
+        if 'run' in command:
+            file_list = ' '.join(files)
+            return execute_command(command['run'].format(files=file_list))
+        else:
+            return None, Runner.SKIPPED
 
     def run(self):
         """Runs the set of commands."""
@@ -43,7 +53,7 @@ class Runner(object):
             description = '%s ' % command.get('description', name)[:68]
             printer.fprint(description.ljust(69, '.'), 'bold', inline=True)
 
-            output, status = execute_command(command)
+            output, status = self.run_command(command)
 
             if status == self.SUCCESS:
                 printer.fprint(' [SUCCESS]', 'green', 'bold')
