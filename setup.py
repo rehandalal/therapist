@@ -27,7 +27,7 @@ setup(
     license='Mozilla Public License Version 2.0',
     author='Rehan Dalal',
     author_email='rehan@meet-rehan.com',
-    description='Smart pre-commit hook for git.',
+    description='A smart pre-commit hook for git.',
     long_description=__doc__,
     packages=find_packages(exclude=['tests']),
     include_package_data=True,

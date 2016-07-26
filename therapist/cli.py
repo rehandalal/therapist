@@ -30,7 +30,7 @@ def find_git_dir():
 @click.group()
 @click.version_option(__version__, prog_name='therapist')
 def cli():
-    """Smart pre-commit hook for git."""
+    """A smart pre-commit hook for git."""
     pass
 
 
@@ -50,7 +50,7 @@ def install():
         printer.fprint('There is an existing pre-commit hook.', 'yellow')
 
         if not click.confirm('Are you sure you want to overwrite this hook?'):
-            printer.fprint('Install aborted.')
+            printer.fprint('Installation aborted.')
             exit(1)
 
     printer.fprint('Installing pre-commit hook...', inline=True)
