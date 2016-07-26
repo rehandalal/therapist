@@ -1,0 +1,6 @@
+click==6.6
+flake8==3.0.1
+pytest==2.9.2
+pytest-runner==2.9
+PyYAML==3.11
+six==1.10.0
