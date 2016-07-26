@@ -20,7 +20,7 @@ def execute_command(command, files):
     if 'exclude' in command:
         files = [f for f in files if not fnmatch_any(command['exclude'], f)]
 
-    if 'run' in command:
+    if 'run' in command and files:
         file_list = ' '.join(files)
         run_command = command['run'].format(files=file_list)
 
