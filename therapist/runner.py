@@ -72,7 +72,7 @@ class Runner(object):
                     printer.fprint(''.ljust(79, '='), 'bold')
                     printer.fprint('FAILED: ' + failure['description'], 'bold')
                     printer.fprint(''.ljust(79, '='), 'bold')
-                    printer.fprint(failure['output'])
+                    printer.fprint(failure['output'].decode())
 
         # Print a blank line
         printer.fprint()
