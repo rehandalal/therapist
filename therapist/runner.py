@@ -67,7 +67,7 @@ class Runner(object):
                     config = yaml.safe_load(config_file)
             except IOError:
                 printer.fprint('ERROR: Missing configuration file.', 'red', 'bold')
-                printer.fprint('You must create a `therapist.yml` file or use the --no-verify option.', 'red', 'bold')
+                printer.fprint('You must create a `.therapist.yml` file or use the --no-verify option.', 'red', 'bold')
                 exit(1)
             else:
                 self.commands = config

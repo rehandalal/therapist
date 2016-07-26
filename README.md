@@ -38,7 +38,7 @@ $ therapist install
 
 ## Configuration
 
-In the root folder of your repo, create a file called `therapist.yml`. Here is a sample of what it might look like:
+In the root folder of your repo, create a file called `.therapist.yml`. Here is a sample of what it might look like:
 
 ```yml
 flake8:

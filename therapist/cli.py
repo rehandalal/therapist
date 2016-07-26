@@ -71,7 +71,7 @@ def run(command=None):
     repo_root = os.path.dirname(gitdir_path)
     os.chdir(repo_root)
 
-    runner = Runner(os.path.join(repo_root, 'therapist.yml'), ignore_modified=True)
+    runner = Runner(os.path.join(repo_root, '.therapist.yml'), ignore_modified=True)
 
     if command:
         printer.fprint()
