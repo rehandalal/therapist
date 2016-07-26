@@ -61,7 +61,7 @@ build:
 This is the actual command to be run. You can also include the `{files}` placeholder which will be replaced with a space separated list of files which have been modified.
 
 #####description *(Optional)*
-This is just a name or a brief description of what is happening in this command. If it is longer that 68 characters it will be truncated.
+This is just a name or a brief description of what is happening in this command. If it is longer that 68 characters it will be truncated. If no description is provided, the command name will be used.
 
 #####include *(Optional)*
 Only files whose paths match these expressions will be passed through to the command.

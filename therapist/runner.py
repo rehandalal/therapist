@@ -15,10 +15,10 @@ GIT_BINARY = find_executable('git')
 
 def execute_command(command, files):
     if 'include' in command:
-        files = [f for f in files if fnmatch_all(command['include'], f)]
+        files = [f for f in files if fnmatch_all(f, command['include'])]
 
     if 'exclude' in command:
-        files = [f for f in files if not fnmatch_any(command['exclude'], f)]
+        files = [f for f in files if not fnmatch_any(f, command['exclude'])]
 
     if 'run' in command and files:
         file_list = ' '.join(files)
