@@ -27,7 +27,7 @@ for line in status.splitlines():
             printer.fprint('One or more files have been modified since they were added.', 'red')
             exit(1)
 
-        files.append(os.path.join(BASE_DIR, file_status.path))
+        files.append(file_status.path)
 
 if files:
     # Try and load the config file

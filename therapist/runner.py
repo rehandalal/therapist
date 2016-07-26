@@ -1,7 +1,7 @@
-import re
 import subprocess
 
 from therapist.printer import Printer
+from therapist.utils import fnmatch_all, fnmatch_any
 
 
 printer = Printer()
@@ -30,8 +30,11 @@ class Runner(object):
 
     def run_command(self, command):
         """Runs a single command."""
-        if 'filter' in command:
-            files = [file for file in self.files if re.search(command['filter'], file)]
+        if 'include' in command:
+            files = [file for file in self.files if fnmatch_all(command['include'], file)]
+
+        if 'exclude' in command:
+            files = [file for file in self.files if not fnmatch_any(command['exclude'], file)]
 
         if 'run' in command:
             file_list = ' '.join(files)
