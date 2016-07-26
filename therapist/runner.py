@@ -1,71 +1,100 @@
 import subprocess
+import yaml
 
+from distutils.spawn import find_executable
+
+from therapist.git import Status
 from therapist.printer import Printer
 from therapist.utils import fnmatch_all, fnmatch_any
 
 
 printer = Printer()
 
+GIT_BINARY = find_executable('git')
 
-def execute_command(command):
-    """Executes a command."""
-    pipes = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    std_out, std_err = pipes.communicate()
 
-    if len(std_err):
-        return std_err, Runner.FAILURE
-    else:
-        status = Runner.SUCCESS if pipes.returncode == 0 else Runner.FAILURE
-        return std_out, status
+def execute_command(command, files):
+    if 'include' in command:
+        files = [f for f in files if fnmatch_all(command['include'], f)]
+
+    if 'exclude' in command:
+        files = [f for f in files if not fnmatch_any(command['exclude'], f)]
+
+    if 'run' in command:
+        file_list = ' '.join(files)
+        run_command = command['run'].format(files=file_list)
+
+        pipes = subprocess.Popen(run_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        std_out, std_err = pipes.communicate()
+
+        if len(std_err):
+            return std_err, Runner.FAILURE
+        else:
+            return std_out, Runner.SUCCESS if pipes.returncode == 0 else Runner.FAILURE
+
+    return None, Runner.SKIPPED
 
 
 class Runner(object):
+    commands = {}
+    files = []
+
     SUCCESS = 0
     FAILURE = 1
     SKIPPED = 2
 
-    def __init__(self, commands=[], files=[]):
-        self.commands = commands
-        self.files = files
+    class CommandDoesNotExist(Exception):
+        pass
 
-    def run_command(self, command):
+    def __init__(self, config_path, ignore_modified=False):
+        # Get a list of the modified tracked files
+        status = subprocess.check_output([GIT_BINARY, 'status', '--porcelain', '-uno'])
+
+        for line in status.splitlines():
+            file_status = Status.from_string(line)
+
+            if file_status.state:
+                if file_status.modified and not ignore_modified:
+                    printer.fprint('One or more files have been modified since they were added.', 'red')
+                    exit(1)
+
+                self.files.append(file_status.path)
+
+        if self.files:
+            # Try and load the config file
+            try:
+                with open(config_path, 'r') as config_file:
+                    config = yaml.safe_load(config_file)
+            except IOError:
+                printer.fprint('ERROR: Missing configuration file.', 'red', 'bold')
+                printer.fprint('You must create a `therapist.yml` file or use the --no-verify option.', 'red', 'bold')
+                exit(1)
+            else:
+                self.commands = config
+
+    def run_command(self, command_name):
         """Runs a single command."""
-        if 'include' in command:
-            files = [file for file in self.files if fnmatch_all(command['include'], file)]
-
-        if 'exclude' in command:
-            files = [file for file in self.files if not fnmatch_any(command['exclude'], file)]
-
-        if 'run' in command:
-            file_list = ' '.join(files)
-            return execute_command(command['run'].format(files=file_list))
-        else:
-            return None, Runner.SKIPPED
-
-    def run(self):
-        """Runs the set of commands."""
         exitcode = 0
         failures = []
 
-        # Print a blank line
-        printer.fprint()
+        command = self.commands.get(command_name, None)
 
-        # Execute each command and report status
-        for name in self.commands:
-            command = self.commands[name]
-            description = '%s ' % command.get('description', name)[:68]
-            printer.fprint(description.ljust(69, '.'), 'bold', inline=True)
+        if not command:
+            raise self.CommandDoesNotExist
 
-            output, status = self.run_command(command)
+        description = '%s ' % command.get('description', command_name)[:68]
+        printer.fprint(description.ljust(69, '.'), 'bold', inline=True)
 
-            if status == self.SUCCESS:
-                printer.fprint(' [SUCCESS]', 'green', 'bold')
-            elif status == self.FAILURE:
-                printer.fprint(' [FAILURE]', 'red', 'bold')
-                failures.append({'description': description, 'output': output})
-                exitcode = 1
-            else:
-                printer.fprint(' [SKIPPED]', 'cyan', 'bold')
+        output, status = execute_command(command, self.files)
+
+        if status == self.SUCCESS:
+            printer.fprint(' [SUCCESS]', 'green', 'bold')
+        elif status == self.FAILURE:
+            printer.fprint(' [FAILURE]', 'red', 'bold')
+            failures.append({'description': description, 'output': output})
+            exitcode = 1
+        else:
+            printer.fprint(' [SKIPPED]', 'cyan', 'bold')
 
         # Iterate through failures if they exist and print output
         if failures:
@@ -77,7 +106,16 @@ class Runner(object):
                     printer.fprint(''.ljust(79, '='), 'bold')
                     printer.fprint(failure['output'].decode())
 
-        # Print a blank line
-        printer.fprint()
+        return exitcode
 
-        exit(exitcode)
+    def run(self):
+        """Runs the set of commands."""
+        if self.files:
+            printer.fprint()
+
+            # Run each command
+            for name in self.commands:
+                exitcode = self.run_command(name)
+
+            printer.fprint()
+            exit(exitcode)

@@ -7,6 +7,7 @@ import click
 
 from therapist._version import __version__
 from therapist.printer import Printer
+from therapist.runner import Runner
 
 
 MODE_775 = (stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
@@ -37,13 +38,13 @@ def cli():
 def install():
     """Install the pre-commit hook."""
     srchook = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'hooks', 'pre-commit.py')
-    gitdirpath = find_git_dir()
+    gitdir_path = find_git_dir()
 
-    if gitdirpath is None:
+    if gitdir_path is None:
         printer.fprint('Unable to locate git repo.', 'red')
         exit(1)
 
-    dsthook = os.path.join(gitdirpath, 'hooks', 'pre-commit')
+    dsthook = os.path.join(gitdir_path, 'hooks', 'pre-commit')
 
     if os.path.isfile(dsthook):
         printer.fprint('There is an existing pre-commit hook.', 'yellow')
@@ -56,6 +57,38 @@ def install():
     copy(srchook, dsthook)
     os.chmod(dsthook, MODE_775)
     printer.fprint('\tDONE', 'green', 'bold')
+
+
+@cli.command()
+@click.option('--command', '-c', help='An optional name of a specific command to be run.')
+def run(command=None):
+    gitdir_path = find_git_dir()
+
+    if gitdir_path is None:
+        printer.fprint('Unable to locate git repo.', 'red')
+        exit(1)
+
+    repo_root = os.path.dirname(gitdir_path)
+    os.chdir(repo_root)
+
+    runner = Runner(os.path.join(repo_root, 'therapist.yml'), ignore_modified=True)
+
+    if command:
+        printer.fprint()
+
+        try:
+            runner.run_command(command)
+        except runner.CommandDoesNotExist:
+            printer.fprint('`{}` is not a valid command.'.format(command))
+            printer.fprint()
+            printer.fprint('Available commands:')
+
+            for c in runner.commands:
+                printer.fprint(c)
+
+        printer.fprint()
+    else:
+        runner.run()
 
 
 @cli.command()
