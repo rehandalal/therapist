@@ -12,7 +12,7 @@ class Status(object):
     def from_string(cls, string):
         status = cls()
 
-        status.state = string[0].upper()
+        status.state = string[0].strip().upper()
         status.modified = string[1].upper() == 'M'
 
         if status.state == 'R':

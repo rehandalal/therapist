@@ -20,14 +20,14 @@ status = subprocess.check_output([GIT_BINARY, 'status', '--porcelain', '-uno'])
 files = []
 
 for line in status.splitlines():
-    print line
     file_status = Status.from_string(line)
 
-    if file_status.modified:
-        printer.fprint('One or more files have been modified since they were added.', 'red')
-        exit(1)
+    if file_status.state:
+        if file_status.modified:
+            printer.fprint('One or more files have been modified since they were added.', 'red')
+            exit(1)
 
-    files.append(os.path.join(BASE_DIR, file_status.path))
+        files.append(os.path.join(BASE_DIR, file_status.path))
 
 if files:
     # Try and load the config file
