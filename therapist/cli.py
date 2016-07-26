@@ -62,6 +62,7 @@ def install():
 @cli.command()
 @click.option('--command', '-c', help='An optional name of a specific command to be run.')
 def run(command=None):
+    """Run one or all the commands."""
     gitdir_path = find_git_dir()
 
     if gitdir_path is None:
