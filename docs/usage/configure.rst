@@ -11,7 +11,7 @@ a ``.therapist.yml`` configuration file.
 Add a file called ``.therapist.yml`` to the root directory of your project. The
 configuration file describes a set of commands like so:
 
-    .. code-block:: yaml
+    .. code-block:: yml
 
         flake8:
             run: flake8 {files}
