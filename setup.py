@@ -29,7 +29,7 @@ setup(
     author_email='rehan@meet-rehan.com',
     description='A smart pre-commit hook for git.',
     long_description=__doc__,
-    packages=find_packages(exclude=['tests']),
+    packages=find_packages(exclude=['tests', 'docs']),
     include_package_data=True,
     zip_safe=False,
     platforms='any',
