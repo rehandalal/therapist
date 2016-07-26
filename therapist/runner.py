@@ -5,7 +5,7 @@ from distutils.spawn import find_executable
 
 from therapist.git import Status
 from therapist.printer import Printer
-from therapist.utils import fnmatch_all, fnmatch_any
+from therapist.utils import fnmatch_any
 
 
 printer = Printer()
@@ -15,7 +15,7 @@ GIT_BINARY = find_executable('git')
 
 def execute_command(command, files):
     if 'include' in command:
-        files = [f for f in files if fnmatch_all(f, command['include'])]
+        files = [f for f in files if fnmatch_any(f, command['include'])]
 
     if 'exclude' in command:
         files = [f for f in files if not fnmatch_any(f, command['exclude'])]
