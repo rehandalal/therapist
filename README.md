@@ -45,7 +45,7 @@ flake8:
   include: "*.py"
   exclude:
     - "settings*.py"
-    - "*migrations"
+    - "migrations/*.py"
   run: flake8 {files}
 eslint:
   descripton: ESLint
