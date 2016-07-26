@@ -1,0 +1,2 @@
+flake8:
+  run: flake8 therapist tests
