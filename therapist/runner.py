@@ -12,10 +12,11 @@ def execute_command(command):
         pipes = subprocess.Popen(command.get('run'), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         std_out, std_err = pipes.communicate()
 
-        if pipes.returncode == 0:
-            return std_out, Runner.SUCCESS
-        else:
+        if len(std_err):
             return std_err, Runner.FAILURE
+        else:
+            status = Runner.SUCCESS if pipes.returncode == 0 else Runner.FAILURE
+            return std_out, status
     else:
         return None, Runner.SKIPPED
 
