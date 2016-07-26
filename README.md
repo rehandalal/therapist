@@ -42,8 +42,8 @@ In the root folder of your repo, create a file called `therapist.yml`. Here is a
 
 ```yml
 flake8:
-  description: Flake8
-  run: flake8 project_dir
+  filter: .py$
+  run: flake8 {files}
 eslint:
   descripton: ESLint
   run: eslint project_dir
@@ -51,6 +51,17 @@ build:
   description: Build the project
   run: ./build.sh
 ```
+
+### Parameters
+
+**run**
+This is the actual command to be run. You can also include the `{files}` placeholder which will be replaced with a space separated list of files which have been modified.
+
+**description** *(Optional)*
+This is just a name or a brief description of what is happening in this command. If it is longer that 68 characters it will be truncated.
+
+**filter** *(Optional)*
+Only files whose paths match this expression will be passed through to the command.
 
 ## Uninstalling the hook
 
