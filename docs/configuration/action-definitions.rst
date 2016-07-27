@@ -1,5 +1,5 @@
 Action definitions
-------------------
+==================
 
 There are several optional parameters that you can specify for a action. They
 are:
