@@ -6,7 +6,7 @@ run the following from the command line:
 
     .. code-block:: bash
 
-        # pip install therapist
+        $ pip install therapist
 
 This command will download the latest version of Therapist from the
 `Python Package Index`_ and install it to your system. More information about
@@ -20,22 +20,22 @@ script:
 
     .. code-block:: bash
 
-        # python setup.py install
+        $ python setup.py install
 
 You could also install the `development version`_ by running the following:
 
     .. code-block:: bash
 
-        # pip install therapist==dev
+        $ pip install therapist==dev
 
 Or simple install from a clone of the `git repo`_:
 
     .. code-block:: bash
 
-        # git clone https://github.com/rehandalal/therapist.git
-        # mkvirtualenv therapist
-        # pip install -r requirements.txt
-        # pip install --editable .
+        $ git clone https://github.com/rehandalal/therapist.git
+        $ mkvirtualenv therapist
+        $ pip install -r requirements.txt
+        $ pip install --editable .
 
 .. _pip: https://github.com/pypa/pip
 .. _Python Package Index: https://pypi.python.org/pypi/therapist
