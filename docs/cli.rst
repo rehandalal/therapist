@@ -1,3 +1,5 @@
+.. _cli_toplevel:
+
 Command-Line Interface
 ======================
 
@@ -12,10 +14,10 @@ For a list of commands simply run:
 
     .. code-block:: bash
 
-       therapist --help
+        # therapist --help
 
 To get more information on a specific command run:
 
     .. code-block:: bash
 
-        therapist <command-name> --help
+        # therapist <command-name> --help
