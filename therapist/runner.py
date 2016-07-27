@@ -46,19 +46,31 @@ class Runner(object):
     class CommandDoesNotExist(Exception):
         pass
 
-    def __init__(self, config_path, ignore_modified=False):
-        # Get a list of the modified tracked files
-        status = subprocess.check_output([GIT_BINARY, 'status', '--porcelain', '-uno'])
+    def __init__(self, config_path, ignore_modified=False, include_unstaged=False, include_untracked=False):
+        args = [GIT_BINARY, 'status', '--porcelain']
+
+        if not include_untracked:
+            args.append('-uno')
+
+        status = subprocess.check_output(args)
 
         for line in status.splitlines():
             file_status = Status.from_string(line)
 
-            if file_status.state:
-                if file_status.modified and not ignore_modified:
-                    printer.fprint('One or more files have been modified since they were added.', 'red')
-                    exit(1)
+            # Check if staged files were modified since being staged
+            if file_status.is_staged and file_status.is_modified and not ignore_modified:
+                printer.fprint('One or more files have been modified since they were staged.', 'red')
+                exit(1)
 
-                self.files.append(file_status.path)
+            # Skip unstaged files if the `unstaged` flag is False
+            if not file_status.is_staged and not include_unstaged:
+                continue
+
+            # Skip deleted files
+            if file_status.is_deleted:
+                continue
+
+            self.files.append(file_status.path)
 
         if self.files:
             # Try and load the config file

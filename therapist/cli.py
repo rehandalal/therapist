@@ -60,8 +60,10 @@ def install():
 
 
 @cli.command()
-@click.option('--command', '-c', help='An optional name of a specific command to be run.')
-def run(command=None):
+@click.option('--command', '-c', default=None, help='A name of a specific command to be run.')
+@click.option('--include-unstaged', is_flag=True, help='Include unstaged files.')
+@click.option('--include-untracked', is_flag=True, help='Include untracked files.')
+def run(command, include_unstaged, include_untracked):
     """Run one or all the commands."""
     gitdir_path = find_git_dir()
 
@@ -72,7 +74,8 @@ def run(command=None):
     repo_root = os.path.dirname(gitdir_path)
     os.chdir(repo_root)
 
-    runner = Runner(os.path.join(repo_root, '.therapist.yml'), ignore_modified=True)
+    runner = Runner(os.path.join(repo_root, '.therapist.yml'), ignore_modified=True, include_unstaged=include_unstaged,
+                    include_untracked=include_untracked)
 
     if command:
         printer.fprint()
