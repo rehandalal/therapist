@@ -48,31 +48,34 @@ class Runner(object):
             self.message = message
             super(self.__class__, self).__init__(*args, **kwargs)
 
-    def __init__(self, config_path, ignore_modified=False, include_unstaged=False, include_untracked=False):
-        args = [GIT_BINARY, 'status', '--porcelain']
+    def __init__(self, config_path, files=None, ignore_modified=False, include_unstaged=False, include_untracked=False):
+        if files:
+            self.files = files
+        else:
+            args = [GIT_BINARY, 'status', '--porcelain']
 
-        if not include_untracked:
-            args.append('-uno')
+            if not include_untracked:
+                args.append('-uno')
 
-        status = subprocess.check_output(args)
+            status = subprocess.check_output(args)
 
-        for line in status.splitlines():
-            file_status = Status.from_string(line)
+            for line in status.splitlines():
+                file_status = Status.from_string(line)
 
-            # Check if staged files were modified since being staged
-            if file_status.is_staged and file_status.is_modified and not ignore_modified:
-                printer.fprint('One or more files have been modified since they were staged.', 'red')
-                exit(1)
+                # Check if staged files were modified since being staged
+                if file_status.is_staged and file_status.is_modified and not ignore_modified:
+                    printer.fprint('One or more files have been modified since they were staged.', 'red')
+                    exit(1)
 
-            # Skip unstaged files if the `unstaged` flag is False
-            if not file_status.is_staged and not include_unstaged:
-                continue
+                # Skip unstaged files if the `unstaged` flag is False
+                if not file_status.is_staged and not include_unstaged:
+                    continue
 
-            # Skip deleted files
-            if file_status.is_deleted:
-                continue
+                # Skip deleted files
+                if file_status.is_deleted:
+                    continue
 
-            self.files.append(file_status.path)
+                self.files.append(file_status.path)
 
         # Try and load the config file
         try:

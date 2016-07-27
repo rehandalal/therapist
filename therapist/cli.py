@@ -60,10 +60,11 @@ def install():
 
 
 @cli.command()
+@click.argument('paths', nargs=-1)
 @click.option('--action', '-a', default=None, help='A name of a specific action to be run.')
 @click.option('--include-unstaged', is_flag=True, help='Include unstaged files.')
 @click.option('--include-untracked', is_flag=True, help='Include untracked files.')
-def run(action, include_unstaged, include_untracked):
+def run(paths, action, include_unstaged, include_untracked):
     """Run actions as a batch or individually."""
     gitdir_path = find_git_dir()
 
@@ -72,10 +73,22 @@ def run(action, include_unstaged, include_untracked):
         exit(1)
 
     repo_root = os.path.dirname(gitdir_path)
+
+    # If paths were provided get all the files for each path
+    if paths:
+        files = []
+        for path in paths:
+            for stats in os.walk(path):
+                for f in stats[2]:
+                    files.append(os.path.abspath(os.path.join(stats[0], f)))
+    else:
+        files = None
+
+    # Change the directory to the repo root before running
     os.chdir(repo_root)
 
-    runner = Runner(os.path.join(repo_root, '.therapist.yml'), ignore_modified=True, include_unstaged=include_unstaged,
-                    include_untracked=include_untracked)
+    runner = Runner(os.path.join(repo_root, '.therapist.yml'), files=files, ignore_modified=True,
+                    include_unstaged=include_unstaged, include_untracked=include_untracked)
 
     if action:
         printer.fprint()
