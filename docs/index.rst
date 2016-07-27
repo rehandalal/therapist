@@ -16,4 +16,5 @@ Usage Documentation
 
    usage/install
    usage/configure
+   usage/cli
    usage/uninstall
