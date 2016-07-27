@@ -60,11 +60,11 @@ def install():
 
 
 @cli.command()
-@click.option('--command', '-c', default=None, help='A name of a specific command to be run.')
+@click.option('--action', '-a', default=None, help='A name of a specific action to be run.')
 @click.option('--include-unstaged', is_flag=True, help='Include unstaged files.')
 @click.option('--include-untracked', is_flag=True, help='Include untracked files.')
-def run(command, include_unstaged, include_untracked):
-    """Run one or all the commands."""
+def run(action, include_unstaged, include_untracked):
+    """Run actions as a batch or individually."""
     gitdir_path = find_git_dir()
 
     if gitdir_path is None:
@@ -77,18 +77,18 @@ def run(command, include_unstaged, include_untracked):
     runner = Runner(os.path.join(repo_root, '.therapist.yml'), ignore_modified=True, include_unstaged=include_unstaged,
                     include_untracked=include_untracked)
 
-    if command:
+    if action:
         printer.fprint()
 
         try:
-            runner.run_command(command)
-        except runner.CommandDoesNotExist:
-            printer.fprint('`{}` is not a valid command.'.format(command))
+            runner.run_action(action)
+        except runner.ActionDoesNotExist as err:
+            printer.fprint(err.message)
             printer.fprint()
-            printer.fprint('Available commands:')
+            printer.fprint('Available actions:')
 
-            for c in runner.commands:
-                printer.fprint(c)
+            for a in runner.actions:
+                printer.fprint(a)
 
         printer.fprint()
     else:

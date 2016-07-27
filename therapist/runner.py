@@ -13,16 +13,16 @@ printer = Printer()
 GIT_BINARY = find_executable('git')
 
 
-def execute_command(command, files):
-    if 'include' in command:
-        files = [f for f in files if fnmatch_any(f, command['include'])]
+def execute_action(action, files):
+    if 'include' in action:
+        files = [f for f in files if fnmatch_any(f, action['include'])]
 
-    if 'exclude' in command:
-        files = [f for f in files if not fnmatch_any(f, command['exclude'])]
+    if 'exclude' in action:
+        files = [f for f in files if not fnmatch_any(f, action['exclude'])]
 
-    if 'run' in command and files:
+    if 'run' in action and files:
         file_list = ' '.join(files)
-        run_command = command['run'].format(files=file_list)
+        run_command = action['run'].format(files=file_list)
 
         pipes = subprocess.Popen(run_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         std_out, std_err = pipes.communicate()
@@ -43,8 +43,10 @@ class Runner(object):
     FAILURE = 1
     SKIPPED = 2
 
-    class CommandDoesNotExist(Exception):
-        pass
+    class ActionDoesNotExist(Exception):
+        def __init__(self, message, *args, **kwargs):
+            self.message = message
+            super(self.__class__, self).__init__(*args, **kwargs)
 
     def __init__(self, config_path, ignore_modified=False, include_unstaged=False, include_untracked=False):
         args = [GIT_BINARY, 'status', '--porcelain']
@@ -82,22 +84,26 @@ class Runner(object):
                 printer.fprint('You must create a `.therapist.yml` file or use the --no-verify option.', 'red', 'bold')
                 exit(1)
             else:
-                self.commands = config
+                if 'actions' in config:
+                    self.actions = config['actions']
+                else:
+                    printer.fprint('ERROR: `actions` is missing from configuration file.', 'red', 'bold')
+                    exit(1)
 
-    def run_command(self, command_name):
-        """Runs a single command."""
+    def run_action(self, action_name):
+        """Runs a single action."""
         exitcode = 0
         failures = []
 
-        command = self.commands.get(command_name, None)
+        action = self.actions.get(action_name, None)
 
-        if not command:
-            raise self.CommandDoesNotExist
+        if not action:
+            raise self.ActionDoesNotExist('`{}` is not a valid action.'.format(action_name))
 
-        description = '%s ' % command.get('description', command_name)[:68]
+        description = '%s ' % action.get('description', action_name)[:68]
         printer.fprint(description.ljust(69, '.'), 'bold', inline=True)
 
-        output, status = execute_command(command, self.files)
+        output, status = execute_action(action, self.files)
 
         if status == self.SUCCESS:
             printer.fprint(' [SUCCESS]', 'green', 'bold')
@@ -121,13 +127,15 @@ class Runner(object):
         return exitcode
 
     def run(self):
-        """Runs the set of commands."""
+        """Runs the set of actions."""
         if self.files:
+            exitcode = 0
+
             printer.fprint()
 
-            # Run each command
-            for name in self.commands:
-                exitcode = self.run_command(name)
+            # Run each actions
+            for name in self.actions:
+                exitcode = self.run_action(name)
 
             printer.fprint()
             exit(exitcode)
