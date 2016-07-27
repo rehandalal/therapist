@@ -36,7 +36,7 @@ def execute_action(action, files):
 
 
 class Runner(object):
-    commands = {}
+    actions = {}
     files = []
 
     SUCCESS = 0
@@ -74,21 +74,20 @@ class Runner(object):
 
             self.files.append(file_status.path)
 
-        if self.files:
-            # Try and load the config file
-            try:
-                with open(config_path, 'r') as config_file:
-                    config = yaml.safe_load(config_file)
-            except IOError:
-                printer.fprint('ERROR: Missing configuration file.', 'red', 'bold')
-                printer.fprint('You must create a `.therapist.yml` file or use the --no-verify option.', 'red', 'bold')
-                exit(1)
+        # Try and load the config file
+        try:
+            with open(config_path, 'r') as config_file:
+                config = yaml.safe_load(config_file)
+        except IOError:
+            printer.fprint('ERROR: Missing configuration file.', 'red', 'bold')
+            printer.fprint('You must create a `.therapist.yml` file or use the --no-verify option.', 'red', 'bold')
+            exit(1)
+        else:
+            if 'actions' in config:
+                self.actions = config['actions']
             else:
-                if 'actions' in config:
-                    self.actions = config['actions']
-                else:
-                    printer.fprint('ERROR: `actions` is missing from configuration file.', 'red', 'bold')
-                    exit(1)
+                printer.fprint('ERROR: `actions` is missing from configuration file.', 'red', 'bold')
+                exit(1)
 
     def run_action(self, action_name):
         """Runs a single action."""
