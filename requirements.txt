@@ -1,8 +1,4 @@
 click==6.6
-flake8==3.0.2
 pathspec==0.4.0
-pytest==2.9.2
-pytest-cov==2.3.0
-pytest-runner==2.9
 PyYAML==3.11
 six==1.10.0

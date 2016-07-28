@@ -23,7 +23,7 @@ def execute_action(action, files, cwd):
         rules = action['exclude'] if isinstance(action['exclude'], list) else [action['exclude']]
         spec = PathSpec(map(GitIgnorePattern, rules))
         exclude = list(spec.match_files(files))
-        files = filter(lambda f: f not in exclude, files)
+        files = list(filter(lambda f: f not in exclude, files))
 
     if 'run' in action and files:
         file_list = ' '.join(files)
