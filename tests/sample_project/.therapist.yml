@@ -1,4 +1,4 @@
 actions:
-  append8:
-    description: Appends the number 8 to files
+  lint:
+    description: Linting
     run: ./scripts/lint.py {files}
