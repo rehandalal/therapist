@@ -1,4 +1,3 @@
-import io
 import os
 import shutil
 import six
@@ -32,12 +31,12 @@ class Project(object):
             self.set_config_data(config_data)
 
     def get_config_data(self):
-        with io.open(self.config_file, 'r') as f:
+        with open(self.config_file, 'r') as f:
             data = yaml.safe_load(f)
         return data
 
     def set_config_data(self, data):
-        with io.open(self.config_file, 'w+') as f:
+        with open(self.config_file, 'w+') as f:
             f.write(six.u(yaml.dump(data, default_flow_style=False)))
 
         # Commit changes to the config file
@@ -47,3 +46,16 @@ class Project(object):
     def exists(self, path):
         """Checks if a file exists."""
         return os.path.exists(os.path.join(self.path, path))
+
+    def makedirs(self, path):
+        """Makes dirs recursively."""
+        path = os.path.join(self.path, path)
+        if not self.exists(path):
+            os.makedirs(path)
+
+    def write(self, path, s=''):
+        """Write to a file."""
+        path = os.path.join(self.path, path)
+        self.makedirs(os.path.dirname(path))
+        with open(path, 'w+') as f:
+            f.write(s)

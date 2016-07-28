@@ -14,7 +14,7 @@ printer = Printer()
 GIT_BINARY = find_executable('git')
 
 
-def execute_action(action, files):
+def execute_action(action, files, cwd):
     if 'include' in action:
         files = [f for f in files if fnmatch_any(f, action['include'])]
 
@@ -26,7 +26,7 @@ def execute_action(action, files):
         run_command = action['run'].format(files=file_list)
 
         try:
-            pipes = subprocess.Popen(run_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            pipes = subprocess.Popen(run_command, shell=True, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except OSError as err:
             return 'OSError {}'.format(str(err)), Runner.ERROR
 
@@ -41,9 +41,6 @@ def execute_action(action, files):
 
 
 class Runner(object):
-    actions = {}
-    files = []
-
     SUCCESS = 0
     FAILURE = 1
     SKIPPED = 2
@@ -63,27 +60,36 @@ class Runner(object):
             self.code = code
             super(self.__class__, self).__init__(*args, **kwargs)
 
-    def __init__(self, config_path, files=None, ignore_modified=False, include_unstaged=False, include_untracked=False):
+    class UnstagedChanges(Exception):
+        def __init__(self, message='', *args, **kwargs):
+            self.message = message
+            super(self.__class__, self).__init__(*args, **kwargs)
+
+    def __init__(self, config_path, files=None, ignore_unstaged_changes=False, include_unstaged=False,
+                 include_untracked=False):
+        self.cwd = os.path.abspath(os.path.dirname(config_path))
+
         if files:
             self.files = files
         else:
+            self.files = []
+
             args = [GIT_BINARY, 'status', '--porcelain']
 
             if not include_untracked:
                 args.append('-uno')
 
-            status = subprocess.check_output(args, cwd=os.path.abspath(os.path.dirname(config_path)))
+            status = subprocess.check_output(args, cwd=self.cwd)
 
             for line in status.splitlines():
                 file_status = Status.from_string(line)
 
                 # Check if staged files were modified since being staged
-                if file_status.is_staged and file_status.is_modified and not ignore_modified:
-                    printer.fprint('One or more files have been modified since they were staged.', 'red')
-                    exit(1)
+                if file_status.is_staged and file_status.is_modified and not ignore_unstaged_changes:
+                    raise self.UnstagedChanges('There are unstaged changes.')
 
                 # Skip unstaged files if the `unstaged` flag is False
-                if not file_status.is_staged and not include_unstaged:
+                if not file_status.is_staged and not include_unstaged and not include_untracked:
                     continue
 
                 # Skip deleted files
@@ -120,7 +126,7 @@ class Runner(object):
         description = '%s ' % action.get('description', action_name)[:68]
         printer.fprint(description.ljust(69, '.'), 'bold', inline=True)
 
-        output, status = execute_action(action, self.files)
+        output, status = execute_action(action, self.files, self.cwd)
 
         if status == self.SUCCESS:
             printer.fprint(' [SUCCESS]', 'green', 'bold')

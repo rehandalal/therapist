@@ -8,7 +8,6 @@ import click
 from therapist import Runner
 from therapist._version import __version__
 from therapist.printer import Printer
-from therapist.utils import chdir
 
 
 MODE_775 = (stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
@@ -88,31 +87,29 @@ def run(paths, action, include_unstaged, include_untracked):
     else:
         files = None
 
-    # Change the directory to the repo root before running
-    with chdir(repo_root):
+    try:
+        runner = Runner(os.path.join(repo_root, '.therapist.yml'), files=files, ignore_unstaged_changes=True,
+                        include_unstaged=include_unstaged, include_untracked=include_untracked)
+    except Runner.Misconfigured as err:
+        printer.fprint('Misconfigured: '.format(err.message), 'red')
+        exit(1)
+
+    if action:
+        printer.fprint()
+
         try:
-            runner = Runner(os.path.join(repo_root, '.therapist.yml'), files=files, ignore_modified=True,
-                            include_unstaged=include_unstaged, include_untracked=include_untracked)
-        except Runner.Misconfigured as err:
-            printer.fprint('Misconfigured: '.format(err.message), 'red')
-            exit(1)
-
-        if action:
+            runner.run_action(action)
+        except runner.ActionDoesNotExist as err:
+            printer.fprint(err.message)
             printer.fprint()
+            printer.fprint('Available actions:')
 
-            try:
-                runner.run_action(action)
-            except runner.ActionDoesNotExist as err:
-                printer.fprint(err.message)
-                printer.fprint()
-                printer.fprint('Available actions:')
+            for a in runner.actions:
+                printer.fprint(a)
 
-                for a in runner.actions:
-                    printer.fprint(a)
-
-            printer.fprint()
-        else:
-            runner.run()
+        printer.fprint()
+    else:
+        runner.run()
 
 
 @cli.command()

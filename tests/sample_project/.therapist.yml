@@ -1,4 +1,5 @@
 actions:
   lint:
     description: Linting
+    exclude: "*.ignore"
     run: ./scripts/lint.py {files}
