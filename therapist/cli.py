@@ -94,22 +94,23 @@ def run(paths, action, include_unstaged, include_untracked):
         printer.fprint('Misconfigured: '.format(err.message), 'red')
         exit(1)
 
-    if action:
-        printer.fprint()
-
-        try:
-            runner.run_action(action)
-        except runner.ActionDoesNotExist as err:
-            printer.fprint(err.message)
+    try:
+        if action:
             printer.fprint()
-            printer.fprint('Available actions:')
+            try:
+                runner.run_action(action)
+            except runner.ActionDoesNotExist as err:
+                printer.fprint(err.message)
+                printer.fprint()
+                printer.fprint('Available actions:')
 
-            for a in runner.actions:
-                printer.fprint(a)
-
-        printer.fprint()
-    else:
-        runner.run()
+                for a in runner.actions:
+                    printer.fprint(a)
+            printer.fprint()
+        else:
+            runner.run()
+    except runner.ActionFailed:
+        exit(1)
 
 
 @cli.command()

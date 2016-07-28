@@ -18,4 +18,7 @@ except Runner.UnstagedChanges as err:
     printer.fprint(err.message, 'red')
     exit(1)
 
-runner.run()
+try:
+    runner.run()
+except runner.ActionFailed:
+    exit(1)

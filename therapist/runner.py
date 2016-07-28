@@ -65,6 +65,11 @@ class Runner(object):
             self.message = message
             super(self.__class__, self).__init__(*args, **kwargs)
 
+    class ActionFailed(Exception):
+        def __init__(self, *args, **kwargs):
+            self.actions = args
+            super(self.__class__, self).__init__(*args, **kwargs)
+
     def __init__(self, config_path, files=None, ignore_unstaged_changes=False, include_unstaged=False,
                  include_untracked=False):
         self.cwd = os.path.abspath(os.path.dirname(config_path))
@@ -115,7 +120,6 @@ class Runner(object):
 
     def run_action(self, action_name):
         """Runs a single action."""
-        exitcode = 0
         failures = []
         errors = []
 
@@ -133,25 +137,22 @@ class Runner(object):
             printer.fprint(' [SUCCESS]', 'green', 'bold')
         elif status == self.FAILURE:
             printer.fprint(' [FAILURE]', 'red', 'bold')
-            if output:
-                failures.append({'description': description, 'output': output})
-            exitcode = 1
+            failures.append({'description': description, 'output': output})
         elif status == self.ERROR:
             printer.fprint('..', 'bold', inline=True)
             printer.fprint(' [ERROR]', 'red', 'bold')
-            if output:
-                errors.append({'description': description, 'output': output})
-            exitcode = 1
+            errors.append({'description': description, 'output': output})
         else:
             printer.fprint(' [SKIPPED]', 'cyan', 'bold')
 
-        # Iterate through failures if they exist and print output
+        # Helper function to print reports
         def _print_report(title, report):
-            printer.fprint()
-            printer.fprint(''.ljust(79, '='), 'bold')
-            printer.fprint(title[:79], 'bold')
-            printer.fprint(''.ljust(79, '='), 'bold')
-            printer.fprint(report)
+            if report:
+                printer.fprint()
+                printer.fprint(''.ljust(79, '='), 'bold')
+                printer.fprint(title[:79], 'bold')
+                printer.fprint(''.ljust(79, '='), 'bold')
+                printer.fprint(report)
 
         for failure in failures:
             _print_report('FAILED: ' + failure['description'], failure['output'])
@@ -159,20 +160,24 @@ class Runner(object):
         for error in errors:
             _print_report('ERROR: ' + error['description'], error['output'])
 
-        return exitcode
+        if failures or errors:
+            raise self.ActionFailed(action_name)
 
     def run(self):
         """Runs the set of actions."""
         if self.files:
-            exitcode = 0
+            failures = []
 
             printer.fprint()
 
             # Run each actions
             for name in self.actions:
-                exitcode = self.run_action(name)
+                try:
+                    self.run_action(name)
+                except self.ActionFailed:
+                    failures.append(name)
 
             printer.fprint()
 
-            if exitcode:
-                exit(exitcode)
+            if failures:
+                raise self.ActionFailed(*failures)

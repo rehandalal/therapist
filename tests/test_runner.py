@@ -58,7 +58,7 @@ class TestRunner(object):
         p.git.add('.')
 
         r = Runner(p.config_file)
-        with pytest.raises(SystemExit):
+        with pytest.raises(r.ActionFailed):
             r.run()
 
         assert 'fail.txt' in r.files
@@ -87,7 +87,8 @@ class TestRunner(object):
         p.write('fail.txt', 'x')
 
         r = Runner(p.config_file, ignore_unstaged_changes=True)
-        r.run_action('lint')
+        with pytest.raises(r.ActionFailed):
+            r.run_action('lint')
 
         assert 'fail.txt' in r.files
 
@@ -100,7 +101,8 @@ class TestRunner(object):
         p.write('fail.txt')
 
         r = Runner(p.config_file, include_untracked=True)
-        r.run_action('lint')
+        with pytest.raises(r.ActionFailed):
+            r.run_action('lint')
 
         assert 'fail.txt' in r.files
 
@@ -118,7 +120,8 @@ class TestRunner(object):
         p.write('fail.txt', 'x')
 
         r = Runner(p.config_file, include_unstaged=True)
-        r.run_action('lint')
+        with pytest.raises(r.ActionFailed):
+            r.run_action('lint')
 
         assert 'fail.txt' in r.files
 
@@ -154,7 +157,8 @@ class TestRunner(object):
         p.git.add('.')
 
         r = Runner(p.config_file)
-        r.run_action('lint')
+        with pytest.raises(r.ActionFailed):
+            r.run_action('lint')
 
         assert 'fail.txt' in r.files
 
@@ -184,7 +188,8 @@ class TestRunner(object):
         p.git.add('.')
 
         r = Runner(p.config_file)
-        r.run_action('lint')
+        with pytest.raises(r.ActionFailed):
+            r.run_action('lint')
 
         assert len(r.files) == 1000
 
@@ -241,7 +246,8 @@ class TestRunner(object):
         p.git.add('.')
 
         r = Runner(p.config_file)
-        r.run_action('runissue')
+        with pytest.raises(r.ActionFailed):
+            r.run_action('runissue')
 
         assert 'pass.py' in r.files
 
