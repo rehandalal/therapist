@@ -18,9 +18,11 @@ class Project(object):
         sample_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'sample_project')
         shutil.copytree(sample_path, self.path)
 
-        # Initialize a git repo
+        # Initialize a git repo and configure
         self.git = Git(repo_path=self.path)
         self.git.init()
+        self.git.config('user.name', 'test-suite')
+        self.git.config('user.email', 'test-suite@therapist.xyz')
 
         # Commit all files to the repo
         self.git.add('.')
