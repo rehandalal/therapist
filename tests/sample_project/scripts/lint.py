@@ -7,7 +7,7 @@ BASE_DIR = os.path.abspath(os.curdir)
 
 
 def check(file):
-    if file.endswith('fail'):
+    if 'fail' in file:
         print('FAIL!')
         exit(1)
 

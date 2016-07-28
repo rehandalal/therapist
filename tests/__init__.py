@@ -59,3 +59,10 @@ class Project(object):
         self.makedirs(os.path.dirname(path))
         with open(path, 'w+') as f:
             f.write(s)
+
+    def read(self, path):
+        """Read a file."""
+        path = os.path.join(self.path, path)
+        with open(path, 'r') as f:
+            s = f.read()
+        return s
