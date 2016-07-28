@@ -31,7 +31,7 @@ class Git(object):
         subprocess_kwargs = {}
         if self.repo_path:
             subprocess_kwargs['cwd'] = self.repo_path
-        subprocess.check_output(cmd, **subprocess_kwargs).decode('utf8')
+        return subprocess.check_output(cmd, **subprocess_kwargs).decode()
 
     def __getattr__(self, name):
         name = name.replace('_', '-')
@@ -64,10 +64,11 @@ class Status(object):
 
     @classmethod
     def from_string(cls, string):
+        string = string  # Ensure that the string is actually a string
         status = cls()
 
-        status.state = string[0].strip().upper()
-        status.is_modified = string[1].upper() == 'M'
+        status.state = string[0]
+        status.is_modified = string[1] == 'M'
 
         if status.is_renamed:
             matches = re.search('(\S+?)\s+->\s+(\S+?)$', string[3:])
@@ -81,7 +82,7 @@ class Status(object):
     @property
     def is_staged(self):
         """If the state is empty then the file is unstaged."""
-        return self.state != '?' and len(self.state) > 0
+        return self.state not in (' ', '?',)
 
     @property
     def is_untracked(self):

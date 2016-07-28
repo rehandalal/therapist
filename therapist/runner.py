@@ -79,7 +79,7 @@ class Runner(object):
             if not include_untracked:
                 args.append('-uno')
 
-            status = subprocess.check_output(args, cwd=self.cwd)
+            status = subprocess.check_output(args, cwd=self.cwd).decode()
 
             for line in status.splitlines():
                 file_status = Status.from_string(line)
@@ -150,7 +150,7 @@ class Runner(object):
             printer.fprint(''.ljust(79, '='), 'bold')
             printer.fprint(title[:79], 'bold')
             printer.fprint(''.ljust(79, '='), 'bold')
-            printer.fprint(report.decode('utf8'))
+            printer.fprint(report)
 
         for failure in failures:
             _print_report('FAILED: ' + failure['description'], failure['output'])
