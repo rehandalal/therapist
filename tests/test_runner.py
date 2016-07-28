@@ -1,8 +1,9 @@
 import pytest
 import re
 
-from . import Project
 from therapist import Runner
+
+from . import Project
 
 
 class TestRunner(object):

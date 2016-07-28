@@ -75,6 +75,20 @@ class Runner(object):
         self.cwd = os.path.abspath(os.path.dirname(config_path))
         self.git = Git(repo_path=self.cwd)
 
+        # Try and load the config file
+        try:
+            with open(config_path, 'r') as f:
+                config = yaml.safe_load(f)
+                f.close()
+        except IOError:
+            raise self.Misconfigured('Missing configuration file.', code=self.Misconfigured.NO_CONFIG_FILE)
+        else:
+            if 'actions' in config:
+                self.actions = config['actions']
+            else:
+                raise self.Misconfigured('`actions` was not specified in the configuration file.',
+                                         code=self.Misconfigured.NO_ACTIONS)
+
         if files:
             self.files = files
         else:
@@ -103,20 +117,6 @@ class Runner(object):
                     continue
 
                 self.files.append(file_status.path)
-
-        # Try and load the config file
-        try:
-            with open(config_path, 'r') as f:
-                config = yaml.safe_load(f)
-                f.close()
-        except IOError:
-            raise self.Misconfigured('Missing configuration file.', code=self.Misconfigured.NO_CONFIG_FILE)
-        else:
-            if 'actions' in config:
-                self.actions = config['actions']
-            else:
-                raise self.Misconfigured('`actions` was not specified in the configuration file.',
-                                         code=self.Misconfigured.NO_ACTIONS)
 
     def run_action(self, action_name):
         """Runs a single action."""

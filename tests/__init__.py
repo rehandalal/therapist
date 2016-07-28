@@ -66,3 +66,13 @@ class Project(object):
         with open(path, 'r') as f:
             s = f.read()
         return s
+
+    def remove(self, path, recursive=False):
+        """Removes a file or a directory if recursive is True."""
+        path = os.path.join(self.path, path)
+        if os.path.isdir(path) and recursive:
+            for stats in os.walk(path):
+                for f in stats[2]:
+                    os.remove(os.path.join(stats[0], f))
+        else:
+            os.remove(path)
