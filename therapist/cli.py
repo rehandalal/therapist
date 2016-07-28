@@ -91,7 +91,7 @@ def run(paths, action, include_unstaged, include_untracked):
         runner = Runner(os.path.join(repo_root, '.therapist.yml'), files=files, ignore_unstaged_changes=True,
                         include_unstaged=include_unstaged, include_untracked=include_untracked)
     except Runner.Misconfigured as err:
-        printer.fprint('Misconfigured: '.format(err.message), 'red')
+        printer.fprint('Misconfigured: {}'.format(err.message), 'red')
         exit(1)
 
     try:
