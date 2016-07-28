@@ -1,6 +1,16 @@
+import os
 import re
 
+from contextlib import contextmanager
 from fnmatch import translate
+
+
+@contextmanager
+def chdir(new_dir):
+    cwd = os.path.abspath(os.curdir)
+    os.chdir(new_dir)
+    yield
+    os.chdir(cwd)
 
 
 def fnmatch_any(name, pats):

@@ -1,3 +1,4 @@
+import os
 import subprocess
 import yaml
 
@@ -24,7 +25,11 @@ def execute_action(action, files):
         file_list = ' '.join(files)
         run_command = action['run'].format(files=file_list)
 
-        pipes = subprocess.Popen(run_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            pipes = subprocess.Popen(run_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except OSError as err:
+            return 'OSError {}'.format(str(err)), Runner.ERROR
+
         std_out, std_err = pipes.communicate()
 
         if len(std_err):
@@ -42,10 +47,20 @@ class Runner(object):
     SUCCESS = 0
     FAILURE = 1
     SKIPPED = 2
+    ERROR = 3
 
     class ActionDoesNotExist(Exception):
-        def __init__(self, message, *args, **kwargs):
+        def __init__(self, message='', *args, **kwargs):
             self.message = message
+            super(self.__class__, self).__init__(*args, **kwargs)
+
+    class Misconfigured(Exception):
+        NO_CONFIG_FILE = 1
+        NO_ACTIONS = 2
+
+        def __init__(self, message='', code=0, *args, **kwargs):
+            self.message = message
+            self.code = code
             super(self.__class__, self).__init__(*args, **kwargs)
 
     def __init__(self, config_path, files=None, ignore_modified=False, include_unstaged=False, include_untracked=False):
@@ -57,7 +72,7 @@ class Runner(object):
             if not include_untracked:
                 args.append('-uno')
 
-            status = subprocess.check_output(args)
+            status = subprocess.check_output(args, cwd=os.path.abspath(os.path.dirname(config_path)))
 
             for line in status.splitlines():
                 file_status = Status.from_string(line)
@@ -79,23 +94,23 @@ class Runner(object):
 
         # Try and load the config file
         try:
-            with open(config_path, 'r') as config_file:
-                config = yaml.safe_load(config_file)
+            with open(config_path, 'r') as f:
+                config = yaml.safe_load(f)
+                f.close()
         except IOError:
-            printer.fprint('ERROR: Missing configuration file.', 'red', 'bold')
-            printer.fprint('You must create a `.therapist.yml` file or use the --no-verify option.', 'red', 'bold')
-            exit(1)
+            raise self.Misconfigured('Missing configuration file.', code=self.Misconfigured.NO_CONFIG_FILE)
         else:
             if 'actions' in config:
                 self.actions = config['actions']
             else:
-                printer.fprint('ERROR: `actions` is missing from configuration file.', 'red', 'bold')
-                exit(1)
+                raise self.Misconfigured('`actions` was not specified in the configuration file.',
+                                         code=self.Misconfigured.NO_ACTIONS)
 
     def run_action(self, action_name):
         """Runs a single action."""
         exitcode = 0
         failures = []
+        errors = []
 
         action = self.actions.get(action_name, None)
 
@@ -111,20 +126,31 @@ class Runner(object):
             printer.fprint(' [SUCCESS]', 'green', 'bold')
         elif status == self.FAILURE:
             printer.fprint(' [FAILURE]', 'red', 'bold')
-            failures.append({'description': description, 'output': output})
+            if output:
+                failures.append({'description': description, 'output': output})
+            exitcode = 1
+        elif status == self.ERROR:
+            printer.fprint('..', 'bold', inline=True)
+            printer.fprint(' [ERROR]', 'red', 'bold')
+            if output:
+                errors.append({'description': description, 'output': output})
             exitcode = 1
         else:
             printer.fprint(' [SKIPPED]', 'cyan', 'bold')
 
         # Iterate through failures if they exist and print output
-        if failures:
-            for failure in failures:
-                if failure['output']:
-                    printer.fprint()
-                    printer.fprint(''.ljust(79, '='), 'bold')
-                    printer.fprint('FAILED: ' + failure['description'], 'bold')
-                    printer.fprint(''.ljust(79, '='), 'bold')
-                    printer.fprint(failure['output'].decode())
+        def _print_report(title, report):
+            printer.fprint()
+            printer.fprint(''.ljust(79, '='), 'bold')
+            printer.fprint(title[:79], 'bold')
+            printer.fprint(''.ljust(79, '='), 'bold')
+            printer.fprint(report.decode('utf8'))
+
+        for failure in failures:
+            _print_report('FAILED: ' + failure['description'], failure['output'])
+
+        for error in errors:
+            _print_report('ERROR: ' + error['description'], error['output'])
 
         return exitcode
 
@@ -140,4 +166,6 @@ class Runner(object):
                 exitcode = self.run_action(name)
 
             printer.fprint()
-            exit(exitcode)
+
+            if exitcode:
+                exit(exitcode)

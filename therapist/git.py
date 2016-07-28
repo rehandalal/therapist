@@ -1,4 +1,47 @@
 import re
+import subprocess
+
+
+def to_cli_args(*args, **kwargs):
+    cmd = []
+    for k, v in kwargs.items():
+        k = k.replace('_', '-')
+        short = len(k) == 1
+        if short:
+            cmd.append('-' + k)
+            if v is not True:
+                cmd.append(v)
+        else:
+            if v is True:
+                cmd.append('--' + k)
+            else:
+                cmd.append('--{0}={1}'.format(k, v))
+
+    cmd.extend(args)
+    return cmd
+
+
+class Git(object):
+    def __init__(self, cmd=None, repo_path=None):
+        self.repo_path = repo_path
+        self.current = list(cmd) if cmd else ['git']
+
+    def __call__(self, *args, **kwargs):
+        cmd = self.current + to_cli_args(*args, **kwargs)
+        subprocess_kwargs = {}
+        if self.repo_path:
+            subprocess_kwargs['cwd'] = self.repo_path
+        subprocess.check_output(cmd, **subprocess_kwargs).decode('utf8')
+
+    def __getattr__(self, name):
+        name = name.replace('_', '-')
+        return Git(self.current + [name], repo_path=self.repo_path)
+
+    def __str__(self):
+        return str(self.current)
+
+    def __repr__(self):
+        return '<Git {}>'.format(str(self))
 
 
 class Status(object):
@@ -9,9 +52,11 @@ class Status(object):
         self.is_modified = is_modified
 
     def __str__(self):
-        status = '{:1}{:1} {}'.format(self.state, 'M' if self.is_modified else '', self.path)
+        status = '{:1}{:1}'.format(self.state, 'M' if self.is_modified else '')
         if self.is_renamed:
-            status = '{} -> {}'.format(status, self.original_path)
+            status = '{:3}{} -> {}'.format(status, self.original_path, self.path)
+        else:
+            status = '{:3}{}'.format(status, self.path)
         return status
 
     def __repr__(self):
