@@ -3,11 +3,10 @@ import subprocess
 import yaml
 
 from distutils.spawn import find_executable
+from pathspec import GitIgnorePattern, PathSpec
 
 from therapist.git import Git, Status
 from therapist.printer import Printer
-from therapist.utils import fnmatch_any
-
 
 printer = Printer()
 
@@ -16,10 +15,15 @@ GIT_BINARY = find_executable('git')
 
 def execute_action(action, files, cwd):
     if 'include' in action:
-        files = [f for f in files if fnmatch_any(f, action['include'])]
+        rules = action['include'] if isinstance(action['include'], list) else [action['include']]
+        spec = PathSpec(map(GitIgnorePattern, rules))
+        files = list(spec.match_files(files))
 
     if 'exclude' in action:
-        files = [f for f in files if not fnmatch_any(f, action['exclude'])]
+        rules = action['exclude'] if isinstance(action['exclude'], list) else [action['exclude']]
+        spec = PathSpec(map(GitIgnorePattern, rules))
+        exclude = list(spec.match_files(files))
+        files = filter(lambda f: f not in exclude, files)
 
     if 'run' in action and files:
         file_list = ' '.join(files)
