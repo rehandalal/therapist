@@ -113,7 +113,7 @@ class TestRunner(object):
         p.write('fail.txt')
 
         p.git.add('.')
-        p.git.commit(m='Add file')
+        p.git.commit(m='Add file.', date='Wed Jul 27 15:13:46 2016 -0400')
 
         p.write('fail.txt', 'x')
 

@@ -1,4 +1,14 @@
-from therapist.git import Status
+from therapist.git import Git, Status
+
+
+class TestGit(object):
+    def test_str(self):
+        g = Git()
+        assert g.__str__() == "['git']"
+
+    def test_repr(self):
+        g = Git()
+        assert g.__repr__() == "<Git ['git']>"
 
 
 class TestStatus(object):

@@ -4,7 +4,7 @@ import yaml
 
 from distutils.spawn import find_executable
 
-from therapist.git import Status
+from therapist.git import Git, Status
 from therapist.printer import Printer
 from therapist.utils import fnmatch_any
 
@@ -68,18 +68,19 @@ class Runner(object):
     def __init__(self, config_path, files=None, ignore_unstaged_changes=False, include_unstaged=False,
                  include_untracked=False):
         self.cwd = os.path.abspath(os.path.dirname(config_path))
+        self.git = Git(repo_path=self.cwd)
 
         if files:
             self.files = files
         else:
             self.files = []
 
-            args = [GIT_BINARY, 'status', '--porcelain']
+            args = []
 
             if not include_untracked:
                 args.append('-uno')
 
-            status = subprocess.check_output(args, cwd=self.cwd).decode()
+            status = self.git.status(*args, porcelain=True)
 
             for line in status.splitlines():
                 file_status = Status.from_string(line)
