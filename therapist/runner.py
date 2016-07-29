@@ -58,6 +58,8 @@ class Runner(object):
     class Misconfigured(Exception):
         NO_CONFIG_FILE = 1
         NO_ACTIONS = 2
+        EMPTY_CONFIG = 3
+        ACTIONS_WRONGLY_CONFIGURED = 4
 
         def __init__(self, message='', code=0, *args, **kwargs):
             self.message = message
@@ -83,12 +85,22 @@ class Runner(object):
         try:
             with open(config_path, 'r') as f:
                 config = yaml.safe_load(f)
-                f.close()
         except IOError:
             raise self.Misconfigured('Missing configuration file.', code=self.Misconfigured.NO_CONFIG_FILE)
         else:
+            if config is None:
+                raise self.Misconfigured('Empty configuration file.', code=self.Misconfigured.EMPTY_CONFIG)
+
             if 'actions' in config:
-                self.actions = config['actions']
+                try:
+                    self.actions = config['actions']
+                except TypeError:
+                    raise self.Misconfigured('`actions` was not configured correctly.',
+                                             code=self.Misconfigured.ACTIONS_WRONGLY_CONFIGURED)
+                else:
+                    if not isinstance(self.actions, dict):
+                        raise self.Misconfigured('`actions` was not configured correctly.',
+                                                 code=self.Misconfigured.ACTIONS_WRONGLY_CONFIGURED)
             else:
                 raise self.Misconfigured('`actions` was not specified in the configuration file.',
                                          code=self.Misconfigured.NO_ACTIONS)

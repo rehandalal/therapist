@@ -17,6 +17,15 @@ class TestRunner(object):
 
         assert err.value.code == Runner.Misconfigured.NO_CONFIG_FILE
 
+    def test_empty_config_file(self, tmpdir):
+        p = Project(tmpdir.strpath)
+        p.write('.therapist.yml', '')
+
+        with pytest.raises(Runner.Misconfigured) as err:
+            Runner(p.config_file)
+
+        assert err.value.code == Runner.Misconfigured.EMPTY_CONFIG
+
     def test_no_actions_in_config(self, tmpdir):
         p = Project(tmpdir.strpath)
         data = p.get_config_data()
@@ -27,6 +36,22 @@ class TestRunner(object):
             Runner(p.config_file)
 
         assert err.value.code == Runner.Misconfigured.NO_ACTIONS
+
+    def test_actions_wrongly_configured(self, tmpdir):
+        p = Project(tmpdir.strpath)
+        p.write('.therapist.yml', 'actions')
+
+        with pytest.raises(Runner.Misconfigured) as err:
+            Runner(p.config_file)
+
+        assert err.value.code == Runner.Misconfigured.ACTIONS_WRONGLY_CONFIGURED
+
+        p.write('.therapist.yml', 'actions:\n  flake8')
+
+        with pytest.raises(Runner.Misconfigured) as err:
+            Runner(p.config_file)
+
+        assert err.value.code == Runner.Misconfigured.ACTIONS_WRONGLY_CONFIGURED
 
     def test_run_multiple_actions(self, tmpdir):
         config_data = {
