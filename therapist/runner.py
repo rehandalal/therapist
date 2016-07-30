@@ -2,15 +2,12 @@ import os
 import subprocess
 import yaml
 
-from distutils.spawn import find_executable
 from pathspec import GitIgnorePattern, PathSpec
 
 from therapist.git import Git, Status
 from therapist.printer import Printer
 
 printer = Printer()
-
-GIT_BINARY = find_executable('git')
 
 
 def execute_action(action, files, cwd):
@@ -115,9 +112,9 @@ class Runner(object):
             if not include_untracked:
                 args.append('-uno')
 
-            status = self.git.status(*args, porcelain=True)
+            out, err = self.git.status(*args, porcelain=True)
 
-            for line in status.splitlines():
+            for line in out.splitlines():
                 file_status = Status.from_string(line)
 
                 # Check if staged files were modified since being staged

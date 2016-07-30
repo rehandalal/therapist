@@ -336,3 +336,38 @@ class TestRun(object):
             assert 'Misconfigured:' in result.output
             assert result.exception
             assert result.exit_code == 1
+
+
+class TestHook(object):
+    def test_hook_works_for_failure(self, cli_runner, tmpdir, capsys):
+        p = Project(tmpdir.strpath)
+
+        with chdir(p.path):
+            cli_runner.invoke(cli.install)
+        assert p.exists('.git/hooks/pre-commit')
+
+        p.write('fail.py')
+        p.git.add('.')
+
+        out, err = p.git.commit(m='Should not get committed.')
+        assert 'FAIL!  {}'.format(p.abspath('fail.py')) in err
+
+        out, err = p.git.status(porcelain=True)
+        assert 'fail.py' in out
+
+    def test_hook_works_for_success(self, cli_runner, tmpdir, capsys):
+        p = Project(tmpdir.strpath)
+
+        with chdir(p.path):
+            cli_runner.invoke(cli.install)
+        assert p.exists('.git/hooks/pre-commit')
+
+        p.write('pass.py')
+        p.git.add('.')
+
+        out, err = p.git.commit(m='Add a file.')
+        assert '[SUCCESS]'.format(p.abspath('fail.py')) in err
+
+        out, err = p.git.status(porcelain=True)
+        assert not out
+        assert not err
