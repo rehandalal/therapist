@@ -37,7 +37,7 @@ class TestCLI(object):
 
 
 class TestInstall(object):
-    def test_cli_install(self, cli_runner, tmpdir):
+    def test_install(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
             result = cli_runner.invoke(cli.install)
@@ -46,14 +46,14 @@ class TestInstall(object):
         assert result.exit_code == 0
         assert p.exists('.git/hooks/pre-commit')
 
-    def test_cli_install_outside_repo(self, cli_runner, tmpdir):
+    def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.install)
         assert 'Unable to locate git repo.' in result.output
         assert result.exception
         assert result.exit_code == 1
 
-    def test_cli_try_reinstall(self, cli_runner, tmpdir):
+    def test_try_reinstall(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
             cli_runner.invoke(cli.install)
@@ -64,7 +64,7 @@ class TestInstall(object):
             assert not result.exception
             assert result.exit_code == 0
 
-    def test_cli_install_update_outdated(self, cli_runner, tmpdir):
+    def test_update_outdated(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
             cli_runner.invoke(cli.install)
@@ -83,7 +83,7 @@ class TestInstall(object):
             hook = p.read('.git/hooks/pre-commit')
             assert '# THERAPIST {}'.format(hook_hash) in hook
 
-    def test_cli_install_dont_update_outdated(self, cli_runner, tmpdir):
+    def test_dont_update_outdated(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
             cli_runner.invoke(cli.install)
@@ -102,7 +102,7 @@ class TestInstall(object):
             hook = p.read('.git/hooks/pre-commit')
             assert '# THERAPIST n0tth3h45h'.format(hook_hash) in hook
 
-    def test_cli_install_replace_existing(self, cli_runner, tmpdir):
+    def test_replace_existing(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
             p.write('.git/hooks/pre-commit', '#!usr/bin/env python\n#\n#')
@@ -117,7 +117,7 @@ class TestInstall(object):
             hook = p.read('.git/hooks/pre-commit')
             assert '# THERAPIST' in hook
 
-    def test_cli_install_replace_existing_cancel(self, cli_runner, tmpdir):
+    def test_replace_existing_cancel(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
             p.write('.git/hooks/pre-commit', '#!usr/bin/env python')
@@ -134,7 +134,7 @@ class TestInstall(object):
 
 
 class TestUninstall(object):
-    def test_cli_uninstall(self, cli_runner, tmpdir):
+    def test_uninstall(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
             cli_runner.invoke(cli.install)
@@ -145,14 +145,14 @@ class TestUninstall(object):
             assert not result.exception
             assert result.exit_code == 0
 
-    def test_cli_uninstall_outside_repo(self, cli_runner, tmpdir):
+    def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.uninstall)
             assert 'Unable to locate git repo.' in result.output
             assert result.exception
             assert result.exit_code == 1
 
-    def test_cli_uninstall_no_hook(self, cli_runner, tmpdir):
+    def test_no_hook(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
             result = cli_runner.invoke(cli.uninstall)
@@ -160,7 +160,7 @@ class TestUninstall(object):
             assert not result.exception
             assert result.exit_code == 0
 
-    def test_cli_uninstall_cancel(self, cli_runner, tmpdir):
+    def test_cancel(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
             cli_runner.invoke(cli.install)
@@ -171,7 +171,7 @@ class TestUninstall(object):
             assert result.exception
             assert result.exit_code == 1
 
-    def test_cli_uninstall_non_therapist_hook(self, cli_runner, tmpdir):
+    def test_non_therapist_hook(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
             p.write('.git/hooks/pre-commit')
@@ -183,7 +183,7 @@ class TestUninstall(object):
 
 
 class TestRun(object):
-    def test_cli_run(self, cli_runner, tmpdir):
+    def test_run(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('pass.py')
         p.git.add('.')
@@ -194,7 +194,7 @@ class TestRun(object):
             assert not result.exception
             assert result.exit_code == 0
 
-    def test_cli_run_outside_repo(self, cli_runner, tmpdir):
+    def test_outside_repo(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('pass.py')
         p.git.add('.')
@@ -205,7 +205,7 @@ class TestRun(object):
         assert result.exception
         assert result.exit_code == 1
 
-    def test_cli_run_fails(self, cli_runner, tmpdir):
+    def test_fails(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('fail.py')
         p.git.add('.')
@@ -216,7 +216,7 @@ class TestRun(object):
             assert result.exception
             assert result.exit_code == 1
 
-    def test_cli_run_action(self, cli_runner, tmpdir):
+    def test_action(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('pass.py')
         p.git.add('.')
@@ -227,7 +227,7 @@ class TestRun(object):
             assert not result.exception
             assert result.exit_code == 0
 
-    def test_cli_run_action_fails(self, cli_runner, tmpdir):
+    def test_action_fails(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('fail.py')
         p.git.add('.')
@@ -238,7 +238,7 @@ class TestRun(object):
             assert result.exception
             assert result.exit_code == 1
 
-    def test_cli_run_action_invalid(self, cli_runner, tmpdir):
+    def test_action_invalid(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('fail.py')
         p.git.add('.')
@@ -250,7 +250,7 @@ class TestRun(object):
             assert not result.exception
             assert result.exit_code == 0
 
-    def test_cli_run_on_file(self, cli_runner, tmpdir):
+    def test_on_file(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('pass.py')
         p.git.add('.')
@@ -261,7 +261,7 @@ class TestRun(object):
             assert not result.exception
             assert result.exit_code == 0
 
-    def test_cli_run_on_file_fail(self, cli_runner, tmpdir):
+    def test_on_file_fail(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('fail.py')
         p.git.add('.')
@@ -272,7 +272,7 @@ class TestRun(object):
             assert result.exception
             assert result.exit_code == 1
 
-    def test_cli_run_pass_dir(self, cli_runner, tmpdir):
+    def test_pass_dir(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('dir/pass.py')
         p.git.add('.')
@@ -283,7 +283,7 @@ class TestRun(object):
             assert not result.exception
             assert result.exit_code == 0
 
-    def test_cli_run_pass_dir_fail(self, cli_runner, tmpdir):
+    def test_pass_dir_fail(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('dir/fail.py')
         p.git.add('.')
@@ -294,7 +294,7 @@ class TestRun(object):
             assert result.exception
             assert result.exit_code == 1
 
-    def test_cli_include_untracked(self, cli_runner, tmpdir):
+    def test_include_untracked(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('fail.py')
 
@@ -308,7 +308,7 @@ class TestRun(object):
             assert result.exception
             assert result.exit_code == 1
 
-    def test_cli_include_unstaged(self, cli_runner, tmpdir):
+    def test_include_unstaged(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('fail.py')
         p.git.add('.')
@@ -325,7 +325,24 @@ class TestRun(object):
             assert result.exception
             assert result.exit_code == 1
 
-    def test_cli_run_misconfigured(self, cli_runner, tmpdir):
+    def test_ignore_unstaged_changes(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        p.write('fail.py')
+        p.git.add('.')
+        p.write('fail.py', 'x')
+
+        with chdir(p.path):
+            result = cli_runner.invoke(cli.run)
+            assert 'There are unstaged changes.' in result.output
+            assert result.exception
+            assert result.exit_code == 1
+
+            result = cli_runner.invoke(cli.run, ['--ignore-unstaged-changes'])
+            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert result.exception
+            assert result.exit_code == 1
+
+    def test_misconfigured(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         config_data = p.get_config_data()
         config_data.pop('actions')
@@ -339,7 +356,7 @@ class TestRun(object):
 
 
 class TestHook(object):
-    def test_hook_works_for_failure(self, cli_runner, tmpdir, capsys):
+    def test_action_failure(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
 
         with chdir(p.path):
@@ -355,7 +372,7 @@ class TestHook(object):
         out, err = p.git.status(porcelain=True)
         assert 'fail.py' in out
 
-    def test_hook_works_for_success(self, cli_runner, tmpdir, capsys):
+    def test_action_success(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
 
         with chdir(p.path):

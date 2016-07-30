@@ -72,7 +72,10 @@ class TestRunner(object):
         p = Project(tmpdir.strpath, config_data=config_data)
 
         r = Runner(p.config_file, files=['file1', 'file2'])
-        r.run()
+        results = r.run()
+
+        for result in results:
+            assert result['status'] == Runner.SUCCESS
 
         assert p.exists('file1')
         assert p.exists('file2')
@@ -86,8 +89,10 @@ class TestRunner(object):
         p.git.add('.')
 
         r = Runner(p.config_file)
-        with pytest.raises(r.ActionFailed):
-            r.run()
+        results = r.run()
+
+        for result in results:
+            assert result['status'] == Runner.FAILURE
 
         assert 'fail.txt' in r.files
 
@@ -115,8 +120,8 @@ class TestRunner(object):
         p.write('fail.txt', 'x')
 
         r = Runner(p.config_file, ignore_unstaged_changes=True)
-        with pytest.raises(r.ActionFailed):
-            r.run_action('lint')
+        result = r.run_action('lint')
+        assert result['status'] == Runner.FAILURE
 
         assert 'fail.txt' in r.files
 
@@ -129,8 +134,8 @@ class TestRunner(object):
         p.write('fail.txt')
 
         r = Runner(p.config_file, include_untracked=True)
-        with pytest.raises(r.ActionFailed):
-            r.run_action('lint')
+        result = r.run_action('lint')
+        assert result['status'] == Runner.FAILURE
 
         assert 'fail.txt' in r.files
 
@@ -148,8 +153,8 @@ class TestRunner(object):
         p.write('fail.txt', 'x')
 
         r = Runner(p.config_file, include_unstaged=True)
-        with pytest.raises(r.ActionFailed):
-            r.run_action('lint')
+        result = r.run_action('lint')
+        assert result['status'] == Runner.FAILURE
 
         assert 'fail.txt' in r.files
 
@@ -171,8 +176,9 @@ class TestRunner(object):
         p.git.add('.')
 
         r = Runner(p.config_file)
-        r.run_action('lint')
+        result = r.run_action('lint')
 
+        assert result['status'] == Runner.SUCCESS
         assert 'pass.py' in r.files
 
         out, err = capsys.readouterr()
@@ -185,8 +191,8 @@ class TestRunner(object):
         p.git.add('.')
 
         r = Runner(p.config_file)
-        with pytest.raises(r.ActionFailed):
-            r.run_action('lint')
+        result = r.run_action('lint')
+        assert result['status'] == Runner.FAILURE
 
         assert 'fail.txt' in r.files
 
@@ -216,8 +222,8 @@ class TestRunner(object):
         p.git.add('.')
 
         r = Runner(p.config_file)
-        with pytest.raises(r.ActionFailed):
-            r.run_action('lint')
+        result = r.run_action('lint')
+        assert result['status'] == Runner.ERROR
 
         assert len(r.files) == 1000
 
@@ -274,8 +280,8 @@ class TestRunner(object):
         p.git.add('.')
 
         r = Runner(p.config_file)
-        with pytest.raises(r.ActionFailed):
-            r.run_action('runissue')
+        result = r.run_action('runissue')
+        assert result['status'] == Runner.FAILURE
 
         assert 'pass.py' in r.files
 
