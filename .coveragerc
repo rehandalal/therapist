@@ -1,2 +1,5 @@
 [run]
 include = therapist/*
+
+[report]
+show_missing = True

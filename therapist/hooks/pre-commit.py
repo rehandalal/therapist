@@ -1,11 +1,12 @@
 #!/usr/bin/env python
+# THERAPIST {hash}
 import os
 
 from therapist import Runner
 from therapist.printer import Printer
 
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 printer = Printer()
 
 

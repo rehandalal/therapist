@@ -44,6 +44,10 @@ class Project(object):
         self.git.add(self.config_file)
         self.git.commit(m='Update .therapist.yml')
 
+    def abspath(self, path):
+        """Converts a path relative to the project root to an absolute path."""
+        return os.path.abspath(os.path.join(self.path, path))
+
     def exists(self, path):
         """Checks if a file exists."""
         return os.path.exists(os.path.join(self.path, path))
@@ -77,3 +81,9 @@ class Project(object):
                     os.remove(os.path.join(stats[0], f))
         else:
             os.remove(path)
+
+    def copy(self, src, dst):
+        """Copy a file from one path to another"""
+        src = os.path.join(self.path, src)
+        dst = os.path.join(self.path, dst)
+        shutil.copy2(src, dst)

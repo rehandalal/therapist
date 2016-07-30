@@ -1,7 +1,6 @@
+import hashlib
 import os
 import stat
-
-from shutil import copy
 
 import click
 
@@ -9,6 +8,8 @@ from therapist import Runner
 from therapist._version import __version__
 from therapist.printer import Printer
 
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 MODE_775 = (stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
             stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP |
@@ -20,43 +21,71 @@ printer = Printer()
 def find_git_dir():
     """Locate the .git directory."""
     path = os.path.abspath(os.curdir)
-    while path != os.path.abspath('/'):
+    while path != '/':
         if os.path.isdir(os.path.join(path, '.git')):
             return os.path.join(path, '.git')
         path = os.path.dirname(path)
     return None
 
 
-@click.group()
-@click.version_option(__version__, prog_name='therapist')
-def cli():
+def get_hook_hash(path):
+    """Verify that the file at path is the therapist hook and return the hash"""
+    with open(path, 'r') as f:
+        for i, line in enumerate(f):
+            if i == 1:
+                if line.startswith('# THERAPIST'):
+                    parts = line.split()
+                    return parts[2]
+                break
+
+
+@click.group(invoke_without_command=True)
+@click.option('--version', '-V', is_flag=True, help='Show the version and exit.')
+def cli(version, *args, **kwargs):
     """A smart pre-commit hook for git."""
-    pass
+    if version:
+        printer.fprint('v{}'.format(__version__))
 
 
 @cli.command()
 def install():
     """Install the pre-commit hook."""
-    srchook = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'hooks', 'pre-commit.py')
     gitdir_path = find_git_dir()
 
     if gitdir_path is None:
         printer.fprint('Unable to locate git repo.', 'red')
         exit(1)
 
-    dsthook = os.path.join(gitdir_path, 'hooks', 'pre-commit')
+    with open(os.path.join(BASE_DIR, 'hooks', 'pre-commit.py'), 'r') as f:
+        srchook = f.read()
+        srchook_hash = hashlib.md5(srchook.encode()).hexdigest()
 
-    if os.path.isfile(dsthook):
-        printer.fprint('There is an existing pre-commit hook.', 'yellow')
+    dsthook_path = os.path.join(gitdir_path, 'hooks', 'pre-commit')
 
-        if not click.confirm('Are you sure you want to overwrite this hook?'):
-            printer.fprint('Installation aborted.')
-            exit(1)
+    if os.path.isfile(dsthook_path):
+        dsthook_hash = get_hook_hash(dsthook_path)
+        if dsthook_hash:
+            if dsthook_hash == srchook_hash:
+                printer.fprint('The pre-commit hook has already been installed.')
+                exit(0)
+            else:
+                printer.fprint('You are not using the current version of the pre-commit hook.', 'yellow')
 
-    printer.fprint('Installing pre-commit hook...', inline=True)
-    copy(srchook, dsthook)
-    os.chmod(dsthook, MODE_775)
-    printer.fprint('\tDONE', 'green', 'bold')
+                if not click.confirm('Would you like to replace this hook with the current version?'):
+                    printer.fprint('Installation aborted.')
+                    exit(1)
+        else:
+            printer.fprint('There is an existing pre-commit hook.', 'yellow')
+
+            if not click.confirm('Are you sure you want to replace this hook?'):
+                printer.fprint('Installation aborted.')
+                exit(1)
+
+    printer.fprint('Installing pre-commit hook...\t', inline=True)
+    with open(dsthook_path, 'w+') as f:
+        f.write(srchook.format(hash=srchook_hash))
+    os.chmod(dsthook_path, MODE_775)
+    printer.fprint('DONE', 'green', 'bold')
 
 
 @cli.command()
@@ -64,8 +93,11 @@ def install():
 @click.option('--action', '-a', default=None, help='A name of a specific action to be run.')
 @click.option('--include-unstaged', is_flag=True, help='Include unstaged files.')
 @click.option('--include-untracked', is_flag=True, help='Include untracked files.')
-def run(paths, action, include_unstaged, include_untracked):
+@click.option('--ignore-unstaged-changes', is_flag=True, help='Ignore changes to staged files.')
+def run(*args, **kwargs):
     """Run actions as a batch or individually."""
+    paths = kwargs.pop('paths', ())
+    action = kwargs.pop('action')
     gitdir_path = find_git_dir()
 
     if gitdir_path is None:
@@ -88,8 +120,7 @@ def run(paths, action, include_unstaged, include_untracked):
         files = None
 
     try:
-        runner = Runner(os.path.join(repo_root, '.therapist.yml'), files=files, ignore_unstaged_changes=True,
-                        include_unstaged=include_unstaged, include_untracked=include_untracked)
+        runner = Runner(os.path.join(repo_root, '.therapist.yml'), files=files, **kwargs)
     except Runner.Misconfigured as err:
         printer.fprint('Misconfigured: {}'.format(err.message), 'red')
         exit(1)
@@ -122,13 +153,23 @@ def uninstall():
         printer.fprint('Unable to locate git repo.', 'red')
         exit(1)
 
-    hookpath = os.path.join(gitdirpath, 'hooks', 'pre-commit')
+    hook_path = os.path.join(gitdirpath, 'hooks', 'pre-commit')
 
-    if not os.path.isfile(hookpath):
-        printer.fprint('There is no hook to uninstall.', 'yellow')
+    if not os.path.isfile(hook_path):
+        printer.fprint('There is no pre-commit hook currently installed.')
+        exit(0)
+
+    hook_hash = get_hook_hash(hook_path)
+
+    if hook_hash:
+        if not click.confirm('Are you sure you want to uninstall the current pre-commit hook?'):
+            printer.fprint('Uninstallation aborted.')
+            exit(1)
+    else:
+        printer.fprint('The current pre-commit hook is not the Therapist pre-commit hook.', 'yellow')
+        printer.fprint('Uninstallation aborted.')
         exit(1)
 
-    if click.confirm('Are you sure you want to uninstall the current pre-commit hook?'):
-        printer.fprint('Uninstalling pre-commit hook...', inline=True)
-        os.remove(hookpath)
-        printer.fprint('\tDONE', 'green', 'bold')
+    printer.fprint('Uninstalling pre-commit hook...\t', inline=True)
+    os.remove(hook_path)
+    printer.fprint('DONE', 'green', 'bold')
