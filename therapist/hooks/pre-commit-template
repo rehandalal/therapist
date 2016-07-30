@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# THERAPIST {hash}
+
+# Check if the therapist CLI exists
+which therapist &> /dev/null
+
+if (($? != 0)); then
+    echo '`therapist` was not found. Did you forget to activate your virtualenv?'
+    exit 1
+fi
+
+therapist run
+exit $?

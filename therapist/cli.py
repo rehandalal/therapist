@@ -56,7 +56,7 @@ def install():
         printer.fprint('Unable to locate git repo.', 'red')
         exit(1)
 
-    with open(os.path.join(BASE_DIR, 'hooks', 'pre-commit.py'), 'r') as f:
+    with open(os.path.join(BASE_DIR, 'hooks', 'pre-commit-template'), 'r') as f:
         srchook = f.read()
         srchook_hash = hashlib.md5(srchook.encode()).hexdigest()
 
