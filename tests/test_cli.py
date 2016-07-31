@@ -102,15 +102,34 @@ class TestInstall(object):
             hook = p.read('.git/hooks/pre-commit')
             assert '# THERAPIST n0tth3h45h'.format(hook_hash) in hook
 
-    def test_replace_existing(self, cli_runner, tmpdir):
+    def test_preserve_existing(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
-            p.write('.git/hooks/pre-commit', '#!usr/bin/env python\n#\n#')
+            p.write('.git/hooks/pre-commit', '')
             hook = p.read('.git/hooks/pre-commit')
-            assert hook == '#!usr/bin/env python\n#\n#'
+            assert hook == ''
 
             result = cli_runner.invoke(cli.install, input='y')
             assert 'There is an existing pre-commit hook.' in result.output
+            assert 'Copying `pre-commit` to `pre-commit.legacy`...' in result.output
+            assert not result.exception
+            assert result.exit_code == 0
+
+            hook = p.read('.git/hooks/pre-commit')
+            assert '# THERAPIST' in hook
+
+            assert p.exists('.git/hooks/pre-commit.legacy')
+
+    def test_replace_existing(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        with chdir(p.path):
+            p.write('.git/hooks/pre-commit', '')
+            hook = p.read('.git/hooks/pre-commit')
+            assert hook == ''
+
+            result = cli_runner.invoke(cli.install, input='n\ny')
+            assert 'There is an existing pre-commit hook.' in result.output
+            assert 'Copying `pre-commit` to `pre-commit.legacy`...' not in result.output
             assert not result.exception
             assert result.exit_code == 0
 
@@ -120,17 +139,55 @@ class TestInstall(object):
     def test_replace_existing_cancel(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
-            p.write('.git/hooks/pre-commit', '#!usr/bin/env python')
+            p.write('.git/hooks/pre-commit', '#!usr/bin/env bash\n\nexit 1')
             hook = p.read('.git/hooks/pre-commit')
-            assert hook == '#!usr/bin/env python'
+            assert hook == '#!usr/bin/env bash\n\nexit 1'
 
-            result = cli_runner.invoke(cli.install, input='n')
+            result = cli_runner.invoke(cli.install, input='n\nn')
             assert 'There is an existing pre-commit hook.' in result.output
             assert result.exception
             assert result.exit_code == 1
 
             hook = p.read('.git/hooks/pre-commit')
-            assert hook == '#!usr/bin/env python'
+            assert hook == '#!usr/bin/env bash\n\nexit 1'
+
+    def test_force_option(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        with chdir(p.path):
+            p.write('.git/hooks/pre-commit', '# legacy')
+
+            result = cli_runner.invoke(cli.install, ['-f'])
+            assert 'There is an existing pre-commit hook.' not in result.output
+            assert 'Installing pre-commit hook...' in result.output
+            assert not result.exception
+            assert result.exit_code == 0
+
+            assert not p.exists('.git/hooks/pre-commit.legacy')
+
+    def test_force_option_preserve_legacy(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        with chdir(p.path):
+            p.write('.git/hooks/pre-commit', '# legacy')
+
+            result = cli_runner.invoke(cli.install, ['-f', '--preserve-legacy'])
+            assert 'There is an existing pre-commit hook.' not in result.output
+            assert 'Copying `pre-commit` to `pre-commit.legacy`...' in result.output
+            assert 'Installing pre-commit hook...' in result.output
+            assert not result.exception
+            assert result.exit_code == 0
+
+            assert '# legacy' in p.read('.git/hooks/pre-commit.legacy')
+
+    def test_force_already_installed(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        with chdir(p.path):
+            cli_runner.invoke(cli.install)
+            assert p.exists('.git/hooks/pre-commit')
+
+            result = cli_runner.invoke(cli.install, ['-f'])
+            assert 'The pre-commit hook has already been installed.' in result.output
+            assert not result.exception
+            assert result.exit_code == 0
 
 
 class TestUninstall(object):
@@ -180,6 +237,103 @@ class TestUninstall(object):
             assert 'The current pre-commit hook is not the Therapist pre-commit hook.' in result.output
             assert result.exception
             assert result.exit_code == 1
+
+    def test_restore_legacy(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        with chdir(p.path):
+            cli_runner.invoke(cli.install)
+            assert '# THERAPIST' in p.read('.git/hooks/pre-commit')
+
+            p.write('.git/hooks/pre-commit.legacy', '# legacy')
+
+            result = cli_runner.invoke(cli.uninstall, input='y\ny')
+            assert 'Would you like to restore the legacy hook?' in result.output
+            assert 'Copying `pre-commit.legacy` to `pre-commit`...' in result.output
+            assert not result.exception
+            assert result.exit_code == 0
+            assert '# legacy' in p.read('.git/hooks/pre-commit')
+
+    def test_remove_legacy(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        with chdir(p.path):
+            cli_runner.invoke(cli.install)
+            assert '# THERAPIST' in p.read('.git/hooks/pre-commit')
+
+            p.write('.git/hooks/pre-commit.legacy', '# legacy')
+
+            result = cli_runner.invoke(cli.uninstall, input='y\nn\ny')
+            assert 'Would you like to restore the legacy hook?' in result.output
+            assert 'Would you like to remove the legacy hook?' in result.output
+            assert not result.exception
+            assert result.exit_code == 0
+            assert not p.exists('.git/hooks/pre-commit')
+            assert not p.exists('.git/hooks/pre-commit.legacy')
+
+    def test_dont_restore_or_remove_legacy(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        with chdir(p.path):
+            cli_runner.invoke(cli.install)
+            assert '# THERAPIST' in p.read('.git/hooks/pre-commit')
+
+            p.write('.git/hooks/pre-commit.legacy', '# legacy')
+
+            result = cli_runner.invoke(cli.uninstall, input='y\nn\nn')
+            assert 'Would you like to restore the legacy hook?' in result.output
+            assert 'Would you like to remove the legacy hook?' in result.output
+            assert not result.exception
+            assert result.exit_code == 0
+            assert not p.exists('.git/hooks/pre-commit')
+            assert p.exists('.git/hooks/pre-commit.legacy')
+
+    def test_force_option(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        with chdir(p.path):
+            cli_runner.invoke(cli.install)
+            assert p.exists('.git/hooks/pre-commit')
+
+            p.write('.git/hooks/pre-commit.legacy', '# legacy')
+
+            result = cli_runner.invoke(cli.uninstall, ['-f'])
+            assert 'Are you sure you want to uninstall the current pre-commit hook?' not in result.output
+            assert 'There is a legacy pre-commit hook present.' not in result.output
+            assert 'Copying `pre-commit.legacy` to `pre-commit`...' not in result.output
+            assert 'Removing `pre-commit.legacy`...' in result.output
+            assert 'Uninstalling pre-commit hook...' in result.output
+            assert not result.exception
+            assert result.exit_code == 0
+            assert not p.exists('.git/hooks/pre-commit')
+            assert not p.exists('.git/hooks/pre-commit.legacy')
+
+    def test_force_option_restore_legacy(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        with chdir(p.path):
+            cli_runner.invoke(cli.install)
+            assert p.exists('.git/hooks/pre-commit')
+
+            p.write('.git/hooks/pre-commit.legacy', '# legacy')
+
+            result = cli_runner.invoke(cli.uninstall, ['-f', '--restore-legacy'])
+            assert 'Are you sure you want to uninstall the current pre-commit hook?' not in result.output
+            assert 'There is a legacy pre-commit hook present.' not in result.output
+            assert 'Copying `pre-commit.legacy` to `pre-commit`...' in result.output
+            assert 'Removing `pre-commit.legacy`...' not in result.output
+            assert 'Uninstalling pre-commit hook...' not in result.output
+            assert not result.exception
+            assert result.exit_code == 0
+            assert '# legacy' in p.read('.git/hooks/pre-commit')
+            assert not p.exists('.git/hooks/pre-commit.legacy')
+
+    def test_force_option_not_therapist_hook(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        with chdir(p.path):
+            cli_runner.invoke(cli.install)
+            p.write('.git/hooks/pre-commit', '# SOME OTHER HOOK')
+
+            result = cli_runner.invoke(cli.uninstall, ['-f'])
+            assert 'Uninstallation aborted.' in result.output
+            assert result.exception
+            assert result.exit_code == 1
+            assert p.exists('.git/hooks/pre-commit')
 
 
 class TestRun(object):

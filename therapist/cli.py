@@ -103,6 +103,60 @@ def install(force, preserve_legacy):
 
 
 @cli.command()
+@click.option('--force', '-f', is_flag=True, help='Force uninstallation of the Therapist pre-commit hook. This will '
+                                                  'also remove any legacy hook unless you also use the '
+                                                  '--restore-legacy option.')
+@click.option('--restore-legacy', is_flag=True, help='Restores any legacy pre-commit hook.')
+def uninstall(force, restore_legacy):
+    """Uninstall the current pre-commit hook."""
+    gitdirpath = find_git_dir()
+
+    if gitdirpath is None:
+        printer.fprint('Unable to locate git repo.', 'red')
+        exit(1)
+
+    hook_path = os.path.join(gitdirpath, 'hooks', 'pre-commit')
+
+    if not os.path.isfile(hook_path):
+        printer.fprint('There is no pre-commit hook currently installed.')
+        exit(0)
+
+    hook_hash = get_hook_hash(hook_path)
+
+    if hook_hash:
+        if not force:
+            if not click.confirm('Are you sure you want to uninstall the current pre-commit hook?', default=False):
+                printer.fprint('Uninstallation aborted.')
+                exit(1)
+    else:
+        printer.fprint('The current pre-commit hook is not the Therapist pre-commit hook.', 'yellow')
+        printer.fprint('Uninstallation aborted.')
+        exit(1)
+
+    legacy_hook_path = os.path.join(gitdirpath, 'hooks', 'pre-commit.legacy')
+
+    if os.path.isfile(legacy_hook_path):
+        if not force and not restore_legacy:
+            printer.fprint('There is a legacy pre-commit hook present.', 'yellow')
+            restore_legacy = click.confirm('Would you like to restore the legacy hook?', default=True)
+        if restore_legacy:
+            printer.fprint('Copying `pre-commit.legacy` to `pre-commit`...\t', inline=True)
+            shutil.copy2(legacy_hook_path, hook_path)
+            os.remove(legacy_hook_path)
+            printer.fprint('DONE', 'green', 'bold')
+            exit(0)
+        else:
+            if force or click.confirm('Would you like to remove the legacy hook?', default=False):
+                printer.fprint('Removing `pre-commit.legacy`...\t', inline=True)
+                os.remove(legacy_hook_path)
+                printer.fprint('DONE', 'green', 'bold')
+
+    printer.fprint('Uninstalling pre-commit hook...\t', inline=True)
+    os.remove(hook_path)
+    printer.fprint('DONE', 'green', 'bold')
+
+
+@cli.command()
 @click.argument('paths', nargs=-1)
 @click.option('--action', '-a', default=None, help='A name of a specific action to be run.')
 @click.option('--include-unstaged', is_flag=True, help='Include unstaged files.')
@@ -175,57 +229,3 @@ def run(*args, **kwargs):
                 printer.fprint()
 
         exit(exitcode)
-
-
-@cli.command()
-@click.option('--force', '-f', is_flag=True, help='Force uninstallation of the Therapist pre-commit hook. This will '
-                                                  'also remove any legacy hook unless you also use the '
-                                                  '--restore-legacy option.')
-@click.option('--restore-legacy', is_flag=True, help='Restores any legacy pre-commit hook.')
-def uninstall(force, restore_legacy):
-    """Uninstall the current pre-commit hook."""
-    gitdirpath = find_git_dir()
-
-    if gitdirpath is None:
-        printer.fprint('Unable to locate git repo.', 'red')
-        exit(1)
-
-    hook_path = os.path.join(gitdirpath, 'hooks', 'pre-commit')
-
-    if not os.path.isfile(hook_path):
-        printer.fprint('There is no pre-commit hook currently installed.')
-        exit(0)
-
-    hook_hash = get_hook_hash(hook_path)
-
-    if hook_hash:
-        if not force:
-            if not click.confirm('Are you sure you want to uninstall the current pre-commit hook?', default=False):
-                printer.fprint('Uninstallation aborted.')
-                exit(1)
-    else:
-        printer.fprint('The current pre-commit hook is not the Therapist pre-commit hook.', 'yellow')
-        printer.fprint('Uninstallation aborted.')
-        exit(1)
-
-    legacy_hook_path = os.path.join(gitdirpath, 'hooks', 'pre-commit.legacy')
-
-    if os.path.isfile(legacy_hook_path):
-        if not force and not restore_legacy:
-            printer.fprint('There is a legacy pre-commit hook present.', 'yellow')
-            restore_legacy = click.confirm('Would you like to restore the legacy hook?', default=True)
-        if restore_legacy:
-            printer.fprint('Copying `pre-commit.legacy` to `pre-commit`...\t', inline=True)
-            shutil.copy2(legacy_hook_path, hook_path)
-            os.remove(legacy_hook_path)
-            printer.fprint('DONE', 'green', 'bold')
-            exit(0)
-        else:
-            if force or click.confirm('Would you like to remove the legacy hook?', default=False):
-                printer.fprint('Removing `pre-commit.legacy`...\t', inline=True)
-                os.remove(legacy_hook_path)
-                printer.fprint('DONE', 'green', 'bold')
-
-    printer.fprint('Uninstalling pre-commit hook...\t', inline=True)
-    os.remove(hook_path)
-    printer.fprint('DONE', 'green', 'bold')
