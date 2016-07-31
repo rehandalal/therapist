@@ -87,3 +87,7 @@ class Project(object):
         src = os.path.join(self.path, src)
         dst = os.path.join(self.path, dst)
         shutil.copy2(src, dst)
+
+    def chmod(self, path, mode):
+        path = os.path.join(self.path, path)
+        os.chmod(path, mode)

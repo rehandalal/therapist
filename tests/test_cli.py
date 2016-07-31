@@ -537,8 +537,47 @@ class TestHook(object):
         p.git.add('.')
 
         out, err = p.git.commit(m='Add a file.')
-        assert '[SUCCESS]'.format(p.abspath('fail.py')) in err
+        assert '[SUCCESS]' in err
 
         out, err = p.git.status(porcelain=True)
         assert not out
+        assert not err
+
+    def test_legacy_hook(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+
+        with chdir(p.path):
+            cli_runner.invoke(cli.install)
+        assert p.exists('.git/hooks/pre-commit')
+
+        p.write('.git/hooks/pre-commit.legacy', '#!/usr/bin/env bash\necho "LEGACY"')
+        p.chmod('.git/hooks/pre-commit.legacy', cli.MODE_775)
+
+        p.write('pass.py')
+        p.git.add('.')
+
+        out, err = p.git.commit(m='Add a file.')
+        assert 'LEGACY' in err
+
+        out, err = p.git.status(porcelain=True)
+        assert not out
+        assert not err
+
+    def test_legacy_hook_fails(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+
+        with chdir(p.path):
+            cli_runner.invoke(cli.install)
+        assert p.exists('.git/hooks/pre-commit')
+
+        p.write('.git/hooks/pre-commit.legacy', '#!/usr/bin/env bash\nexit 1')
+        p.chmod('.git/hooks/pre-commit.legacy', cli.MODE_775)
+
+        p.write('pass.py')
+        p.git.add('.')
+
+        p.git.commit(m='Add a file.')
+
+        out, err = p.git.status(porcelain=True)
+        assert 'pass.py' in out
         assert not err
