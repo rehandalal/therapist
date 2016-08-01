@@ -37,9 +37,9 @@ def execute_action(action, files, cwd):
         std_out, std_err = pipes.communicate()
 
         if len(std_err):
-            return std_err, Runner.FAILURE
+            return std_err.decode(), Runner.FAILURE
         else:
-            return std_out, Runner.SUCCESS if pipes.returncode == 0 else Runner.FAILURE
+            return std_out.decode(), Runner.SUCCESS if pipes.returncode == 0 else Runner.FAILURE
 
     return None, Runner.SKIPPED
 
