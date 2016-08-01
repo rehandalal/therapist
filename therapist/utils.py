@@ -26,9 +26,7 @@ def current_git_dir():
 def identify_hook(path):
     """Verify that the file at path is the therapist hook and return the hash"""
     with open(path, 'r') as f:
-        for i, line in enumerate(f):
-            if i == 1:
-                if line.startswith('# THERAPIST'):
-                    parts = line.split()
-                    return parts[2]
-                break
+        f.readline()  # Discard the shebang line
+        version_line = f.readline()
+        if version_line.startswith('# THERAPIST'):
+            return version_line.split()[2]
