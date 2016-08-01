@@ -1,6 +1,8 @@
 import pytest
 import re
 
+import six
+
 from therapist import Runner
 
 from . import Project
@@ -312,3 +314,21 @@ class TestRunner(object):
         out, err = capsys.readouterr()
 
         assert re.search('Linting(.+?)\[SUCCESS]', out)
+
+    def test_output_encoded(self, tmpdir, capsys):
+        p = Project(tmpdir.strpath)
+
+        p.write('fail.txt')
+        p.git.add('.')
+
+        r = Runner(p.config_file)
+        with pytest.raises(r.ActionFailed):
+            r.run()
+
+        assert 'fail.txt' in r.files
+
+        out, err = capsys.readouterr()
+
+        assert isinstance(out, six.text_type)
+        assert 'b"' not in out
+        assert "b'" not in out
