@@ -426,7 +426,7 @@ class TestRun(object):
             assert result.exception
             assert result.exit_code == 1
 
-    def test_pass_dir(self, cli_runner, tmpdir):
+    def test_dir(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('dir/pass.py')
         p.git.add('.')
@@ -437,13 +437,35 @@ class TestRun(object):
             assert not result.exception
             assert result.exit_code == 0
 
-    def test_pass_dir_fail(self, cli_runner, tmpdir):
+    def test_dir_fail(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         p.write('dir/fail.py')
         p.git.add('.')
 
         with chdir(p.path):
             result = cli_runner.invoke(cli.run, ['dir'])
+            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert result.exception
+            assert result.exit_code == 1
+
+    def test_file(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        p.write('pass.py')
+        p.git.add('.')
+
+        with chdir(p.path):
+            result = cli_runner.invoke(cli.run, ['pass.py'])
+            assert re.search('Linting.+?\[SUCCESS]', result.output)
+            assert not result.exception
+            assert result.exit_code == 0
+
+    def test_file_fail(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        p.write('fail.py')
+        p.git.add('.')
+
+        with chdir(p.path):
+            result = cli_runner.invoke(cli.run, ['fail.py'])
             assert re.search('Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 1
@@ -492,6 +514,18 @@ class TestRun(object):
             assert result.exit_code == 1
 
             result = cli_runner.invoke(cli.run, ['--ignore-unstaged-changes'])
+            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert result.exception
+            assert result.exit_code == 1
+
+    def test_use_tracked_files(self, cli_runner, tmpdir):
+        p = Project(tmpdir.strpath)
+        p.write('fail.py')
+        p.git.add('.')
+        p.git.commit(m='Add file.')
+
+        with chdir(p.path):
+            result = cli_runner.invoke(cli.run, ['--use-tracked-files'])
             assert re.search('Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 1

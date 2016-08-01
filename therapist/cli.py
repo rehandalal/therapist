@@ -7,7 +7,9 @@ import click
 
 from therapist import Runner
 from therapist._version import __version__
+from therapist.git import Git
 from therapist.printer import Printer
+from therapist.utils import current_git_dir, list_files
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -16,17 +18,8 @@ MODE_775 = (stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
             stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP |
             stat.S_IROTH | stat.S_IXOTH)
 
+git = Git()
 printer = Printer()
-
-
-def find_git_dir():
-    """Locate the .git directory."""
-    path = os.path.abspath(os.curdir)
-    while path != '/':
-        if os.path.isdir(os.path.join(path, '.git')):
-            return os.path.join(path, '.git')
-        path = os.path.dirname(path)
-    return None
 
 
 def get_hook_hash(path):
@@ -54,9 +47,9 @@ def cli(version):
 @click.option('--preserve-legacy', is_flag=True, help='Preserves any existing pre-commit hook.')
 def install(force, preserve_legacy):
     """Install the pre-commit hook."""
-    gitdir_path = find_git_dir()
+    git_dir = current_git_dir()
 
-    if gitdir_path is None:
+    if git_dir is None:
         printer.fprint('Unable to locate git repo.', 'red')
         exit(1)
 
@@ -64,7 +57,7 @@ def install(force, preserve_legacy):
         srchook = f.read()
         srchook_hash = hashlib.md5(srchook.encode()).hexdigest()
 
-    dsthook_path = os.path.join(gitdir_path, 'hooks', 'pre-commit')
+    dsthook_path = os.path.join(git_dir, 'hooks', 'pre-commit')
 
     if os.path.isfile(dsthook_path):
         dsthook_hash = get_hook_hash(dsthook_path)
@@ -109,13 +102,13 @@ def install(force, preserve_legacy):
 @click.option('--restore-legacy', is_flag=True, help='Restores any legacy pre-commit hook.')
 def uninstall(force, restore_legacy):
     """Uninstall the current pre-commit hook."""
-    gitdirpath = find_git_dir()
+    git_dir = current_git_dir()
 
-    if gitdirpath is None:
+    if git_dir is None:
         printer.fprint('Unable to locate git repo.', 'red')
         exit(1)
 
-    hook_path = os.path.join(gitdirpath, 'hooks', 'pre-commit')
+    hook_path = os.path.join(git_dir, 'hooks', 'pre-commit')
 
     if not os.path.isfile(hook_path):
         printer.fprint('There is no pre-commit hook currently installed.')
@@ -133,7 +126,7 @@ def uninstall(force, restore_legacy):
         printer.fprint('Uninstallation aborted.')
         exit(1)
 
-    legacy_hook_path = os.path.join(gitdirpath, 'hooks', 'pre-commit.legacy')
+    legacy_hook_path = os.path.join(git_dir, 'hooks', 'pre-commit.legacy')
 
     if os.path.isfile(legacy_hook_path):
         if not force and not restore_legacy:
@@ -162,33 +155,38 @@ def uninstall(force, restore_legacy):
 @click.option('--include-unstaged', is_flag=True, help='Include unstaged files.')
 @click.option('--include-untracked', is_flag=True, help='Include untracked files.')
 @click.option('--ignore-unstaged-changes', is_flag=True, help='Ignore changes to staged files.')
+@click.option('--use-tracked-files', is_flag=True, help='Runs actions against all tracked files.')
 def run(*args, **kwargs):
     """Run actions as a batch or individually."""
     paths = kwargs.pop('paths', ())
     action = kwargs.pop('action')
-    gitdir_path = find_git_dir()
+    use_tracked_files = kwargs.pop('use_tracked_files')
+    files = []
 
-    if gitdir_path is None:
+    git_dir = current_git_dir()
+
+    if git_dir is None:
         printer.fprint('Unable to locate git repo.', 'red')
         exit(1)
 
-    repo_root = os.path.dirname(gitdir_path)
+    repo_root = os.path.dirname(git_dir)
 
     # If paths were provided get all the files for each path
     if paths:
-        files = []
         for path in paths:
-            if os.path.isdir(path):
-                for stats in os.walk(path):
-                    for f in stats[2]:
-                        files.append(os.path.abspath(os.path.join(stats[0], f)))
-            else:
-                files.append(os.path.abspath(path))
-    else:
-        files = None
+            for f in list_files(path):
+                f = os.path.relpath(f, repo_root)
+                if not f.startswith('..'):  # Don't include files outside the repo root.
+                    files.append(f)
+    elif use_tracked_files:
+        out, err = git.ls_files()
+        files = out.splitlines()
+
+    if len(files):
+        kwargs['files'] = files
 
     try:
-        runner = Runner(os.path.join(repo_root, '.therapist.yml'), files=files, **kwargs)
+        runner = Runner(os.path.join(repo_root, '.therapist.yml'), **kwargs)
     except Runner.Misconfigured as err:
         printer.fprint('Misconfigured: {}'.format(err.message), 'red')
         exit(1)
