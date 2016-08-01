@@ -9,7 +9,7 @@ from therapist import Runner
 from therapist._version import __version__
 from therapist.git import Git
 from therapist.printer import Printer
-from therapist.utils import current_git_dir, list_files
+from therapist.utils import current_git_dir, identify_hook, list_files
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -20,17 +20,6 @@ MODE_775 = (stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
 
 git = Git()
 printer = Printer()
-
-
-def get_hook_hash(path):
-    """Verify that the file at path is the therapist hook and return the hash"""
-    with open(path, 'r') as f:
-        for i, line in enumerate(f):
-            if i == 1:
-                if line.startswith('# THERAPIST'):
-                    parts = line.split()
-                    return parts[2]
-                break
 
 
 @click.group(invoke_without_command=True)
@@ -60,18 +49,11 @@ def install(force, preserve_legacy):
     dsthook_path = os.path.join(git_dir, 'hooks', 'pre-commit')
 
     if os.path.isfile(dsthook_path):
-        dsthook_hash = get_hook_hash(dsthook_path)
+        dsthook_hash = identify_hook(dsthook_path)
         if dsthook_hash:
             if dsthook_hash == srchook_hash:
                 printer.fprint('The pre-commit hook has already been installed.')
                 exit(0)
-            else:
-                if not force:
-                    printer.fprint('You are not using the current version of the pre-commit hook.', 'yellow')
-
-                    if not click.confirm('Would you like to replace this hook with the current version?', default=True):
-                        printer.fprint('Installation aborted.')
-                        exit(1)
         else:
             if not force and not preserve_legacy:
                 printer.fprint('There is an existing pre-commit hook.', 'yellow')
@@ -114,7 +96,7 @@ def uninstall(force, restore_legacy):
         printer.fprint('There is no pre-commit hook currently installed.')
         exit(0)
 
-    hook_hash = get_hook_hash(hook_path)
+    hook_hash = identify_hook(hook_path)
 
     if hook_hash:
         if not force:

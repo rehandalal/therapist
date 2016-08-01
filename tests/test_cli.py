@@ -7,6 +7,7 @@ from click.testing import CliRunner
 from therapist import cli
 from therapist._version import __version__
 from therapist.context_managers import chdir
+from therapist.utils import identify_hook
 
 from . import Project
 
@@ -71,43 +72,22 @@ class TestInstall(object):
             assert p.exists('.git/hooks/pre-commit')
 
             hook = p.read('.git/hooks/pre-commit')
-            hook_hash = cli.get_hook_hash(p.abspath('.git/hooks/pre-commit'))
+            hook_hash = identify_hook(p.abspath('.git/hooks/pre-commit'))
 
-            p.write('.git/hooks/pre-commit', hook.replace('# THERAPIST {}'.format(hook_hash), '# THERAPIST n0tth3h45h'))
+            p.write('.git/hooks/pre-commit', hook.replace('# THERAPIST {}'.format(hook_hash), '# THERAPIST hash'))
 
-            result = cli_runner.invoke(cli.install, input='y')
-            assert 'You are not using the current version of the pre-commit hook.' in result.output
+            result = cli_runner.invoke(cli.install)
+            assert 'Installing pre-commit hook...' in result.output
             assert not result.exception
             assert result.exit_code == 0
 
             hook = p.read('.git/hooks/pre-commit')
             assert '# THERAPIST {}'.format(hook_hash) in hook
 
-    def test_dont_update_outdated(self, cli_runner, tmpdir):
-        p = Project(tmpdir.strpath)
-        with chdir(p.path):
-            cli_runner.invoke(cli.install)
-            assert p.exists('.git/hooks/pre-commit')
-
-            hook = p.read('.git/hooks/pre-commit')
-            hook_hash = cli.get_hook_hash(p.abspath('.git/hooks/pre-commit'))
-
-            p.write('.git/hooks/pre-commit', hook.replace('# THERAPIST {}'.format(hook_hash), '# THERAPIST n0tth3h45h'))
-
-            result = cli_runner.invoke(cli.install, input='n')
-            assert 'Installation aborted.' in result.output
-            assert result.exception
-            assert result.exit_code == 1
-
-            hook = p.read('.git/hooks/pre-commit')
-            assert '# THERAPIST n0tth3h45h'.format(hook_hash) in hook
-
     def test_preserve_existing(self, cli_runner, tmpdir):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
             p.write('.git/hooks/pre-commit', '')
-            hook = p.read('.git/hooks/pre-commit')
-            assert hook == ''
 
             result = cli_runner.invoke(cli.install, input='y')
             assert 'There is an existing pre-commit hook.' in result.output
@@ -124,8 +104,6 @@ class TestInstall(object):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
             p.write('.git/hooks/pre-commit', '')
-            hook = p.read('.git/hooks/pre-commit')
-            assert hook == ''
 
             result = cli_runner.invoke(cli.install, input='n\ny')
             assert 'There is an existing pre-commit hook.' in result.output
@@ -140,8 +118,6 @@ class TestInstall(object):
         p = Project(tmpdir.strpath)
         with chdir(p.path):
             p.write('.git/hooks/pre-commit', '#!usr/bin/env bash\n\nexit 1')
-            hook = p.read('.git/hooks/pre-commit')
-            assert hook == '#!usr/bin/env bash\n\nexit 1'
 
             result = cli_runner.invoke(cli.install, input='n\nn')
             assert 'There is an existing pre-commit hook.' in result.output
