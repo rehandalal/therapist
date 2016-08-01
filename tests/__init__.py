@@ -22,6 +22,7 @@ class Project(object):
         self.git.init()
         self.git.config('user.name', 'test-suite')
         self.git.config('user.email', 'test-suite@therapist.xyz')
+        self.git.config('commit.gpgsign', 'false')
 
         # Commit all files to the repo
         self.git.add('.')
