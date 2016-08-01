@@ -328,8 +328,10 @@ class TestRunner(object):
         p.git.add('.')
 
         r = Runner(p.config_file)
-        with pytest.raises(r.ActionFailed):
-            r.run()
+        results = r.run()
+
+        for result in results:
+            assert result['status'] == Runner.FAILURE
 
         assert 'fail.txt' in r.files
 
