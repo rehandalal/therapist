@@ -59,6 +59,10 @@ class TestStatus(object):
         s = Status.from_string(text)
         assert s.__str__() == text
 
+        text = 'AM  test.py'
+        s = Status.from_string(text)
+        assert s.__str__() == text
+
     def test_repr(self):
         s = Status.from_string('M  test.py')
         assert s.__repr__() == '<Status test.py>'

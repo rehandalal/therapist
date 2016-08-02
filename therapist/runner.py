@@ -2,15 +2,12 @@ import os
 import subprocess
 import yaml
 
-from distutils.spawn import find_executable
 from pathspec import GitIgnorePattern, PathSpec
 
 from therapist.git import Git, Status
 from therapist.printer import Printer
 
 printer = Printer()
-
-GIT_BINARY = find_executable('git')
 
 
 def execute_action(action, files, cwd):
@@ -71,11 +68,6 @@ class Runner(object):
             self.message = message
             super(self.__class__, self).__init__(*args, **kwargs)
 
-    class ActionFailed(Exception):
-        def __init__(self, *args, **kwargs):
-            self.actions = args
-            super(self.__class__, self).__init__(*args, **kwargs)
-
     def __init__(self, config_path, files=None, ignore_unstaged_changes=False, include_unstaged=False,
                  include_untracked=False):
         self.cwd = os.path.abspath(os.path.dirname(config_path))
@@ -115,9 +107,9 @@ class Runner(object):
             if not include_untracked:
                 args.append('-uno')
 
-            status = self.git.status(*args, porcelain=True)
+            out, err = self.git.status(*args, porcelain=True)
 
-            for line in status.splitlines():
+            for line in out.splitlines():
                 file_status = Status.from_string(line)
 
                 # Check if staged files were modified since being staged
@@ -136,64 +128,42 @@ class Runner(object):
 
     def run_action(self, action_name):
         """Runs a single action."""
-        failures = []
-        errors = []
-
         action = self.actions.get(action_name, None)
 
         if not action:
             raise self.ActionDoesNotExist('`{}` is not a valid action.'.format(action_name))
 
-        description = '%s ' % action.get('description', action_name)[:68]
-        printer.fprint(description.ljust(69, '.'), 'bold', inline=True)
+        result = {
+            'description': action.get('description', action_name)[:68]
+        }
 
-        output, status = execute_action(action, self.files, self.cwd)
+        printer.fprint('{} '.format(result['description']).ljust(69, '.'), 'bold', inline=True)
 
-        if status == self.SUCCESS:
+        result['output'], result['status'] = execute_action(action, self.files, self.cwd)
+
+        if result['status'] == self.SUCCESS:
             printer.fprint(' [SUCCESS]', 'green', 'bold')
-        elif status == self.FAILURE:
+        elif result['status'] == self.FAILURE:
             printer.fprint(' [FAILURE]', 'red', 'bold')
-            failures.append({'description': description, 'output': output})
-        elif status == self.ERROR:
+        elif result['status'] == self.ERROR:
             printer.fprint('..', 'bold', inline=True)
             printer.fprint(' [ERROR]', 'red', 'bold')
-            errors.append({'description': description, 'output': output})
         else:
             printer.fprint(' [SKIPPED]', 'cyan', 'bold')
 
-        # Helper function to print reports
-        def _print_report(title, report):
-            if report:
-                printer.fprint()
-                printer.fprint(''.ljust(79, '='), 'bold')
-                printer.fprint(title[:79], 'bold')
-                printer.fprint(''.ljust(79, '='), 'bold')
-                printer.fprint(report)
-
-        for failure in failures:
-            _print_report('FAILED: ' + failure['description'], failure['output'])
-
-        for error in errors:
-            _print_report('ERROR: ' + error['description'], error['output'])
-
-        if failures or errors:
-            raise self.ActionFailed(action_name)
+        return result
 
     def run(self):
         """Runs the set of actions."""
-        if self.files:
-            failures = []
+        results = []
 
+        if self.files:
             printer.fprint()
 
             # Run each actions
             for name in self.actions:
-                try:
-                    self.run_action(name)
-                except self.ActionFailed:
-                    failures.append(name)
+                results.append(self.run_action(name))
 
             printer.fprint()
 
-            if failures:
-                raise self.ActionFailed(*failures)
+        return results

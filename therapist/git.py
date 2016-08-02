@@ -28,10 +28,18 @@ class Git(object):
 
     def __call__(self, *args, **kwargs):
         cmd = self.current + to_cli_args(*args, **kwargs)
-        subprocess_kwargs = {}
+
+        subprocess_kwargs = {
+            'stdout': subprocess.PIPE,
+            'stderr': subprocess.PIPE
+        }
+
         if self.repo_path:
             subprocess_kwargs['cwd'] = self.repo_path
-        return subprocess.check_output(cmd, **subprocess_kwargs).decode()
+
+        pipes = subprocess.Popen(cmd, **subprocess_kwargs)
+        out, err = pipes.communicate()
+        return out.decode(), err.decode()
 
     def __getattr__(self, name):
         name = name.replace('_', '-')

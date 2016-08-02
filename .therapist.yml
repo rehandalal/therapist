@@ -3,3 +3,8 @@ actions:
     include: "*.py"
     exclude: "docs/*.py"
     run: flake8 {files}
+  shellcheck:
+    include:
+      - "*.sh"
+      - pre-commit-template
+    run: shellcheck {files}
