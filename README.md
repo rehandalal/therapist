@@ -8,4 +8,5 @@ Work out your commitment issues. A smart pre-commit hook for git.
 
 ## Documentation
 
-Full documentation for this tool is available at: http://therapist.readthedocs.io/
+Full documentation for this tool is available at: 
+http://therapist.readthedocs.io/
