@@ -95,13 +95,13 @@ class TestRunner(object):
         assert re.search('Linting(.+?)\[FAILURE]', out)
 
     def test_unstaged_changes(self, project):
-        project.write('fail.txt', 'Something')
+        project.write('pass.txt', 'FAIL')
         project.git.add('.')
 
-        project.write('fail.txt', 'x')
+        project.write('pass.txt', 'x')
 
         out, err = project.git.status(porcelain=True)
-        assert 'AM fail.txt' in out
+        assert 'AM pass.txt' in out
 
         r = Runner(project.config_file)
         results = r.run()
@@ -109,10 +109,10 @@ class TestRunner(object):
         for result in results:
             assert result['status'] == Runner.FAILURE
 
-        assert project.read('fail.txt') == 'x'
+        assert project.read('pass.txt') == 'x'
 
         out, err = project.git.status(porcelain=True)
-        assert 'AM fail.txt' in out
+        assert 'AM pass.txt' in out
 
     def test_include_untracked(self, project, capsys):
         project.write('fail.txt')
@@ -144,6 +144,24 @@ class TestRunner(object):
         out, err = capsys.readouterr()
 
         assert re.search('Linting(.+?)\[FAILURE]', out)
+
+    def test_include_unstaged_changes(self, project):
+        project.write('pass.txt', 'FAIL')
+        project.git.add('.')
+
+        project.write('pass.txt', 'x')
+
+        out, err = project.git.status(porcelain=True)
+        assert 'AM pass.txt' in out
+
+        r = Runner(project.config_file, include_unstaged_changes=True)
+        result = r.run_action('lint')
+        assert result['status'] == Runner.SUCCESS
+
+        assert project.read('pass.txt') == 'x'
+
+        out, err = project.git.status(porcelain=True)
+        assert 'AM pass.txt' in out
 
     def test_run_action_does_not_exist(self, project):
         r = Runner(project.config_file)

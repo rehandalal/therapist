@@ -138,6 +138,7 @@ def uninstall(force, restore_legacy):
 @click.option('--action', '-a', default=None, help='A name of a specific action to be run.')
 @click.option('--include-unstaged', is_flag=True, help='Include unstaged files.')
 @click.option('--include-untracked', is_flag=True, help='Include untracked files.')
+@click.option('--include-unstaged-changes', is_flag=True, help='Include unstaged changes to staged files.')
 @click.option('--use-tracked-files', is_flag=True, help='Runs actions against all tracked files.')
 def run(*args, **kwargs):
     """Run actions as a batch or individually."""

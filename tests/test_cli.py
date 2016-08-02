@@ -443,6 +443,19 @@ class TestRun(object):
             assert result.exit_code == 1
             assert project.read('pass.py') == 'x'
 
+    def test_include_unstaged_changes(self, cli_runner, project):
+        project.write('pass.py', 'FAIL')
+        project.git.add('.')
+        project.write('pass.py', 'x')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['--include-unstaged-changes'])
+            assert 'You have unstaged changes.' in result.output
+            assert re.search('Linting.+?\[SUCCESS]', result.output)
+            assert not result.exception
+            assert result.exit_code == 0
+            assert project.read('pass.py') == 'x'
+
     def test_use_tracked_files(self, cli_runner, project):
         project.write('fail.py')
         project.git.add('.')
