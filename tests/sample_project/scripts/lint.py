@@ -6,10 +6,11 @@ import sys
 BASE_DIR = os.path.abspath(os.curdir)
 
 
-def check(file):
-    if 'fail' in file:
-        print('FAIL!  {}'.format(file))
-        exit(1)
+def check(f):
+    with open(f, 'r') as fp:
+        if 'fail' in f or fp.read().upper() == 'FAIL':
+            print('FAIL!  {}'.format(f))
+            exit(1)
 
 
 for path in sys.argv[1:]:

@@ -63,15 +63,10 @@ class Runner(object):
             self.code = code
             super(self.__class__, self).__init__(*args, **kwargs)
 
-    class UnstagedChanges(Exception):
-        def __init__(self, message='', *args, **kwargs):
-            self.message = message
-            super(self.__class__, self).__init__(*args, **kwargs)
-
-    def __init__(self, config_path, files=None, ignore_unstaged_changes=False, include_unstaged=False,
-                 include_untracked=False):
+    def __init__(self, config_path, files=None, include_unstaged=False, include_untracked=False):
         self.cwd = os.path.abspath(os.path.dirname(config_path))
         self.git = Git(repo_path=self.cwd)
+        self.unstaged_changes = False
 
         # Try and load the config file
         try:
@@ -113,8 +108,8 @@ class Runner(object):
                 file_status = Status.from_string(line)
 
                 # Check if staged files were modified since being staged
-                if file_status.is_staged and file_status.is_modified and not ignore_unstaged_changes:
-                    raise self.UnstagedChanges('There are unstaged changes.')
+                if file_status.is_staged and file_status.is_modified:
+                    self.unstaged_changes = True
 
                 # Skip unstaged files if the `unstaged` flag is False
                 if not file_status.is_staged and not include_unstaged and not include_untracked:
@@ -139,7 +134,10 @@ class Runner(object):
 
         printer.fprint('{} '.format(result['description']).ljust(69, '.'), 'bold', inline=True)
 
+        self.git.stash(keep_index=True, quiet=True)
         result['output'], result['status'] = execute_action(action, self.files, self.cwd)
+        self.git.reset(hard=True, quiet=True)
+        self.git.stash.pop(index=True, quiet=True)
 
         if result['status'] == self.SUCCESS:
             printer.fprint(' [SUCCESS]', 'green', 'bold')

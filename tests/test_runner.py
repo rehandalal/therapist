@@ -95,29 +95,24 @@ class TestRunner(object):
         assert re.search('Linting(.+?)\[FAILURE]', out)
 
     def test_unstaged_changes(self, project):
-        project.write('fail.txt')
+        project.write('fail.txt', 'Something')
         project.git.add('.')
 
         project.write('fail.txt', 'x')
 
-        with pytest.raises(Runner.UnstagedChanges):
-            Runner(project.config_file)
+        out, err = project.git.status(porcelain=True)
+        assert 'AM fail.txt' in out
 
-    def test_ignore_unstaged_changes(self, project, capsys):
-        project.write('fail.txt')
-        project.git.add('.')
+        r = Runner(project.config_file)
+        results = r.run()
 
-        project.write('fail.txt', 'x')
+        for result in results:
+            assert result['status'] == Runner.FAILURE
 
-        r = Runner(project.config_file, ignore_unstaged_changes=True)
-        result = r.run_action('lint')
-        assert result['status'] == Runner.FAILURE
+        assert project.read('fail.txt') == 'x'
 
-        assert 'fail.txt' in r.files
-
-        out, err = capsys.readouterr()
-
-        assert re.search('Linting(.+?)\[FAILURE]', out)
+        out, err = project.git.status(porcelain=True)
+        assert 'AM fail.txt' in out
 
     def test_include_untracked(self, project, capsys):
         project.write('fail.txt')

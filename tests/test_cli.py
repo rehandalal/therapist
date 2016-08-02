@@ -430,21 +430,18 @@ class TestRun(object):
             assert result.exception
             assert result.exit_code == 1
 
-    def test_ignore_unstaged_changes(self, cli_runner, project):
-        project.write('fail.py')
+    def test_unstaged_changes(self, cli_runner, project):
+        project.write('pass.py', 'FAIL')
         project.git.add('.')
-        project.write('fail.py', 'x')
+        project.write('pass.py', 'x')
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run)
-            assert 'There are unstaged changes.' in result.output
-            assert result.exception
-            assert result.exit_code == 1
-
-            result = cli_runner.invoke(cli.run, ['--ignore-unstaged-changes'])
+            assert 'You have unstaged changes.' in result.output
             assert re.search('Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 1
+            assert project.read('pass.py') == 'x'
 
     def test_use_tracked_files(self, cli_runner, project):
         project.write('fail.py')

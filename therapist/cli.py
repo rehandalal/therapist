@@ -138,7 +138,6 @@ def uninstall(force, restore_legacy):
 @click.option('--action', '-a', default=None, help='A name of a specific action to be run.')
 @click.option('--include-unstaged', is_flag=True, help='Include unstaged files.')
 @click.option('--include-untracked', is_flag=True, help='Include untracked files.')
-@click.option('--ignore-unstaged-changes', is_flag=True, help='Ignore changes to staged files.')
 @click.option('--use-tracked-files', is_flag=True, help='Runs actions against all tracked files.')
 def run(*args, **kwargs):
     """Run actions as a batch or individually."""
@@ -174,11 +173,11 @@ def run(*args, **kwargs):
     except Runner.Misconfigured as err:
         printer.fprint('Misconfigured: {}'.format(err.message), 'red')
         exit(1)
-    except Runner.UnstagedChanges as err:
-        printer.fprint(err.message, 'red')
-        exit(1)
     else:
         results = []
+
+        if runner.unstaged_changes:
+            printer.fprint('You have unstaged changes.', 'yellow')
 
         if action:
             printer.fprint()
