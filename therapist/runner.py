@@ -34,9 +34,9 @@ def execute_action(action, files, cwd):
         std_out, std_err = pipes.communicate()
 
         if len(std_err):
-            return std_err.decode(), Runner.FAILURE
+            return std_err.decode('utf-8'), Runner.FAILURE
         else:
-            return std_out.decode(), Runner.SUCCESS if pipes.returncode == 0 else Runner.FAILURE
+            return std_out.decode('utf-8'), Runner.SUCCESS if pipes.returncode == 0 else Runner.FAILURE
 
     return None, Runner.SKIPPED
 
@@ -68,7 +68,7 @@ class Runner(object):
         self.cwd = os.path.abspath(os.path.dirname(config_path))
         self.git = Git(repo_path=self.cwd)
         self.unstaged_changes = False
-        self.include_unstaged_changes = include_unstaged_changes
+        self.include_unstaged_changes = include_unstaged_changes or include_unstaged
 
         # Try and load the config file
         try:
@@ -139,11 +139,14 @@ class Runner(object):
         if not self.include_unstaged_changes:
             self.git.stash(keep_index=True, quiet=True)
 
-        result['output'], result['status'] = execute_action(action, self.files, self.cwd)
-
-        if not self.include_unstaged_changes:
-            self.git.reset(hard=True, quiet=True)
-            self.git.stash.pop(index=True, quiet=True)
+        try:
+            result['output'], result['status'] = execute_action(action, self.files, self.cwd)
+        except:
+            raise
+        finally:
+            if not self.include_unstaged_changes:
+                self.git.reset(hard=True, quiet=True)
+                self.git.stash.pop(index=True, quiet=True)
 
         if result['status'] == self.SUCCESS:
             printer.fprint(' [SUCCESS]', 'green', 'bold')

@@ -39,7 +39,7 @@ class Git(object):
 
         pipes = subprocess.Popen(cmd, **subprocess_kwargs)
         out, err = pipes.communicate()
-        return out.decode(), err.decode()
+        return out.decode('utf-8'), err.decode('utf-8')
 
     def __getattr__(self, name):
         name = name.replace('_', '-')
