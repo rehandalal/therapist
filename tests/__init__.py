@@ -1,5 +1,6 @@
 import os
 import shutil
+
 import six
 import yaml
 
@@ -89,5 +90,6 @@ class Project(object):
         shutil.copy2(src, dst)
 
     def chmod(self, path, mode):
+        """Modify file permissions."""
         path = os.path.join(self.path, path)
         os.chmod(path, mode)
