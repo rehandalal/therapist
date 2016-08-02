@@ -12,7 +12,7 @@ popd > /dev/null
 which therapist &> /dev/null
 
 if [ $? -ne 0 ]; then
-    echo '`therapist` was not found. Did you forget to activate your virtualenv?'
+    echo "\`therapist\` was not found. Did you forget to activate your virtualenv?"
     exit 1
 fi
 
