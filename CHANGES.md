@@ -1,5 +1,13 @@
 # Changelog
 
+### v0.3.1
+
+- Fix some decoding issues that occur in Python 2.7.
+- Using the `--include-unstaged` flag now has the side-effect of setting
+  `--include-unstaged-changes` as well.
+- If for some reason an error occurs while executing an action we now
+  ensure that any stashed changes are restored.
+
 ### v0.3
 
 - Pre-commit hook is now a bash script that calls the run command from 
