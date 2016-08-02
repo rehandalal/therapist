@@ -18,6 +18,8 @@ MODE_775 = (stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
             stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP |
             stat.S_IROTH | stat.S_IXOTH)
 
+NOT_GIT_REPO_MESSAGE = 'Not a git repository (or any of the parent directories)'
+
 git = Git()
 printer = Printer()
 
@@ -39,7 +41,7 @@ def install(force, preserve_legacy):
     git_dir = current_git_dir()
 
     if git_dir is None:
-        printer.fprint('Unable to locate git repo.', 'red')
+        printer.fprint(NOT_GIT_REPO_MESSAGE, 'red')
         exit(1)
 
     with open(os.path.join(BASE_DIR, 'hooks', 'pre-commit-template'), 'r') as f:
@@ -87,7 +89,7 @@ def uninstall(force, restore_legacy):
     git_dir = current_git_dir()
 
     if git_dir is None:
-        printer.fprint('Unable to locate git repo.', 'red')
+        printer.fprint(NOT_GIT_REPO_MESSAGE, 'red')
         exit(1)
 
     hook_path = os.path.join(git_dir, 'hooks', 'pre-commit')
@@ -148,7 +150,7 @@ def run(*args, **kwargs):
     git_dir = current_git_dir()
 
     if git_dir is None:
-        printer.fprint('Unable to locate git repo.', 'red')
+        printer.fprint(NOT_GIT_REPO_MESSAGE, 'red')
         exit(1)
 
     repo_root = os.path.dirname(git_dir)

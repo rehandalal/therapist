@@ -38,7 +38,7 @@ class TestInstall(object):
     def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.install)
-        assert 'Unable to locate git repo.' in result.output
+        assert cli.NOT_GIT_REPO_MESSAGE in result.output
         assert result.exception
         assert result.exit_code == 1
 
@@ -160,7 +160,7 @@ class TestUninstall(object):
     def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.uninstall)
-            assert 'Unable to locate git repo.' in result.output
+            assert cli.NOT_GIT_REPO_MESSAGE in result.output
             assert result.exception
             assert result.exit_code == 1
 
@@ -296,7 +296,7 @@ class TestRun(object):
     def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.run)
-        assert 'Unable to locate git repo.' in result.output
+        assert cli.NOT_GIT_REPO_MESSAGE in result.output
         assert result.exception
         assert result.exit_code == 1
 
