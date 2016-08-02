@@ -5,5 +5,13 @@ python:
  - "3.3"
  - "3.4"
  - "3.5"
-install: pip install tox-travis
-script: tox
+addons:
+  apt:
+    sources:
+      - debian-sid
+    packages:
+      - shellcheck
+install: pip install flake8 tox-travis .
+script:
+  - therapist run --use-tracked-files
+  - tox
