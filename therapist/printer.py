@@ -21,9 +21,9 @@ class Printer(object):
         """Returns a string with the styles applied."""
         for style in styles:
             if style.upper() in self.STYLES:
-                text = '%s%s' % (self.STYLES[style.upper()], text)
+                text = '{}{}'.format(self.STYLES[style.upper()], text)
 
-        text = '%s%s%s' % (self.STYLES['RESET'], text, self.STYLES['RESET'])
+        text = '{}{}{}'.format(self.STYLES['RESET'], text, self.STYLES['RESET'])
 
         return text
 

@@ -9,6 +9,7 @@ from therapist import Runner
 from therapist._version import __version__
 from therapist.git import Git
 from therapist.printer import Printer
+from therapist.runner.results import ResultSet
 from therapist.utils import current_git_dir, identify_hook, list_files
 
 
@@ -136,6 +137,8 @@ def uninstall(force, restore_legacy):
 @cli.command()
 @click.argument('paths', nargs=-1)
 @click.option('--action', '-a', default=None, help='A name of a specific action to be run.')
+@click.option('--output-file', default=None, help='Write report to a file.')
+@click.option('--output-format', default=None, help='Which format to use for the report.')
 @click.option('--include-unstaged', is_flag=True, help='Include unstaged files.')
 @click.option('--include-untracked', is_flag=True, help='Include untracked files.')
 @click.option('--include-unstaged-changes', is_flag=True, help='Include unstaged changes to staged files.')
@@ -144,8 +147,9 @@ def run(*args, **kwargs):
     """Run actions as a batch or individually."""
     paths = kwargs.pop('paths', ())
     action = kwargs.pop('action')
+    output_file = kwargs.pop('output_file')
+    output_format = kwargs.pop('output_format')
     use_tracked_files = kwargs.pop('use_tracked_files')
-    files = []
 
     git_dir = current_git_dir()
 
@@ -155,59 +159,65 @@ def run(*args, **kwargs):
 
     repo_root = os.path.dirname(git_dir)
 
-    # If paths were provided get all the files for each path
+    files = []
     if paths:
+        # We want to look at files in their current state if paths are passed through
+        kwargs['include_unstaged_changes'] = True
+
+        # If paths were provided get all the files for each path
         for path in paths:
             for f in list_files(path):
                 f = os.path.relpath(f, repo_root)
                 if not f.startswith('..'):  # Don't include files outside the repo root.
                     files.append(f)
     elif use_tracked_files:
+        # If the use tracked files flag was passed, get a list of all the tracked files
         out, err = git.ls_files()
         files = out.splitlines()
 
-    if len(files):
+    if files or paths:
         kwargs['files'] = files
 
     try:
-        runner = Runner(os.path.join(repo_root, '.therapist.yml'), **kwargs)
+        runner = Runner(repo_root, **kwargs)
     except Runner.Misconfigured as err:
         printer.fprint('Misconfigured: {}'.format(err.message), 'red')
         exit(1)
     else:
-        results = []
+        results = ResultSet()
 
         if runner.unstaged_changes:
             printer.fprint('You have unstaged changes.', 'yellow')
 
+        actions = [a.name for a in runner.actions]
+
         if action:
-            printer.fprint()
-            try:
+            actions = [action]
+
+        try:
+            for action in actions:
                 results.append(runner.run_action(action))
-            except runner.ActionDoesNotExist as err:
-                printer.fprint(err.message)
-                printer.fprint()
-                printer.fprint('Available actions:')
+        except runner.actions.DoesNotExist as err:
+            printer.fprint(err.message)
+            printer.fprint('\nAvailable actions:')
 
-                for a in runner.actions:
-                    printer.fprint(a)
-            printer.fprint()
+            for action in runner.actions:
+                printer.fprint(action)
+
+        if output_format == 'junit':
+            results_output = results.dump_junit_xml()
         else:
-            results = runner.run()
+            results_output = results.dump(colors=bool(output_file))
 
-        exitcode = 0
-        for result in results:
-            if result['status'] in (Runner.FAILURE, Runner.ERROR):
-                exitcode = 1
-                printer.fprint(''.ljust(79, '='), 'bold')
+        if output_file:
+            with open(output_file, 'w+') as f:
+                f.write('{}'.format(results_output))
+        else:
+            if results_output:
+                printer.fprint('\n{}'.format(results.dump(colors=True)))
 
-                status = 'FAILED' if Runner.FAILURE else 'ERROR'
-                printer.fprint('{}: {}'.format(status, result['description']), 'bold')
+        printer.fprint('\n{}'.format(''.ljust(79, '-')), 'bold')
+        printer.fprint('Completed in: {}s'.format(round(results.execution_time, 2)), 'bold')
 
-                printer.fprint(''.ljust(79, '='), 'bold')
-
-                printer.fprint(result['output'])
-
-                printer.fprint()
-
-        exit(exitcode)
+        if results.has_failure or results.has_error:
+            exit(1)

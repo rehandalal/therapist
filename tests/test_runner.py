@@ -10,7 +10,7 @@ from . import Project
 
 class TestRunner(object):
     def test_instantiation(self, project):
-        Runner(project.config_file)
+        Runner(project.path)
 
     def test_no_config_file(self):
         with pytest.raises(Runner.Misconfigured) as err:
@@ -22,7 +22,7 @@ class TestRunner(object):
         project.write('.therapist.yml', '')
 
         with pytest.raises(Runner.Misconfigured) as err:
-            Runner(project.config_file)
+            Runner(project.path)
 
         assert err.value.code == Runner.Misconfigured.EMPTY_CONFIG
 
@@ -32,7 +32,7 @@ class TestRunner(object):
         project.set_config_data(data)
 
         with pytest.raises(Runner.Misconfigured) as err:
-            Runner(project.config_file)
+            Runner(project.path)
 
         assert err.value.code == Runner.Misconfigured.NO_ACTIONS
 
@@ -40,59 +40,16 @@ class TestRunner(object):
         project.write('.therapist.yml', 'actions')
 
         with pytest.raises(Runner.Misconfigured) as err:
-            Runner(project.config_file)
+            Runner(project.path)
 
         assert err.value.code == Runner.Misconfigured.ACTIONS_WRONGLY_CONFIGURED
 
         project.write('.therapist.yml', 'actions:\n  flake8')
 
         with pytest.raises(Runner.Misconfigured) as err:
-            Runner(project.config_file)
+            Runner(project.path)
 
         assert err.value.code == Runner.Misconfigured.ACTIONS_WRONGLY_CONFIGURED
-
-    def test_run_multiple_actions(self, tmpdir):
-        config_data = {
-            'actions': {
-                'touch': {
-                    'description': 'Touch some files',
-                    'run': 'touch {files}',
-                },
-                'echo': {
-                    'include': 'file1',
-                    'run': 'echo "8" > {files}',
-                }
-            }
-        }
-
-        project = Project(tmpdir.strpath, config_data=config_data)
-
-        r = Runner(project.config_file, files=['file1', 'file2'])
-        results = r.run()
-
-        for result in results:
-            assert result['status'] == Runner.SUCCESS
-
-        assert project.exists('file1')
-        assert project.exists('file2')
-
-        assert project.read('file1') == '8\n'
-
-    def test_run_failure(self, project, capsys):
-        project.write('fail.txt')
-        project.git.add('.')
-
-        r = Runner(project.config_file)
-        results = r.run()
-
-        for result in results:
-            assert result['status'] == Runner.FAILURE
-
-        assert 'fail.txt' in r.files
-
-        out, err = capsys.readouterr()
-
-        assert re.search('Linting(.+?)\[FAILURE]', out)
 
     def test_unstaged_changes(self, project):
         project.write('pass.txt', 'FAIL')
@@ -103,11 +60,10 @@ class TestRunner(object):
         out, err = project.git.status(porcelain=True)
         assert 'AM pass.txt' in out
 
-        r = Runner(project.config_file)
-        results = r.run()
+        r = Runner(project.path)
+        result = r.run_action('lint')
 
-        for result in results:
-            assert result['status'] == Runner.FAILURE
+        assert result.is_failure
 
         assert project.read('pass.txt') == 'x'
 
@@ -117,9 +73,9 @@ class TestRunner(object):
     def test_include_untracked(self, project, capsys):
         project.write('fail.txt')
 
-        r = Runner(project.config_file, include_untracked=True)
+        r = Runner(project.path, include_untracked=True)
         result = r.run_action('lint')
-        assert result['status'] == Runner.FAILURE
+        assert result.is_failure
 
         assert 'fail.txt' in r.files
 
@@ -135,9 +91,9 @@ class TestRunner(object):
 
         project.write('fail.txt', 'x')
 
-        r = Runner(project.config_file, include_unstaged=True)
+        r = Runner(project.path, include_unstaged=True)
         result = r.run_action('lint')
-        assert result['status'] == Runner.FAILURE
+        assert result.is_failure
 
         assert 'fail.txt' in r.files
 
@@ -154,9 +110,9 @@ class TestRunner(object):
         out, err = project.git.status(porcelain=True)
         assert 'AM pass.txt' in out
 
-        r = Runner(project.config_file, include_unstaged_changes=True)
+        r = Runner(project.path, include_unstaged_changes=True)
         result = r.run_action('lint')
-        assert result['status'] == Runner.SUCCESS
+        assert result.is_success
 
         assert project.read('pass.txt') == 'x'
 
@@ -164,19 +120,19 @@ class TestRunner(object):
         assert 'AM pass.txt' in out
 
     def test_run_action_does_not_exist(self, project):
-        r = Runner(project.config_file)
+        r = Runner(project.path)
 
-        with pytest.raises(r.ActionDoesNotExist):
+        with pytest.raises(r.actions.DoesNotExist):
             r.run_action('notanaction')
 
     def test_run_action_success(self, project, capsys):
         project.write('pass.py')
         project.git.add('.')
 
-        r = Runner(project.config_file)
+        r = Runner(project.path)
         result = r.run_action('lint')
 
-        assert result['status'] == Runner.SUCCESS
+        assert result.is_success
         assert 'pass.py' in r.files
 
         out, err = capsys.readouterr()
@@ -187,9 +143,9 @@ class TestRunner(object):
         project.write('fail.txt')
         project.git.add('.')
 
-        r = Runner(project.config_file)
+        r = Runner(project.path)
         result = r.run_action('lint')
-        assert result['status'] == Runner.FAILURE
+        assert result.is_failure
 
         assert 'fail.txt' in r.files
 
@@ -201,7 +157,7 @@ class TestRunner(object):
         project.write('.ignore.pass.py')
         project.git.add('.')
 
-        r = Runner(project.config_file)
+        r = Runner(project.path)
         r.run_action('lint')
 
         assert '.ignore.pass.py' in r.files
@@ -215,15 +171,15 @@ class TestRunner(object):
             project.write('pass{}.txt'.format(str(i).ljust(200, '_')))
         project.git.add('.')
 
-        r = Runner(project.config_file)
+        r = Runner(project.path)
         result = r.run_action('lint')
-        assert result['status'] == Runner.ERROR
+        assert result.is_error
 
         assert len(r.files) == 1000
 
         out, err = capsys.readouterr()
 
-        assert re.search('Linting(.+?)\[ERROR]', out)
+        assert re.search('Linting(.+?)\[ERROR!!]', out)
 
     def test_run_action_skips_deleted(self, project):
         project.write('pass.py')
@@ -231,7 +187,7 @@ class TestRunner(object):
         project.git.commit(m='Add file.')
         project.git.rm('pass.py')
 
-        r = Runner(project.config_file)
+        r = Runner(project.path)
         r.run_action('lint')
 
         assert len(r.files) == 0
@@ -249,7 +205,7 @@ class TestRunner(object):
         project.write('pass.py')
         project.git.add('.')
 
-        r = Runner(project.config_file)
+        r = Runner(project.path)
         r.run_action('norun')
 
         assert 'pass.py' in r.files
@@ -272,9 +228,9 @@ class TestRunner(object):
         project.write('pass.py')
         project.git.add('.')
 
-        r = Runner(project.config_file)
+        r = Runner(project.path)
         result = r.run_action('runissue')
-        assert result['status'] == Runner.FAILURE
+        assert result.is_failure
 
         assert 'pass.py' in r.files
 
@@ -287,7 +243,7 @@ class TestRunner(object):
         project.write('fail.js')
         project.git.add('.')
 
-        r = Runner(project.config_file)
+        r = Runner(project.path)
         r.run_action('lint')
 
         assert 'fail.js' in r.files
@@ -301,7 +257,7 @@ class TestRunner(object):
         project.write('.ignore.fail.txt')
         project.git.add('.')
 
-        r = Runner(project.config_file)
+        r = Runner(project.path)
         r.run_action('lint')
 
         assert '.ignore.fail.txt' in r.files
@@ -314,11 +270,10 @@ class TestRunner(object):
         project.write('fail.txt')
         project.git.add('.')
 
-        r = Runner(project.config_file)
-        results = r.run()
+        r = Runner(project.path)
+        result = r.run_action('lint')
 
-        for result in results:
-            assert result['status'] == Runner.FAILURE
+        assert result.is_failure
 
         assert 'fail.txt' in r.files
 
