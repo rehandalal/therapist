@@ -11,7 +11,7 @@ class Result(object):
     SKIP = 2
     ERROR = 3
 
-    def __init__(self, action, status=SKIP, output=None, error=None, execution_time=0):
+    def __init__(self, action, status=SKIP, output=None, error=None, execution_time=0.0):
         self._action = None
         self.action = action
         self.status = status
@@ -158,5 +158,5 @@ class ResultSet(Set):
                 else:
                     element.text = result.output if result.output else ''
 
-        xmlstr = ElementTree.tostring(testsuites, encoding='utf-8')
+        xmlstr = ElementTree.tostring(testsuites, encoding='utf-8').decode('utf-8')
         return '<?xml version="1.0" encoding="UTF-8"?>\n{}'.format(xmlstr)

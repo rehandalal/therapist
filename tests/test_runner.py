@@ -211,7 +211,7 @@ class TestResultSet(object):
 
     def test_dump_junit_success(self):
         a = Action('flake8', run='flake8 {files}')
-        r = Result(action=a, status=Result.SUCCESS, execution_time=1)
+        r = Result(action=a, status=Result.SUCCESS, execution_time=1.0)
         rs = ResultSet([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -224,7 +224,7 @@ class TestResultSet(object):
 
     def test_dump_junit_failure(self):
         a = Action('flake8', run='flake8 {files}')
-        r = Result(action=a, status=Result.FAILURE, output='Failed!', execution_time=1)
+        r = Result(action=a, status=Result.FAILURE, output='Failed!', execution_time=1.0)
         rs = ResultSet([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -237,7 +237,7 @@ class TestResultSet(object):
             '</testsuites>'
         )
 
-        r = Result(action=a, status=Result.FAILURE, error='ERR!', output='Failed!', execution_time=1)
+        r = Result(action=a, status=Result.FAILURE, error='ERR!', output='Failed!', execution_time=1.0)
         rs = ResultSet([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -252,7 +252,7 @@ class TestResultSet(object):
 
     def test_dump_junit_skip(self):
         a = Action('flake8', run='flake8 {files}')
-        r = Result(action=a, status=Result.SKIP, execution_time=1)
+        r = Result(action=a, status=Result.SKIP, execution_time=1.0)
         rs = ResultSet([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -265,7 +265,7 @@ class TestResultSet(object):
 
     def test_dump_junit_error(self):
         a = Action('flake8', run='flake8 {files}')
-        r = Result(action=a, status=Result.ERROR, output='Error!', execution_time=1)
+        r = Result(action=a, status=Result.ERROR, output='Error!', execution_time=1.0)
         rs = ResultSet([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -278,7 +278,7 @@ class TestResultSet(object):
             '</testsuites>'
         )
 
-        r = Result(action=a, status=Result.ERROR, error='ERR!', output='Error!', execution_time=1)
+        r = Result(action=a, status=Result.ERROR, error='ERR!', output='Error!', execution_time=1.0)
         rs = ResultSet([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'

@@ -130,19 +130,17 @@ def uninstall(force, restore_legacy):
 @cli.command()
 @click.argument('paths', nargs=-1)
 @click.option('--action', '-a', default=None, help='A name of a specific action to be run.')
-@click.option('--output-file', default=None, help='Write report to a file.')
-@click.option('--output-format', default=None, help='Which format to use for the report.')
 @click.option('--include-unstaged', is_flag=True, help='Include unstaged files.')
-@click.option('--include-untracked', is_flag=True, help='Include untracked files.')
 @click.option('--include-unstaged-changes', is_flag=True, help='Include unstaged changes to staged files.')
+@click.option('--include-untracked', is_flag=True, help='Include untracked files.')
+@click.option('--junit-xml', default=None, help='Create a junit-xml style report file at the given path.')
 @click.option('--use-tracked-files', is_flag=True, help='Runs actions against all tracked files.')
 @click.option('--quiet', '-q', is_flag=True, help='Suppress all output, unless an error occurs.')
 def run(*args, **kwargs):
     """Run actions as a batch or individually."""
     paths = kwargs.pop('paths', ())
     action = kwargs.pop('action')
-    output_file = kwargs.pop('output_file')
-    output_format = kwargs.pop('output_format')
+    junit_xml = kwargs.pop('junit_xml')
     use_tracked_files = kwargs.pop('use_tracked_files')
     quiet = kwargs.get('quiet')
 
@@ -199,18 +197,12 @@ def run(*args, **kwargs):
             for action in runner.actions:
                 fsprint(action.name)
 
-        if output_format == 'junit':
-            results_output = results.dump_junit()
-        else:
-            results_output = results.dump(colors=bool(output_file))
-
-        if output_file:
-            with open(output_file, 'w+') as f:
-                f.write('{}'.format(results_output))
-        elif results_output and not quiet:
-                fsprint('\n{}'.format(results_output))
+        if junit_xml:
+            with open(junit_xml, 'w+') as f:
+                f.write('{}'.format(results.dump_junit()))
 
         if not quiet:
+            fsprint('\n{}'.format(results.dump(colors=True)))
             fsprint('\n{}'.format(''.ljust(79, '-')), 'bold')
             fsprint('Completed in: {}s'.format(round(results.execution_time, 2)), 'bold')
 
