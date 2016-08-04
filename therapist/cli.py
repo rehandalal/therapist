@@ -7,7 +7,7 @@ import click
 from therapist import Runner
 from therapist._version import __version__
 from therapist.git import Git
-from therapist.printer import fsprint
+from therapist.printer import BOLD, fsprint, GREEN, RED, YELLOW
 from therapist.runner.results import ResultSet
 from therapist.utils import current_git_dir, identify_hook, list_files
 
@@ -36,7 +36,7 @@ def install(force, preserve_legacy):
     git_dir = current_git_dir()
 
     if git_dir is None:
-        fsprint(NOT_GIT_REPO_MESSAGE, 'red')
+        fsprint(NOT_GIT_REPO_MESSAGE, (RED,))
         exit(1)
 
     with open(os.path.join(BASE_DIR, 'hooks', 'pre-commit-template'), 'r') as f:
@@ -53,24 +53,24 @@ def install(force, preserve_legacy):
                 exit(0)
         else:
             if not force and not preserve_legacy:
-                fsprint('There is an existing pre-commit hook.', 'yellow')
+                fsprint('There is an existing pre-commit hook.', (YELLOW,))
                 fsprint('Therapist can preserve this legacy hook and run it before the Therapist pre-commit hook.')
                 preserve_legacy = click.confirm('Would you like to preserve this legacy hook?', default=True)
 
             if preserve_legacy:
-                fsprint('Copying `pre-commit` to `pre-commit.legacy`...\t', inline=True)
+                fsprint('Copying `pre-commit` to `pre-commit.legacy`...\t', end='')
                 shutil.copy2(dsthook_path, '{}.legacy'.format(dsthook_path))
-                fsprint('DONE', 'green', 'bold')
+                fsprint('DONE', (GREEN, BOLD,))
             elif not force:
                 if not click.confirm('Do you want to replace this hook?', default=False):
                     fsprint('Installation aborted.')
                     exit(1)
 
-    fsprint('Installing pre-commit hook...\t', inline=True)
+    fsprint('Installing pre-commit hook...\t', end='')
     with open(dsthook_path, 'w+') as f:
         f.write(srchook.replace('%hash%', srchook_hash))
     os.chmod(dsthook_path, 0o775)
-    fsprint('DONE', 'green', 'bold')
+    fsprint('DONE', (GREEN, BOLD,))
 
 
 @cli.command()
@@ -83,7 +83,7 @@ def uninstall(force, restore_legacy):
     git_dir = current_git_dir()
 
     if git_dir is None:
-        fsprint(NOT_GIT_REPO_MESSAGE, 'red')
+        fsprint(NOT_GIT_REPO_MESSAGE, (RED,))
         exit(1)
 
     hook_path = os.path.join(git_dir, 'hooks', 'pre-commit')
@@ -100,7 +100,7 @@ def uninstall(force, restore_legacy):
                 fsprint('Uninstallation aborted.')
                 exit(1)
     else:
-        fsprint('The current pre-commit hook is not the Therapist pre-commit hook.', 'yellow')
+        fsprint('The current pre-commit hook is not the Therapist pre-commit hook.', (YELLOW,))
         fsprint('Uninstallation aborted.')
         exit(1)
 
@@ -108,23 +108,23 @@ def uninstall(force, restore_legacy):
 
     if os.path.isfile(legacy_hook_path):
         if not force and not restore_legacy:
-            fsprint('There is a legacy pre-commit hook present.', 'yellow')
+            fsprint('There is a legacy pre-commit hook present.', (YELLOW,))
             restore_legacy = click.confirm('Would you like to restore the legacy hook?', default=True)
         if restore_legacy:
-            fsprint('Copying `pre-commit.legacy` to `pre-commit`...\t', inline=True)
+            fsprint('Copying `pre-commit.legacy` to `pre-commit`...\t', end='')
             shutil.copy2(legacy_hook_path, hook_path)
             os.remove(legacy_hook_path)
-            fsprint('DONE', 'green', 'bold')
+            fsprint('DONE', (GREEN, BOLD,))
             exit(0)
         else:
             if force or click.confirm('Would you like to remove the legacy hook?', default=False):
-                fsprint('Removing `pre-commit.legacy`...\t', inline=True)
+                fsprint('Removing `pre-commit.legacy`...\t', end='')
                 os.remove(legacy_hook_path)
-                fsprint('DONE', 'green', 'bold')
+                fsprint('DONE', (GREEN, BOLD,))
 
-    fsprint('Uninstalling pre-commit hook...\t', inline=True)
+    fsprint('Uninstalling pre-commit hook...\t', end='')
     os.remove(hook_path)
-    fsprint('DONE', 'green', 'bold')
+    fsprint('DONE', (GREEN, BOLD,))
 
 
 @cli.command()
@@ -136,7 +136,7 @@ def uninstall(force, restore_legacy):
 @click.option('--junit-xml', default=None, help='Create a junit-xml style report file at the given path.')
 @click.option('--use-tracked-files', is_flag=True, help='Runs actions against all tracked files.')
 @click.option('--quiet', '-q', is_flag=True, help='Suppress all output, unless an error occurs.')
-def run(*args, **kwargs):
+def run(**kwargs):
     """Run actions as a batch or individually."""
     paths = kwargs.pop('paths', ())
     action = kwargs.pop('action')
@@ -147,7 +147,7 @@ def run(*args, **kwargs):
     git_dir = current_git_dir()
 
     if git_dir is None:
-        fsprint(NOT_GIT_REPO_MESSAGE, 'red')
+        fsprint(NOT_GIT_REPO_MESSAGE, (RED,))
         exit(1)
 
     repo_root = os.path.dirname(git_dir)
@@ -174,13 +174,13 @@ def run(*args, **kwargs):
     try:
         runner = Runner(repo_root, **kwargs)
     except Runner.Misconfigured as err:
-        fsprint('Misconfigured: {}'.format(err.message), 'red')
+        fsprint('Misconfigured: {}'.format(err.message), (RED,))
         exit(1)
     else:
         results = ResultSet()
 
         if runner.unstaged_changes and not quiet:
-            fsprint('You have unstaged changes.', 'yellow')
+            fsprint('You have unstaged changes.', (YELLOW,))
 
         actions = [a.name for a in runner.actions]
 
@@ -203,8 +203,8 @@ def run(*args, **kwargs):
 
         if not quiet:
             fsprint('\n{}'.format(results.dump(colors=True)))
-            fsprint('\n{}'.format(''.ljust(79, '-')), 'bold')
-            fsprint('Completed in: {}s'.format(round(results.execution_time, 2)), 'bold')
+            fsprint('\n{}'.format(''.ljust(79, '-')), (BOLD,))
+            fsprint('Completed in: {}s'.format(round(results.execution_time, 2)), (BOLD,))
 
         if results.has_error:
             exit(1)

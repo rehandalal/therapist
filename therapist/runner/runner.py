@@ -6,7 +6,7 @@ import yaml
 from pathspec import GitIgnorePattern, PathSpec
 
 from therapist.git import Git, Status
-from therapist.printer import fsprint
+from therapist.printer import BOLD, CYAN, fsprint, GREEN, RED
 from therapist.runner.actions import Action, ActionSet
 from therapist.runner.results import Result
 
@@ -129,7 +129,7 @@ class Runner(object):
 
         if not self.quiet:
             description = action.description if action.description else action.name
-            fsprint('{} '.format(description[:68]).ljust(69, '.'), 'bold', inline=True)
+            fsprint('{} '.format(description[:68]).ljust(69, '.'), (BOLD,), end='')
 
         if not self.include_unstaged_changes:
             self.git.stash(keep_index=True, quiet=True)
@@ -145,12 +145,12 @@ class Runner(object):
 
         if not self.quiet:
             if result.is_success:
-                fsprint(' [SUCCESS]', 'green', 'bold')
+                fsprint(' [SUCCESS]', (GREEN, BOLD,))
             elif result.is_failure:
-                fsprint(' [FAILURE]', 'red', 'bold')
+                fsprint(' [FAILURE]', (RED, BOLD,))
             elif result.is_skip:
-                fsprint(' [SKIPPED]', 'cyan', 'bold')
+                fsprint(' [SKIPPED]', (CYAN, BOLD,))
             elif result.is_error:
-                fsprint(' [ERROR!!]', 'red', 'bold')
+                fsprint(' [ERROR!!]', (RED, BOLD,))
 
         return result

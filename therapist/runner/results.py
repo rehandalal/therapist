@@ -1,6 +1,6 @@
 from xml.etree import ElementTree
 
-from therapist.printer import stylize
+from therapist.printer import BOLD, RED, stylize
 from therapist.runner.actions import Action
 from therapist.runner.sets import Set
 
@@ -109,20 +109,20 @@ class ResultSet(Set):
 
     def dump(self, colors=False):
         """Returns the results in string format."""
-        def _(msg, *styles):
+        def _(msg, styles=()):
             if colors:
-                msg = stylize(msg, *styles)
+                msg = stylize(msg, styles)
             return msg
 
         text = ''
         for result in self.objects:
             if result.is_failure or result.is_error:
-                text += _('{}\n'.format(''.ljust(79, '=')), 'red', 'bold')
+                text += _('{}\n'.format(''.ljust(79, '=')), (RED, BOLD,))
 
                 status = 'FAILED' if result.is_failure else 'ERROR'
-                text += _('{}: {}\n'.format(status, result.action), 'red', 'bold')
+                text += _('{}: {}\n'.format(status, result.action), (RED, BOLD,))
 
-                text += _('{}\n'.format(''.ljust(79, '=')), 'red', 'bold')
+                text += _('{}\n'.format(''.ljust(79, '=')), (RED, BOLD,))
 
                 if result.error:
                     text += _(result.error)
