@@ -4,8 +4,292 @@ import re
 import six
 
 from therapist import Runner
+from therapist.runner.actions import Action, ActionSet
+from therapist.runner.results import Result, ResultSet
+from therapist.runner.sets import Set
 
 from . import Project
+
+
+class TestSet(object):
+    def test_str(self):
+        items = ['a', 'b', 'c']
+        s = Set(items)
+        assert str(s) == str(items)
+
+    def test_repr(self):
+        s = Set()
+        assert s.__repr__() == '<Set>'
+
+    def test_append(self):
+        s = Set()
+        assert len(s.objects) == 0
+
+        s.append('item')
+        assert len(s.objects) == 1
+        assert s[0] == 'item'
+
+    def test_object_class(self):
+        class BooleanSet(Set):
+            class Meta:
+                object_class = bool
+
+        s = BooleanSet([True])
+
+        with pytest.raises(TypeError):
+            s.append('True')
+
+
+class TestAction(object):
+    def test_str(self):
+        a = Action('flake8')
+        assert str(a) == 'flake8'
+
+        a.description = 'Flake 8'
+        assert str(a) == 'Flake 8'
+
+    def test_repr(self):
+        a = Action('flake8')
+        assert a.__repr__() == '<Action flake8>'
+
+    def test_include(self):
+        a = Action('flake8')
+        a.include = '*.py'
+        assert a.include == ['*.py']
+
+        a.include = ['a.py', 'b.py']
+        assert a.include == ['a.py', 'b.py']
+
+    def test_exclude(self):
+        a = Action('flake8')
+        a.exclude = 'ignore.py'
+        assert a.exclude == ['ignore.py']
+
+        a.exclude = ['a.py', 'b.py']
+        assert a.exclude == ['a.py', 'b.py']
+
+
+class TestActionSet(object):
+    def test_get(self):
+        action = Action('flake8')
+        actions = ActionSet([action])
+
+        assert actions.get('flake8') == action
+
+        with pytest.raises(actions.DoesNotExist):
+            actions.get('not_an_action')
+
+
+class TestResult(object):
+    def test_str(self):
+        a = Action('flake8')
+
+        r = Result(a, status=Result.SUCCESS)
+        assert str(r) == 'SUCCESS'
+
+        r.status = Result.FAILURE
+        assert str(r) == 'FAILURE'
+
+        r.status = Result.SKIP
+        assert str(r) == 'SKIP'
+
+        r.status = Result.ERROR
+        assert str(r) == 'ERROR'
+
+    def test_repr(self):
+        a = Action('flake8')
+        r = Result(a)
+        assert r.__repr__() == '<Result flake8>'
+
+    def test_action_validation(self):
+        with pytest.raises(TypeError):
+            Result('something')
+
+
+class TestResultSet(object):
+    def test_count(self):
+        r1 = Result(action=Action('flake8'), status=Result.SUCCESS)
+        r2 = Result(action=Action('eslint'), status=Result.SKIP)
+        rs = ResultSet([r1, r2])
+        assert rs.count() == 2
+        assert rs.count(Result.SKIP) == 1
+        assert rs.count(Result.FAILURE) == 0
+
+    def test_has_success(self):
+        r = Result(action=Action('flake8'), status=Result.SUCCESS)
+
+        rs = ResultSet()
+        assert not rs.has_success
+
+        rs.append(r)
+        assert rs.has_success
+
+    def test_has_failure(self):
+        r = Result(action=Action('flake8'), status=Result.FAILURE)
+
+        rs = ResultSet()
+        assert not rs.has_failure
+
+        rs.append(r)
+        assert rs.has_failure
+
+    def test_has_skip(self):
+        r = Result(action=Action('flake8'), status=Result.SKIP)
+
+        rs = ResultSet()
+        assert not rs.has_skip
+
+        rs.append(r)
+        assert rs.has_skip
+
+    def test_has_error(self):
+        r = Result(action=Action('flake8'), status=Result.ERROR)
+
+        rs = ResultSet()
+        assert not rs.has_error
+
+        rs.append(r)
+        assert rs.has_error
+
+    def test_dump_colors(self):
+        r = Result(action=Action('flake8'), status=Result.FAILURE, output='Failed!')
+        rs = ResultSet([r])
+        assert rs.dump(colors=True) == (
+            '\x1b[0m\x1b[1m\x1b[31m===============================================================================\n'
+            '\x1b[0m\x1b[0m\x1b[1m\x1b[31mFAILED: flake8\n\x1b[0m'
+            '\x1b[0m\x1b[1m\x1b[31m===============================================================================\n'
+            '\x1b[0m\x1b[0mFailed!\x1b[0m'
+        )
+
+    def test_dump_success(self):
+        r = Result(action=Action('flake8'), status=Result.SUCCESS)
+        rs = ResultSet([r])
+        assert rs.dump() == ''
+
+    def test_dump_failure(self):
+        r = Result(action=Action('flake8'), status=Result.FAILURE, output='Failed!')
+        rs = ResultSet([r])
+        assert rs.dump() == (
+            '===============================================================================\n'
+            'FAILED: flake8\n'
+            '===============================================================================\n'
+            'Failed!'
+        )
+
+        r = Result(action=Action('flake8'), status=Result.FAILURE, error='ERR!', output='Failed!')
+        rs = ResultSet([r])
+        assert rs.dump() == (
+            '===============================================================================\n'
+            'FAILED: flake8\n'
+            '===============================================================================\n'
+            'ERR!'
+        )
+
+    def test_dump_skip(self):
+        r = Result(action=Action('flake8'), status=Result.SKIP)
+        rs = ResultSet([r])
+        assert rs.dump() == ''
+
+    def test_dump_error(self):
+        r = Result(action=Action('flake8'), status=Result.ERROR, output='OH NOES!')
+        rs = ResultSet([r])
+        assert rs.dump() == (
+            '===============================================================================\n'
+            'ERROR: flake8\n'
+            '===============================================================================\n'
+            'OH NOES!'
+        )
+
+        r = Result(action=Action('flake8'), status=Result.ERROR, error='ERR!', output='Failed!')
+        rs = ResultSet([r])
+        assert rs.dump() == (
+            '===============================================================================\n'
+            'ERROR: flake8\n'
+            '===============================================================================\n'
+            'ERR!'
+        )
+
+    def test_dump_junit_success(self):
+        a = Action('flake8', run='flake8 {files}')
+        r = Result(action=a, status=Result.SUCCESS, execution_time=1)
+        rs = ResultSet([r])
+        assert rs.dump_junit() == (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<testsuites errors="0" failures="0" name="therapist" tests="1" time="1.0">'
+            '<testsuite errors="0" failures="0" id="flake8" name="flake8" tests="1" time="1.0">'
+            '<testcase name="flake8 {files}" time="1.0" />'
+            '</testsuite>'
+            '</testsuites>'
+        )
+
+    def test_dump_junit_failure(self):
+        a = Action('flake8', run='flake8 {files}')
+        r = Result(action=a, status=Result.FAILURE, output='Failed!', execution_time=1)
+        rs = ResultSet([r])
+        assert rs.dump_junit() == (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<testsuites errors="0" failures="1" name="therapist" tests="1" time="1.0">'
+            '<testsuite errors="0" failures="1" id="flake8" name="flake8" tests="1" time="1.0">'
+            '<testcase name="flake8 {files}" time="1.0">'
+            '<failure type="failure">Failed!</failure>'
+            '</testcase>'
+            '</testsuite>'
+            '</testsuites>'
+        )
+
+        r = Result(action=a, status=Result.FAILURE, error='ERR!', output='Failed!', execution_time=1)
+        rs = ResultSet([r])
+        assert rs.dump_junit() == (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<testsuites errors="0" failures="1" name="therapist" tests="1" time="1.0">'
+            '<testsuite errors="0" failures="1" id="flake8" name="flake8" tests="1" time="1.0">'
+            '<testcase name="flake8 {files}" time="1.0">'
+            '<failure type="failure">ERR!</failure>'
+            '</testcase>'
+            '</testsuite>'
+            '</testsuites>'
+        )
+
+    def test_dump_junit_skip(self):
+        a = Action('flake8', run='flake8 {files}')
+        r = Result(action=a, status=Result.SKIP, execution_time=1)
+        rs = ResultSet([r])
+        assert rs.dump_junit() == (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<testsuites errors="0" failures="0" name="therapist" tests="1" time="1.0">'
+            '<testsuite errors="0" failures="0" id="flake8" name="flake8" tests="1" time="1.0">'
+            '<testcase name="flake8 {files}" time="1.0" />'
+            '</testsuite>'
+            '</testsuites>'
+        )
+
+    def test_dump_junit_error(self):
+        a = Action('flake8', run='flake8 {files}')
+        r = Result(action=a, status=Result.ERROR, output='Error!', execution_time=1)
+        rs = ResultSet([r])
+        assert rs.dump_junit() == (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<testsuites errors="1" failures="0" name="therapist" tests="1" time="1.0">'
+            '<testsuite errors="1" failures="0" id="flake8" name="flake8" tests="1" time="1.0">'
+            '<testcase name="flake8 {files}" time="1.0">'
+            '<error type="error">Error!</error>'
+            '</testcase>'
+            '</testsuite>'
+            '</testsuites>'
+        )
+
+        r = Result(action=a, status=Result.ERROR, error='ERR!', output='Error!', execution_time=1)
+        rs = ResultSet([r])
+        assert rs.dump_junit() == (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<testsuites errors="1" failures="0" name="therapist" tests="1" time="1.0">'
+            '<testsuite errors="1" failures="0" id="flake8" name="flake8" tests="1" time="1.0">'
+            '<testcase name="flake8 {files}" time="1.0">'
+            '<error type="error">ERR!</error>'
+            '</testcase>'
+            '</testsuite>'
+            '</testsuites>'
+        )
 
 
 class TestRunner(object):
@@ -265,6 +549,23 @@ class TestRunner(object):
         out, err = capsys.readouterr()
 
         assert re.search('Linting(.+?)\[SUCCESS]', out)
+
+    def test_unstash_on_error(self, project, monkeypatch):
+        project.write('pass.py')
+        project.git.add('.')
+        project.write('pass.py', 'changed')
+
+        r = Runner(project.path)
+
+        def raise_exc():
+            raise Exception
+
+        monkeypatch.setattr('time.time', raise_exc)
+
+        with pytest.raises(Exception):
+            r.run_action('lint')
+
+        assert project.read('pass.py') == 'changed'
 
     def test_output_encoded(self, project, capsys):
         project.write('fail.txt')

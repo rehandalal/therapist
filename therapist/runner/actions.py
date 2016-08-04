@@ -14,7 +14,7 @@ class Action(object):
         self.exclude = exclude
 
     def __str__(self):
-        return self.name
+        return self.description if self.description else self.name
 
     def __repr__(self):
         return '<Action {}>'.format(self.name)

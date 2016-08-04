@@ -1,6 +1,7 @@
 from xml.etree import ElementTree
 
-from therapist.printer import Printer
+from therapist.printer import stylize
+from therapist.runner.actions import Action
 from therapist.runner.sets import Set
 
 
@@ -10,7 +11,8 @@ class Result(object):
     SKIP = 2
     ERROR = 3
 
-    def __init__(self, action, status=None, output=None, error=None, execution_time=0):
+    def __init__(self, action, status=SKIP, output=None, error=None, execution_time=0):
+        self._action = None
         self.action = action
         self.status = status
         self.output = output
@@ -29,6 +31,16 @@ class Result(object):
 
     def __repr__(self):
         return '<Result {}>'.format(self.action)
+
+    @property
+    def action(self):
+        return self._action
+
+    @action.setter
+    def action(self, value):
+        if not isinstance(value, Action):
+            raise TypeError('Expected an `Action` object.')
+        self._action = value
 
     @property
     def is_success(self):
@@ -97,11 +109,10 @@ class ResultSet(Set):
 
     def dump(self, colors=False):
         """Returns the results in string format."""
-        def _(text, *styles):
+        def _(msg, *styles):
             if colors:
-                printer = Printer()
-                text = printer.format(text, *styles)
-            return text
+                msg = stylize(msg, *styles)
+            return msg
 
         text = ''
         for result in self.objects:
@@ -119,7 +130,7 @@ class ResultSet(Set):
                     text += _(result.output)
         return text
 
-    def dump_junit_xml(self):
+    def dump_junit(self):
         """Returns a string containing XML mapped to the JUnit schema."""
         testsuites = ElementTree.Element('testsuites', name='therapist', time=str(round(self.execution_time, 2)),
                                          tests=str(self.count()), failures=str(self.count(Result.FAILURE)),
@@ -133,22 +144,19 @@ class ResultSet(Set):
                                                name=str(result.action), time=str(round(result.execution_time, 2)),
                                                tests='1', failures=failures, errors=errors)
 
-            testcase = ElementTree.SubElement(testsuite, 'testcase', name=result.action.run,
-                                              time=str(round(result.execution_time, 2)))
+            testcase = ElementTree.SubElement(testsuite, 'testcase', time=str(round(result.execution_time, 2)))
+            testcase.attrib['name'] = result.action.run if result.action.run else result.action.name
 
-            if result.is_failure:
-                element = ElementTree.SubElement(testcase, 'failure', type='failure')
+            if result.is_failure or result.is_error:
+                if result.is_failure:
+                    element = ElementTree.SubElement(testcase, 'failure', type='failure')
+                else:
+                    element = ElementTree.SubElement(testcase, 'error', type='error')
+
                 if result.error:
                     element.text = result.error
                 else:
-                    element.text = result.output
-
-            if result.is_error:
-                element = ElementTree.SubElement(testcase, 'error', type='error')
-                if result.error:
-                    element.text = result.error
-                else:
-                    element.text = result.output
+                    element.text = result.output if result.output else ''
 
         xmlstr = ElementTree.tostring(testsuites, encoding='utf-8')
         return '<?xml version="1.0" encoding="UTF-8"?>\n{}'.format(xmlstr)

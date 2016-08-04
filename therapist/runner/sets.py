@@ -13,6 +13,9 @@ class Set(object):
     def __iter__(self):
         return iter(self._objects)
 
+    def __getitem__(self, item):
+        return self._objects[item]
+
     def __str__(self):
         return str(self._objects)
 

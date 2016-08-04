@@ -6,12 +6,9 @@ import yaml
 from pathspec import GitIgnorePattern, PathSpec
 
 from therapist.git import Git, Status
-from therapist.printer import Printer
+from therapist.printer import fsprint
 from therapist.runner.actions import Action, ActionSet
 from therapist.runner.results import Result
-
-
-printer = Printer()
 
 
 class Runner(object):
@@ -27,13 +24,14 @@ class Runner(object):
             super(self.__class__, self).__init__(*args, **kwargs)
 
     def __init__(self, cwd, files=None, include_unstaged=False, include_untracked=False,
-                 include_unstaged_changes=False):
+                 include_unstaged_changes=False, quiet=False):
         self.actions = ActionSet()
         self.unstaged_changes = False
 
         self.cwd = os.path.abspath(cwd)
         self.git = Git(repo_path=self.cwd)
         self.include_unstaged_changes = include_unstaged_changes or include_unstaged
+        self.quiet = quiet
 
         # Try and load the config file
         try:
@@ -129,8 +127,9 @@ class Runner(object):
         """Runs a single action."""
         action = self.actions.get(name)
 
-        description = action.description if action.description else action.name
-        printer.fprint('{} '.format(description[:68]).ljust(69, '.'), 'bold', inline=True)
+        if not self.quiet:
+            description = action.description if action.description else action.name
+            fsprint('{} '.format(description[:68]).ljust(69, '.'), 'bold', inline=True)
 
         if not self.include_unstaged_changes:
             self.git.stash(keep_index=True, quiet=True)
@@ -144,13 +143,14 @@ class Runner(object):
                 self.git.reset(hard=True, quiet=True)
                 self.git.stash.pop(index=True, quiet=True)
 
-        if result.is_success:
-            printer.fprint(' [SUCCESS]', 'green', 'bold')
-        elif result.is_failure:
-            printer.fprint(' [FAILURE]', 'red', 'bold')
-        elif result.is_skip:
-            printer.fprint(' [SKIPPED]', 'cyan', 'bold')
-        elif result.is_error:
-            printer.fprint(' [ERROR!!]', 'red', 'bold')
+        if not self.quiet:
+            if result.is_success:
+                fsprint(' [SUCCESS]', 'green', 'bold')
+            elif result.is_failure:
+                fsprint(' [FAILURE]', 'red', 'bold')
+            elif result.is_skip:
+                fsprint(' [SKIPPED]', 'cyan', 'bold')
+            elif result.is_error:
+                fsprint(' [ERROR!!]', 'red', 'bold')
 
         return result

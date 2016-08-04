@@ -308,7 +308,7 @@ class TestRun(object):
             result = cli_runner.invoke(cli.run)
             assert re.search('Linting.+?\[FAILURE]', result.output)
             assert result.exception
-            assert result.exit_code == 1
+            assert result.exit_code == 2
 
     def test_action(self, cli_runner, project):
         project.write('pass.py')
@@ -328,7 +328,7 @@ class TestRun(object):
             result = cli_runner.invoke(cli.run, ['-a', 'lint'])
             assert re.search('Linting.+?\[FAILURE]', result.output)
             assert result.exception
-            assert result.exit_code == 1
+            assert result.exit_code == 2
 
     def test_action_invalid(self, cli_runner, project):
         project.write('fail.py')
@@ -346,7 +346,7 @@ class TestRun(object):
         project.git.add('.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['*.py'])
+            result = cli_runner.invoke(cli.run, ['pass.py'])
             assert re.search('Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
@@ -356,10 +356,10 @@ class TestRun(object):
         project.git.add('.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['*.py'])
+            result = cli_runner.invoke(cli.run, ['fail.py'])
             assert re.search('Linting.+?\[FAILURE]', result.output)
             assert result.exception
-            assert result.exit_code == 1
+            assert result.exit_code == 2
 
     def test_dir(self, cli_runner, project):
         project.write('dir/pass.py')
@@ -379,7 +379,7 @@ class TestRun(object):
             result = cli_runner.invoke(cli.run, ['dir'])
             assert re.search('Linting.+?\[FAILURE]', result.output)
             assert result.exception
-            assert result.exit_code == 1
+            assert result.exit_code == 2
 
     def test_file(self, cli_runner, project):
         project.write('pass.py')
@@ -399,7 +399,7 @@ class TestRun(object):
             result = cli_runner.invoke(cli.run, ['fail.py'])
             assert re.search('Linting.+?\[FAILURE]', result.output)
             assert result.exception
-            assert result.exit_code == 1
+            assert result.exit_code == 2
 
     def test_include_untracked(self, cli_runner, project):
         project.write('fail.py')
@@ -412,7 +412,7 @@ class TestRun(object):
             result = cli_runner.invoke(cli.run, ['--include-untracked'])
             assert re.search('Linting.+?\[FAILURE]', result.output)
             assert result.exception
-            assert result.exit_code == 1
+            assert result.exit_code == 2
 
     def test_include_unstaged(self, cli_runner, project):
         project.write('fail.py')
@@ -428,7 +428,7 @@ class TestRun(object):
             result = cli_runner.invoke(cli.run, ['--include-unstaged'])
             assert re.search('Linting.+?\[FAILURE]', result.output)
             assert result.exception
-            assert result.exit_code == 1
+            assert result.exit_code == 2
 
     def test_unstaged_changes(self, cli_runner, project):
         project.write('pass.py', 'FAIL')
@@ -440,7 +440,7 @@ class TestRun(object):
             assert 'You have unstaged changes.' in result.output
             assert re.search('Linting.+?\[FAILURE]', result.output)
             assert result.exception
-            assert result.exit_code == 1
+            assert result.exit_code == 2
             assert project.read('pass.py') == 'x'
 
     def test_include_unstaged_changes(self, cli_runner, project):
@@ -465,7 +465,7 @@ class TestRun(object):
             result = cli_runner.invoke(cli.run, ['--use-tracked-files'])
             assert re.search('Linting.+?\[FAILURE]', result.output)
             assert result.exception
-            assert result.exit_code == 1
+            assert result.exit_code == 2
 
     def test_misconfigured(self, cli_runner, project):
         config_data = project.get_config_data()
@@ -515,7 +515,7 @@ class TestHook(object):
         assert project.exists('.git/hooks/pre-commit')
 
         project.write('.git/hooks/pre-commit.legacy', '#!/usr/bin/env bash\necho "LEGACY"')
-        project.chmod('.git/hooks/pre-commit.legacy', cli.MODE_775)
+        project.chmod('.git/hooks/pre-commit.legacy', 0o775)
 
         project.write('pass.py')
         project.git.add('.')
@@ -533,7 +533,7 @@ class TestHook(object):
         assert project.exists('.git/hooks/pre-commit')
 
         project.write('.git/hooks/pre-commit.legacy', '#!/usr/bin/env bash\nexit 1')
-        project.chmod('.git/hooks/pre-commit.legacy', cli.MODE_775)
+        project.chmod('.git/hooks/pre-commit.legacy', 0o755)
 
         project.write('pass.py')
         project.git.add('.')

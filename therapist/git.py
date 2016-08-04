@@ -72,7 +72,6 @@ class Status(object):
 
     @classmethod
     def from_string(cls, string):
-        string = string  # Ensure that the string is actually a string
         status = cls()
 
         status.state = string[0]
