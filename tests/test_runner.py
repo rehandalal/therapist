@@ -5,8 +5,8 @@ import six
 
 from therapist import Runner
 from therapist.runner.actions import Action, ActionCollection
-from therapist.runner.results import Result, ResultCollection
 from therapist.runner.collections import Collection
+from therapist.runner.results import Result, ResultCollection
 
 from . import Project
 
