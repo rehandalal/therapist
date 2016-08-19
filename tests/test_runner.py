@@ -4,25 +4,25 @@ import re
 import six
 
 from therapist import Runner
-from therapist.runner.actions import Action, ActionSet
-from therapist.runner.results import Result, ResultSet
-from therapist.runner.sets import Set
+from therapist.runner.actions import Action, ActionCollection
+from therapist.runner.results import Result, ResultCollection
+from therapist.runner.collections import Collection
 
 from . import Project
 
 
-class TestSet(object):
+class TestCollection(object):
     def test_str(self):
         items = ['a', 'b', 'c']
-        s = Set(items)
+        s = Collection(items)
         assert str(s) == str(items)
 
     def test_repr(self):
-        s = Set()
-        assert s.__repr__() == '<Set>'
+        s = Collection()
+        assert s.__repr__() == '<Collection>'
 
     def test_append(self):
-        s = Set()
+        s = Collection()
         assert len(s.objects) == 0
 
         s.append('item')
@@ -30,11 +30,11 @@ class TestSet(object):
         assert s[0] == 'item'
 
     def test_object_class(self):
-        class BooleanSet(Set):
+        class BooleanCollection(Collection):
             class Meta:
                 object_class = bool
 
-        s = BooleanSet([True])
+        s = BooleanCollection([True])
 
         with pytest.raises(TypeError):
             s.append('True')
@@ -69,10 +69,10 @@ class TestAction(object):
         assert a.exclude == ['a.py', 'b.py']
 
 
-class TestActionSet(object):
+class TestActionCollection(object):
     def test_get(self):
         action = Action('flake8')
-        actions = ActionSet([action])
+        actions = ActionCollection([action])
 
         assert actions.get('flake8') == action
 
@@ -106,11 +106,11 @@ class TestResult(object):
             Result('something')
 
 
-class TestResultSet(object):
+class TestResultCollection(object):
     def test_count(self):
         r1 = Result(action=Action('flake8'), status=Result.SUCCESS)
         r2 = Result(action=Action('eslint'), status=Result.SKIP)
-        rs = ResultSet([r1, r2])
+        rs = ResultCollection([r1, r2])
         assert rs.count() == 2
         assert rs.count(Result.SKIP) == 1
         assert rs.count(Result.FAILURE) == 0
@@ -118,7 +118,7 @@ class TestResultSet(object):
     def test_has_success(self):
         r = Result(action=Action('flake8'), status=Result.SUCCESS)
 
-        rs = ResultSet()
+        rs = ResultCollection()
         assert not rs.has_success
 
         rs.append(r)
@@ -127,7 +127,7 @@ class TestResultSet(object):
     def test_has_failure(self):
         r = Result(action=Action('flake8'), status=Result.FAILURE)
 
-        rs = ResultSet()
+        rs = ResultCollection()
         assert not rs.has_failure
 
         rs.append(r)
@@ -136,7 +136,7 @@ class TestResultSet(object):
     def test_has_skip(self):
         r = Result(action=Action('flake8'), status=Result.SKIP)
 
-        rs = ResultSet()
+        rs = ResultCollection()
         assert not rs.has_skip
 
         rs.append(r)
@@ -145,7 +145,7 @@ class TestResultSet(object):
     def test_has_error(self):
         r = Result(action=Action('flake8'), status=Result.ERROR)
 
-        rs = ResultSet()
+        rs = ResultCollection()
         assert not rs.has_error
 
         rs.append(r)
@@ -153,7 +153,7 @@ class TestResultSet(object):
 
     def test_dump_colors(self):
         r = Result(action=Action('flake8'), status=Result.FAILURE, output='Failed!')
-        rs = ResultSet([r])
+        rs = ResultCollection([r])
         assert rs.dump(colors=True) == (
             '\x1b[0m\x1b[1m\x1b[31m===============================================================================\n'
             '\x1b[0m\x1b[0m\x1b[1m\x1b[31mFAILED: flake8\n\x1b[0m'
@@ -163,12 +163,12 @@ class TestResultSet(object):
 
     def test_dump_success(self):
         r = Result(action=Action('flake8'), status=Result.SUCCESS)
-        rs = ResultSet([r])
+        rs = ResultCollection([r])
         assert rs.dump() == ''
 
     def test_dump_failure(self):
         r = Result(action=Action('flake8'), status=Result.FAILURE, output='Failed!')
-        rs = ResultSet([r])
+        rs = ResultCollection([r])
         assert rs.dump() == (
             '===============================================================================\n'
             'FAILED: flake8\n'
@@ -177,7 +177,7 @@ class TestResultSet(object):
         )
 
         r = Result(action=Action('flake8'), status=Result.FAILURE, error='ERR!', output='Failed!')
-        rs = ResultSet([r])
+        rs = ResultCollection([r])
         assert rs.dump() == (
             '===============================================================================\n'
             'FAILED: flake8\n'
@@ -187,12 +187,12 @@ class TestResultSet(object):
 
     def test_dump_skip(self):
         r = Result(action=Action('flake8'), status=Result.SKIP)
-        rs = ResultSet([r])
+        rs = ResultCollection([r])
         assert rs.dump() == ''
 
     def test_dump_error(self):
         r = Result(action=Action('flake8'), status=Result.ERROR, output='OH NOES!')
-        rs = ResultSet([r])
+        rs = ResultCollection([r])
         assert rs.dump() == (
             '===============================================================================\n'
             'ERROR: flake8\n'
@@ -201,7 +201,7 @@ class TestResultSet(object):
         )
 
         r = Result(action=Action('flake8'), status=Result.ERROR, error='ERR!', output='Failed!')
-        rs = ResultSet([r])
+        rs = ResultCollection([r])
         assert rs.dump() == (
             '===============================================================================\n'
             'ERROR: flake8\n'
@@ -212,7 +212,7 @@ class TestResultSet(object):
     def test_dump_junit_success(self):
         a = Action('flake8', run='flake8 {files}')
         r = Result(action=a, status=Result.SUCCESS, execution_time=1.0)
-        rs = ResultSet([r])
+        rs = ResultCollection([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<testsuites errors="0" failures="0" name="therapist" tests="1" time="1.0">'
@@ -225,7 +225,7 @@ class TestResultSet(object):
     def test_dump_junit_failure(self):
         a = Action('flake8', run='flake8 {files}')
         r = Result(action=a, status=Result.FAILURE, output='Failed!', execution_time=1.0)
-        rs = ResultSet([r])
+        rs = ResultCollection([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<testsuites errors="0" failures="1" name="therapist" tests="1" time="1.0">'
@@ -238,7 +238,7 @@ class TestResultSet(object):
         )
 
         r = Result(action=a, status=Result.FAILURE, error='ERR!', output='Failed!', execution_time=1.0)
-        rs = ResultSet([r])
+        rs = ResultCollection([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<testsuites errors="0" failures="1" name="therapist" tests="1" time="1.0">'
@@ -253,7 +253,7 @@ class TestResultSet(object):
     def test_dump_junit_skip(self):
         a = Action('flake8', run='flake8 {files}')
         r = Result(action=a, status=Result.SKIP, execution_time=1.0)
-        rs = ResultSet([r])
+        rs = ResultCollection([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<testsuites errors="0" failures="0" name="therapist" tests="1" time="1.0">'
@@ -266,7 +266,7 @@ class TestResultSet(object):
     def test_dump_junit_error(self):
         a = Action('flake8', run='flake8 {files}')
         r = Result(action=a, status=Result.ERROR, output='Error!', execution_time=1.0)
-        rs = ResultSet([r])
+        rs = ResultCollection([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<testsuites errors="1" failures="0" name="therapist" tests="1" time="1.0">'
@@ -279,7 +279,7 @@ class TestResultSet(object):
         )
 
         r = Result(action=a, status=Result.ERROR, error='ERR!', output='Error!', execution_time=1.0)
-        rs = ResultSet([r])
+        rs = ResultCollection([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<testsuites errors="1" failures="0" name="therapist" tests="1" time="1.0">'

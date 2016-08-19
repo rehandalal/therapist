@@ -8,7 +8,7 @@ from therapist import Runner
 from therapist._version import __version__
 from therapist.git import Git
 from therapist.printer import BOLD, fsprint, GREEN, RED, YELLOW
-from therapist.runner.results import ResultSet
+from therapist.runner.results import ResultCollection
 from therapist.utils import current_git_dir, identify_hook, list_files
 
 
@@ -177,7 +177,7 @@ def run(**kwargs):
         fsprint('Misconfigured: {}'.format(err.message), (RED,))
         exit(1)
     else:
-        results = ResultSet()
+        results = ResultCollection()
 
         if runner.unstaged_changes and not quiet:
             fsprint('You have unstaged changes.', (YELLOW,))

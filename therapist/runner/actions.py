@@ -1,4 +1,4 @@
-from therapist.runner.sets import Set
+from therapist.runner.collections import Collection
 
 
 class Action(object):
@@ -42,7 +42,7 @@ class Action(object):
             self._exclude = value if isinstance(value, list) else [value]
 
 
-class ActionSet(Set):
+class ActionCollection(Collection):
     class Meta:
         object_class = Action
 

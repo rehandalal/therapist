@@ -7,7 +7,7 @@ from pathspec import GitIgnorePattern, PathSpec
 
 from therapist.git import Git, Status
 from therapist.printer import BOLD, CYAN, fsprint, GREEN, RED
-from therapist.runner.actions import Action, ActionSet
+from therapist.runner.actions import Action, ActionCollection
 from therapist.runner.results import Result
 
 
@@ -25,7 +25,7 @@ class Runner(object):
 
     def __init__(self, cwd, files=None, include_unstaged=False, include_untracked=False,
                  include_unstaged_changes=False, quiet=False):
-        self.actions = ActionSet()
+        self.actions = ActionCollection()
         self.unstaged_changes = False
 
         self.cwd = os.path.abspath(cwd)

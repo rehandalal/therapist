@@ -2,7 +2,7 @@ from xml.etree import ElementTree
 
 from therapist.printer import BOLD, RED, stylize
 from therapist.runner.actions import Action
-from therapist.runner.sets import Set
+from therapist.runner.collections import Collection
 
 
 class Result(object):
@@ -59,7 +59,7 @@ class Result(object):
         return self.status == self.ERROR
 
 
-class ResultSet(Set):
+class ResultCollection(Collection):
     class Meta:
         object_class = Result
 

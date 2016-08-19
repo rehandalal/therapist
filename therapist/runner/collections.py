@@ -1,4 +1,4 @@
-class Set(object):
+class Collection(object):
     """A generic iterable set of objects."""
     class Meta:
         pass
