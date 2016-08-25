@@ -3,7 +3,8 @@ import subprocess
 import time
 import yaml
 
-from pathspec import GitIgnorePattern, PathSpec
+from pathspec import PathSpec
+from pathspec.patterns import GitWildMatchPattern
 
 from therapist.git import Git, Status
 from therapist.printer import BOLD, CYAN, fsprint, GREEN, RED
@@ -95,11 +96,11 @@ class Runner(object):
         result = Result(action, status=Result.SKIP)
 
         if action.include:
-            spec = PathSpec(map(GitIgnorePattern, action.include))
+            spec = PathSpec(map(GitWildMatchPattern, action.include))
             files = list(spec.match_files(files))
 
         if action.exclude:
-            spec = PathSpec(map(GitIgnorePattern, action.exclude))
+            spec = PathSpec(map(GitWildMatchPattern, action.exclude))
             exclude = list(spec.match_files(files))
             files = list(filter(lambda f: f not in exclude, files))
 
