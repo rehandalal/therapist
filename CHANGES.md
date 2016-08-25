@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.3.2
+
+- Added the `--junit-xml` to allow for a JUnit XML style report to be 
+  output to a given path.
+- Added the `--quiet` flag that suppresses output from the `run`
+  command.
+
 ### v0.3.1
 
 - Fix some decoding issues that occur in Python 2.7.
