@@ -11,6 +11,7 @@ addons:
       - debian-sid
     packages:
       - shellcheck
+cache: pip
 install: pip install flake8 tox-travis .
 script:
   - therapist run --use-tracked-files

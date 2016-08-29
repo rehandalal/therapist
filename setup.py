@@ -7,7 +7,7 @@ import re
 from setuptools import find_packages, setup
 
 
-DEPENDENCIES = ['click', 'pathspec', 'PyYAML', 'six']
+DEPENDENCIES = ['click', 'couleur', 'pathspec', 'PyYAML', 'six']
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
