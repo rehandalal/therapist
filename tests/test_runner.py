@@ -366,7 +366,7 @@ class TestRunner(object):
         assert result.is_failure
 
         assert 'fail.txt' in r.files
-        assert message == '#{bold}Linting ...................................................... #{red}[FAILURE]'
+        assert message == '#{bold}Linting ............................................................. #{red}[FAILURE]'
 
     def test_include_unstaged(self, project):
         project.write('fail.txt')
@@ -381,7 +381,7 @@ class TestRunner(object):
         assert result.is_failure
 
         assert 'fail.txt' in r.files
-        assert message == '#{bold}Linting ...................................................... #{red}[FAILURE]'
+        assert message == '#{bold}Linting ............................................................. #{red}[FAILURE]'
 
     def test_include_unstaged_changes(self, project):
         project.write('pass.txt', 'FAIL')
@@ -416,7 +416,8 @@ class TestRunner(object):
 
         assert result.is_success
         assert 'pass.py' in r.files
-        assert message == '#{bold}Linting ...................................................... #{green}[SUCCESS]'
+        assert message == ('#{bold}Linting ............................................................. '
+                           '#{green}[SUCCESS]')
 
     def test_run_action_failure(self, project):
         project.write('fail.txt')
@@ -427,7 +428,7 @@ class TestRunner(object):
         assert result.is_failure
 
         assert 'fail.txt' in r.files
-        assert message == '#{bold}Linting ...................................................... #{red}[FAILURE]'
+        assert message == '#{bold}Linting ............................................................. #{red}[FAILURE]'
 
     def test_run_action_skipped(self, project):
         project.write('.ignore.pass.py')
@@ -437,7 +438,8 @@ class TestRunner(object):
         result, message = r.run_action('lint')
 
         assert '.ignore.pass.py' in r.files
-        assert message == '#{bold}Linting ...................................................... #{cyan}[SKIPPED]'
+        assert message == ('#{bold}Linting ............................................................. '
+                           '#{cyan}[SKIPPED]')
 
     def test_run_action_error(self, project):
         for i in range(1000):
@@ -449,7 +451,7 @@ class TestRunner(object):
         assert result.is_error
 
         assert len(r.files) == 1000
-        assert message == '#{bold}Linting ...................................................... #{red}[ERROR!!]'
+        assert message == '#{bold}Linting ............................................................. #{red}[ERROR!!]'
 
     def test_run_action_skips_deleted(self, project):
         project.write('pass.py')
@@ -479,7 +481,8 @@ class TestRunner(object):
         result, message = r.run_action('norun')
 
         assert 'pass.py' in r.files
-        assert message == '#{bold}Skips ........................................................ #{cyan}[SKIPPED]'
+        assert message == ('#{bold}Skips ............................................................... '
+                           '#{cyan}[SKIPPED]')
 
     def test_action_run_issue(self, tmpdir):
         config_data = {
@@ -500,7 +503,7 @@ class TestRunner(object):
         assert result.is_failure
 
         assert 'pass.py' in r.files
-        assert message == '#{bold}Should fail .................................................. #{red}[FAILURE]'
+        assert message == '#{bold}Should fail ......................................................... #{red}[FAILURE]'
 
     def test_action_filter_include(self, project):
         project.write('pass.py')
@@ -511,7 +514,8 @@ class TestRunner(object):
         result, message = r.run_action('lint')
 
         assert 'fail.js' in r.files
-        assert message == '#{bold}Linting ...................................................... #{green}[SUCCESS]'
+        assert message == ('#{bold}Linting ............................................................. '
+                           '#{green}[SUCCESS]')
 
     def test_action_filter_exclude(self, project):
         project.write('pass.py')
@@ -522,7 +526,8 @@ class TestRunner(object):
         result, message = r.run_action('lint')
 
         assert '.ignore.fail.txt' in r.files
-        assert message == '#{bold}Linting ...................................................... #{green}[SUCCESS]'
+        assert message == ('#{bold}Linting ............................................................. '
+                           '#{green}[SUCCESS]')
 
     def test_unstash_on_error(self, project, monkeypatch):
         project.write('pass.py')
