@@ -1,5 +1,4 @@
 import pytest
-import re
 
 import six
 
@@ -154,11 +153,12 @@ class TestResultCollection(object):
     def test_dump_colors(self):
         r = Result(action=Action('flake8'), status=Result.FAILURE, output='Failed!')
         rs = ResultCollection([r])
-        assert rs.dump(colors=True) == (
-            '\x1b[0m\x1b[1m\x1b[31m===============================================================================\n'
-            '\x1b[0m\x1b[0m\x1b[1m\x1b[31mFAILED: flake8\n\x1b[0m'
-            '\x1b[0m\x1b[1m\x1b[31m===============================================================================\n'
-            '\x1b[0m\x1b[0mFailed!\x1b[0m'
+        assert rs.dump() == (
+            '\n#{red}#{bold}'
+            '===============================================================================\n'
+            'FAILED: flake8\n'
+            '===============================================================================\n'
+            '#{reset}Failed!'
         )
 
     def test_dump_success(self):
@@ -170,19 +170,21 @@ class TestResultCollection(object):
         r = Result(action=Action('flake8'), status=Result.FAILURE, output='Failed!')
         rs = ResultCollection([r])
         assert rs.dump() == (
+            '\n#{red}#{bold}'
             '===============================================================================\n'
             'FAILED: flake8\n'
             '===============================================================================\n'
-            'Failed!'
+            '#{reset}Failed!'
         )
 
         r = Result(action=Action('flake8'), status=Result.FAILURE, error='ERR!', output='Failed!')
         rs = ResultCollection([r])
         assert rs.dump() == (
+            '\n#{red}#{bold}'
             '===============================================================================\n'
             'FAILED: flake8\n'
             '===============================================================================\n'
-            'ERR!'
+            '#{reset}ERR!'
         )
 
     def test_dump_skip(self):
@@ -194,19 +196,21 @@ class TestResultCollection(object):
         r = Result(action=Action('flake8'), status=Result.ERROR, output='OH NOES!')
         rs = ResultCollection([r])
         assert rs.dump() == (
+            '\n#{red}#{bold}'
             '===============================================================================\n'
             'ERROR: flake8\n'
             '===============================================================================\n'
-            'OH NOES!'
+            '#{reset}OH NOES!'
         )
 
         r = Result(action=Action('flake8'), status=Result.ERROR, error='ERR!', output='Failed!')
         rs = ResultCollection([r])
         assert rs.dump() == (
+            '\n#{red}#{bold}'
             '===============================================================================\n'
             'ERROR: flake8\n'
             '===============================================================================\n'
-            'ERR!'
+            '#{reset}ERR!'
         )
 
     def test_dump_junit_success(self):
@@ -345,7 +349,7 @@ class TestRunner(object):
         assert 'AM pass.txt' in out
 
         r = Runner(project.path)
-        result = r.run_action('lint')
+        result, message = r.run_action('lint')
 
         assert result.is_failure
 
@@ -354,20 +358,17 @@ class TestRunner(object):
         out, err = project.git.status(porcelain=True)
         assert 'AM pass.txt' in out
 
-    def test_include_untracked(self, project, capsys):
+    def test_include_untracked(self, project):
         project.write('fail.txt')
 
         r = Runner(project.path, include_untracked=True)
-        result = r.run_action('lint')
+        result, message = r.run_action('lint')
         assert result.is_failure
 
         assert 'fail.txt' in r.files
+        assert message == '#{bold}Linting ...................................................... #{red}[FAILURE]'
 
-        out, err = capsys.readouterr()
-
-        assert re.search('Linting(.+?)\[FAILURE]', out)
-
-    def test_include_unstaged(self, project, capsys):
+    def test_include_unstaged(self, project):
         project.write('fail.txt')
 
         project.git.add('.')
@@ -376,14 +377,11 @@ class TestRunner(object):
         project.write('fail.txt', 'x')
 
         r = Runner(project.path, include_unstaged=True)
-        result = r.run_action('lint')
+        result, message = r.run_action('lint')
         assert result.is_failure
 
         assert 'fail.txt' in r.files
-
-        out, err = capsys.readouterr()
-
-        assert re.search('Linting(.+?)\[FAILURE]', out)
+        assert message == '#{bold}Linting ...................................................... #{red}[FAILURE]'
 
     def test_include_unstaged_changes(self, project):
         project.write('pass.txt', 'FAIL')
@@ -395,7 +393,7 @@ class TestRunner(object):
         assert 'AM pass.txt' in out
 
         r = Runner(project.path, include_unstaged_changes=True)
-        result = r.run_action('lint')
+        result, message = r.run_action('lint')
         assert result.is_success
 
         assert project.read('pass.txt') == 'x'
@@ -409,61 +407,49 @@ class TestRunner(object):
         with pytest.raises(r.actions.DoesNotExist):
             r.run_action('notanaction')
 
-    def test_run_action_success(self, project, capsys):
+    def test_run_action_success(self, project):
         project.write('pass.py')
         project.git.add('.')
 
         r = Runner(project.path)
-        result = r.run_action('lint')
+        result, message = r.run_action('lint')
 
         assert result.is_success
         assert 'pass.py' in r.files
+        assert message == '#{bold}Linting ...................................................... #{green}[SUCCESS]'
 
-        out, err = capsys.readouterr()
-
-        assert re.search('Linting(.+?)\[SUCCESS]', out)
-
-    def test_run_action_failure(self, project, capsys):
+    def test_run_action_failure(self, project):
         project.write('fail.txt')
         project.git.add('.')
 
         r = Runner(project.path)
-        result = r.run_action('lint')
+        result, message = r.run_action('lint')
         assert result.is_failure
 
         assert 'fail.txt' in r.files
+        assert message == '#{bold}Linting ...................................................... #{red}[FAILURE]'
 
-        out, err = capsys.readouterr()
-
-        assert re.search('Linting(.+?)\[FAILURE]', out)
-
-    def test_run_action_skipped(self, project, capsys):
+    def test_run_action_skipped(self, project):
         project.write('.ignore.pass.py')
         project.git.add('.')
 
         r = Runner(project.path)
-        r.run_action('lint')
+        result, message = r.run_action('lint')
 
         assert '.ignore.pass.py' in r.files
+        assert message == '#{bold}Linting ...................................................... #{cyan}[SKIPPED]'
 
-        out, err = capsys.readouterr()
-
-        assert re.search('Linting(.+?)\[SKIPPED]', out)
-
-    def test_run_action_error(self, project, capsys):
+    def test_run_action_error(self, project):
         for i in range(1000):
             project.write('pass{}.txt'.format(str(i).ljust(200, '_')))
         project.git.add('.')
 
         r = Runner(project.path)
-        result = r.run_action('lint')
+        result, message = r.run_action('lint')
         assert result.is_error
 
         assert len(r.files) == 1000
-
-        out, err = capsys.readouterr()
-
-        assert re.search('Linting(.+?)\[ERROR!!]', out)
+        assert message == '#{bold}Linting ...................................................... #{red}[ERROR!!]'
 
     def test_run_action_skips_deleted(self, project):
         project.write('pass.py')
@@ -476,7 +462,7 @@ class TestRunner(object):
 
         assert len(r.files) == 0
 
-    def test_action_no_run(self, tmpdir, capsys):
+    def test_action_no_run(self, tmpdir):
         config_data = {
             'actions': {
                 'norun': {
@@ -490,15 +476,12 @@ class TestRunner(object):
         project.git.add('.')
 
         r = Runner(project.path)
-        r.run_action('norun')
+        result, message = r.run_action('norun')
 
         assert 'pass.py' in r.files
+        assert message == '#{bold}Skips ........................................................ #{cyan}[SKIPPED]'
 
-        out, err = capsys.readouterr()
-
-        assert re.search('Skips(.+?)\[SKIPPED]', out)
-
-    def test_action_run_issue(self, tmpdir, capsys):
+    def test_action_run_issue(self, tmpdir):
         config_data = {
             'actions': {
                 'runissue': {
@@ -513,42 +496,33 @@ class TestRunner(object):
         project.git.add('.')
 
         r = Runner(project.path)
-        result = r.run_action('runissue')
+        result, message = r.run_action('runissue')
         assert result.is_failure
 
         assert 'pass.py' in r.files
+        assert message == '#{bold}Should fail .................................................. #{red}[FAILURE]'
 
-        out, err = capsys.readouterr()
-
-        assert re.search('Should fail(.+?)\[FAILURE]', out)
-
-    def test_action_filter_include(self, project, capsys):
+    def test_action_filter_include(self, project):
         project.write('pass.py')
         project.write('fail.js')
         project.git.add('.')
 
         r = Runner(project.path)
-        r.run_action('lint')
+        result, message = r.run_action('lint')
 
         assert 'fail.js' in r.files
+        assert message == '#{bold}Linting ...................................................... #{green}[SUCCESS]'
 
-        out, err = capsys.readouterr()
-
-        assert re.search('Linting(.+?)\[SUCCESS]', out)
-
-    def test_action_filter_exclude(self, project, capsys):
+    def test_action_filter_exclude(self, project):
         project.write('pass.py')
         project.write('.ignore.fail.txt')
         project.git.add('.')
 
         r = Runner(project.path)
-        r.run_action('lint')
+        result, message = r.run_action('lint')
 
         assert '.ignore.fail.txt' in r.files
-
-        out, err = capsys.readouterr()
-
-        assert re.search('Linting(.+?)\[SUCCESS]', out)
+        assert message == '#{bold}Linting ...................................................... #{green}[SUCCESS]'
 
     def test_unstash_on_error(self, project, monkeypatch):
         project.write('pass.py')
@@ -572,7 +546,7 @@ class TestRunner(object):
         project.git.add('.')
 
         r = Runner(project.path)
-        result = r.run_action('lint')
+        result, message = r.run_action('lint')
 
         assert result.is_failure
 
