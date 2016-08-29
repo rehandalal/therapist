@@ -111,7 +111,7 @@ class ResultCollection(Collection):
         text = ''
         for result in self.objects:
             if result.is_failure or result.is_error:
-                text += '\n#{red}#{bold}'
+                text += '\n#{red}#{bright}'
                 text += '{}\n'.format(''.ljust(79, '='))
 
                 status = 'FAILED' if result.is_failure else 'ERROR'
@@ -120,9 +120,9 @@ class ResultCollection(Collection):
                 text += '{}\n'.format(''.ljust(79, '='))
 
                 if result.error:
-                    text += '#{{reset}}{}'.format(result.error)
+                    text += '#{{reset_all}}{}'.format(result.error)
                 else:
-                    text += '#{{reset}}{}'.format(result.output)
+                    text += '#{{reset_all}}{}'.format(result.output)
         return text
 
     def dump_junit(self):

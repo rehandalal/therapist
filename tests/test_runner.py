@@ -154,11 +154,11 @@ class TestResultCollection(object):
         r = Result(action=Action('flake8'), status=Result.FAILURE, output='Failed!')
         rs = ResultCollection([r])
         assert rs.dump() == (
-            '\n#{red}#{bold}'
+            '\n#{red}#{bright}'
             '===============================================================================\n'
             'FAILED: flake8\n'
             '===============================================================================\n'
-            '#{reset}Failed!'
+            '#{reset_all}Failed!'
         )
 
     def test_dump_success(self):
@@ -170,21 +170,21 @@ class TestResultCollection(object):
         r = Result(action=Action('flake8'), status=Result.FAILURE, output='Failed!')
         rs = ResultCollection([r])
         assert rs.dump() == (
-            '\n#{red}#{bold}'
+            '\n#{red}#{bright}'
             '===============================================================================\n'
             'FAILED: flake8\n'
             '===============================================================================\n'
-            '#{reset}Failed!'
+            '#{reset_all}Failed!'
         )
 
         r = Result(action=Action('flake8'), status=Result.FAILURE, error='ERR!', output='Failed!')
         rs = ResultCollection([r])
         assert rs.dump() == (
-            '\n#{red}#{bold}'
+            '\n#{red}#{bright}'
             '===============================================================================\n'
             'FAILED: flake8\n'
             '===============================================================================\n'
-            '#{reset}ERR!'
+            '#{reset_all}ERR!'
         )
 
     def test_dump_skip(self):
@@ -196,21 +196,21 @@ class TestResultCollection(object):
         r = Result(action=Action('flake8'), status=Result.ERROR, output='OH NOES!')
         rs = ResultCollection([r])
         assert rs.dump() == (
-            '\n#{red}#{bold}'
+            '\n#{red}#{bright}'
             '===============================================================================\n'
             'ERROR: flake8\n'
             '===============================================================================\n'
-            '#{reset}OH NOES!'
+            '#{reset_all}OH NOES!'
         )
 
         r = Result(action=Action('flake8'), status=Result.ERROR, error='ERR!', output='Failed!')
         rs = ResultCollection([r])
         assert rs.dump() == (
-            '\n#{red}#{bold}'
+            '\n#{red}#{bright}'
             '===============================================================================\n'
             'ERROR: flake8\n'
             '===============================================================================\n'
-            '#{reset}ERR!'
+            '#{reset_all}ERR!'
         )
 
     def test_dump_junit_success(self):
@@ -366,7 +366,8 @@ class TestRunner(object):
         assert result.is_failure
 
         assert 'fail.txt' in r.files
-        assert message == '#{bold}Linting ............................................................. #{red}[FAILURE]'
+        assert message == ('#{bright}Linting ............................................................. '
+                           '#{red}[FAILURE]')
 
     def test_include_unstaged(self, project):
         project.write('fail.txt')
@@ -381,7 +382,8 @@ class TestRunner(object):
         assert result.is_failure
 
         assert 'fail.txt' in r.files
-        assert message == '#{bold}Linting ............................................................. #{red}[FAILURE]'
+        assert message == ('#{bright}Linting ............................................................. '
+                           '#{red}[FAILURE]')
 
     def test_include_unstaged_changes(self, project):
         project.write('pass.txt', 'FAIL')
@@ -416,7 +418,7 @@ class TestRunner(object):
 
         assert result.is_success
         assert 'pass.py' in r.files
-        assert message == ('#{bold}Linting ............................................................. '
+        assert message == ('#{bright}Linting ............................................................. '
                            '#{green}[SUCCESS]')
 
     def test_run_action_failure(self, project):
@@ -428,7 +430,8 @@ class TestRunner(object):
         assert result.is_failure
 
         assert 'fail.txt' in r.files
-        assert message == '#{bold}Linting ............................................................. #{red}[FAILURE]'
+        assert message == ('#{bright}Linting ............................................................. '
+                           '#{red}[FAILURE]')
 
     def test_run_action_skipped(self, project):
         project.write('.ignore.pass.py')
@@ -438,7 +441,7 @@ class TestRunner(object):
         result, message = r.run_action('lint')
 
         assert '.ignore.pass.py' in r.files
-        assert message == ('#{bold}Linting ............................................................. '
+        assert message == ('#{bright}Linting ............................................................. '
                            '#{cyan}[SKIPPED]')
 
     def test_run_action_error(self, project):
@@ -451,7 +454,8 @@ class TestRunner(object):
         assert result.is_error
 
         assert len(r.files) == 1000
-        assert message == '#{bold}Linting ............................................................. #{red}[ERROR!!]'
+        assert message == ('#{bright}Linting ............................................................. '
+                           '#{red}[ERROR!!]')
 
     def test_run_action_skips_deleted(self, project):
         project.write('pass.py')
@@ -481,7 +485,7 @@ class TestRunner(object):
         result, message = r.run_action('norun')
 
         assert 'pass.py' in r.files
-        assert message == ('#{bold}Skips ............................................................... '
+        assert message == ('#{bright}Skips ............................................................... '
                            '#{cyan}[SKIPPED]')
 
     def test_action_run_issue(self, tmpdir):
@@ -503,7 +507,8 @@ class TestRunner(object):
         assert result.is_failure
 
         assert 'pass.py' in r.files
-        assert message == '#{bold}Should fail ......................................................... #{red}[FAILURE]'
+        assert message == ('#{bright}Should fail ......................................................... '
+                           '#{red}[FAILURE]')
 
     def test_action_filter_include(self, project):
         project.write('pass.py')
@@ -514,7 +519,7 @@ class TestRunner(object):
         result, message = r.run_action('lint')
 
         assert 'fail.js' in r.files
-        assert message == ('#{bold}Linting ............................................................. '
+        assert message == ('#{bright}Linting ............................................................. '
                            '#{green}[SUCCESS]')
 
     def test_action_filter_exclude(self, project):
@@ -526,7 +531,7 @@ class TestRunner(object):
         result, message = r.run_action('lint')
 
         assert '.ignore.fail.txt' in r.files
-        assert message == ('#{bold}Linting ............................................................. '
+        assert message == ('#{bright}Linting ............................................................. '
                            '#{green}[SUCCESS]')
 
     def test_unstash_on_error(self, project, monkeypatch):

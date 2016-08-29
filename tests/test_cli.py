@@ -3,7 +3,6 @@ import re
 from therapist import cli
 from therapist._version import __version__
 from therapist.context_managers import chdir
-from therapist.messages import NOT_GIT_REPO_MSG
 from therapist.utils import identify_hook
 
 
@@ -39,7 +38,7 @@ class TestInstall(object):
     def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.install)
-        assert NOT_GIT_REPO_MSG in result.output
+        assert 'Not a git repository (or any of the parent directories)' in result.output
         assert result.exception
         assert result.exit_code == 1
 
@@ -161,7 +160,7 @@ class TestUninstall(object):
     def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.uninstall)
-            assert NOT_GIT_REPO_MSG in result.output
+            assert 'Not a git repository (or any of the parent directories)' in result.output
             assert result.exception
             assert result.exit_code == 1
 
@@ -297,7 +296,7 @@ class TestRun(object):
     def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.run)
-        assert NOT_GIT_REPO_MSG in result.output
+        assert 'Not a git repository (or any of the parent directories)' in result.output
         assert result.exception
         assert result.exit_code == 1
 

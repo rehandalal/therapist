@@ -1,10 +1,10 @@
 import hashlib
 import os
+import re
 import shutil
-import sys
 
 import click
-import couleur
+import colorama
 
 from six import print_
 
@@ -27,11 +27,20 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 git = Git()
 
-couleur.proxy(sys.stdout).enable()
-
 
 def output(message, **kwargs):
-    print_('#{{reset}}{}#{{reset}}'.format(message), **kwargs)
+    def repl(match):
+        attr = match.group(0)[2:-1].upper()
+        if hasattr(colorama.Fore, attr):
+            return getattr(colorama.Fore, attr)
+        elif hasattr(colorama.Style, attr):
+            return getattr(colorama.Style, attr)
+        else:
+            return match.group(0)
+
+    message, count = re.subn('#{(.+?)}', repl, message)
+    message = colorama.Style.RESET_ALL + message + colorama.Style.RESET_ALL
+    print_(message, **kwargs)
 
 
 @click.group(invoke_without_command=True)
@@ -45,9 +54,15 @@ def cli(version):
 @cli.command()
 @click.option('--force', '-f', is_flag=True, help='Force installation of the hook. This will replace any existing hook '
                                                   'unless you also use the --preserve-legacy option.')
+@click.option('--no-color', is_flag=True, help='Disables colors and other rich output.')
 @click.option('--preserve-legacy', is_flag=True, help='Preserves any existing pre-commit hook.')
-def install(force, preserve_legacy):
+def install(**kwargs):
     """Install the pre-commit hook."""
+    force = kwargs.get('force')
+    preserve_legacy = kwargs.get('preserve_legacy')
+
+    colorama.init(strip=kwargs.get('no_color'))
+
     git_dir = current_git_dir()
 
     if git_dir is None:
@@ -91,9 +106,15 @@ def install(force, preserve_legacy):
 @click.option('--force', '-f', is_flag=True, help='Force uninstallation of the Therapist pre-commit hook. This will '
                                                   'also remove any legacy hook unless you also use the '
                                                   '--restore-legacy option.')
+@click.option('--no-color', is_flag=True, help='Disables colors and other rich output.')
 @click.option('--restore-legacy', is_flag=True, help='Restores any legacy pre-commit hook.')
-def uninstall(force, restore_legacy):
+def uninstall(**kwargs):
     """Uninstall the current pre-commit hook."""
+    force = kwargs.get('force')
+    restore_legacy = kwargs.get('restore_legacy')
+
+    colorama.init(strip=kwargs.get('no_color'))
+
     git_dir = current_git_dir()
 
     if git_dir is None:
@@ -158,8 +179,7 @@ def run(**kwargs):
     use_tracked_files = kwargs.pop('use_tracked_files')
     quiet = kwargs.pop('quiet')
 
-    if kwargs.pop('no_color'):
-        couleur.proxy(sys.stdout).ignore()
+    colorama.init(strip=kwargs.pop('no_color'))
 
     git_dir = current_git_dir()
 
@@ -225,7 +245,7 @@ def run(**kwargs):
 
         if not quiet:
             output(results.dump())
-            output('#{{bold}}{}\nCompleted in: {}s'.format(''.ljust(79, '-'), round(results.execution_time, 2)))
+            output('#{{bright}}{}\nCompleted in: {}s'.format(''.ljust(79, '-'), round(results.execution_time, 2)))
 
         if results.has_error:
             exit(1)

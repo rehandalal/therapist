@@ -127,7 +127,7 @@ class Runner(object):
         action = self.actions.get(name)
 
         description = action.description if action.description else action.name
-        message = '#{bold}'
+        message = '#{bright}'
         message += '{} '.format(description[:68]).ljust(69, '.')
 
         if not self.include_unstaged_changes:
