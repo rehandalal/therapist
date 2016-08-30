@@ -8,7 +8,7 @@ class Plugin(Process):
         return '<Plugin {}>'.format(self.name)
 
     def execute(self, **kwargs):
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: nocover
 
 
 class PluginCollection(Collection):
