@@ -1,4 +1,4 @@
-from therapist._version import __version__  # noqa
-from therapist.runner import Runner
+VERSION = (0, 3, 2)
 
-__all__ = [Runner]
+
+__version__ = '.'.join(str(v) for v in VERSION)

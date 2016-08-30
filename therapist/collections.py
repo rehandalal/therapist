@@ -22,6 +22,10 @@ class Collection(object):
     def __repr__(self):
         return '<{}>'.format(self.__class__.__name__)
 
+    def __bool__(self):
+        return bool(self._objects)
+    __nonzero__ = __bool__
+
     @property
     def objects(self):
         return self._objects

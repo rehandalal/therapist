@@ -1,31 +1,29 @@
 import os
-import subprocess
-import time
 import yaml
 
-from pathspec import PathSpec
-from pathspec.patterns import GitWildMatchPattern
-
-from therapist.git import Git, Status
+from therapist.exc import Error
+from therapist.plugins.loader import load_plugin
+from therapist.plugins.plugins import PluginCollection
 from therapist.runner.actions import Action, ActionCollection
-from therapist.runner.results import Result
+from therapist.utils.git import Git, Status
 
 
 class Runner(object):
-    class Misconfigured(Exception):
+    class Misconfigured(Error):
         NO_CONFIG_FILE = 1
-        NO_ACTIONS = 2
+        NO_ACTIONS_OR_PLUGINS = 2
         EMPTY_CONFIG = 3
         ACTIONS_WRONGLY_CONFIGURED = 4
+        PLUGINS_WRONGLY_CONFIGURED = 5
 
-        def __init__(self, message=None, *args, **kwargs):
-            self.message = message
-            self.code = kwargs.pop('code', 0)
+        def __init__(self, *args, **kwargs):
+            self.code = kwargs.pop('code', None)
             super(self.__class__, self).__init__(*args, **kwargs)
 
     def __init__(self, cwd, files=None, include_unstaged=False, include_untracked=False,
                  include_unstaged_changes=False):
         self.actions = ActionCollection()
+        self.plugins = PluginCollection()
         self.unstaged_changes = False
 
         self.cwd = os.path.abspath(cwd)
@@ -54,11 +52,32 @@ class Runner(object):
                                                  code=self.Misconfigured.ACTIONS_WRONGLY_CONFIGURED)
 
                     for action_name in actions:
-                        attrs = actions[action_name]
-                        self.actions.append(Action(action_name, **attrs))
-            else:
-                raise self.Misconfigured('`actions` was not specified in the configuration file.',
-                                         code=self.Misconfigured.NO_ACTIONS)
+                        settings = actions[action_name]
+                        if settings is None:
+                            settings = {}
+                        self.actions.append(Action(action_name, **settings))
+
+            if 'plugins' in config:
+                try:
+                    plugins = config['plugins']
+                except TypeError:
+                    raise self.Misconfigured('`plugins` was not configured correctly.',
+                                             code=self.Misconfigured.PLUGINS_WRONGLY_CONFIGURED)
+                else:
+                    if not isinstance(plugins, dict):
+                        raise self.Misconfigured('`plugins` was not configured correctly.',
+                                                 code=self.Misconfigured.PLUGINS_WRONGLY_CONFIGURED)
+
+                    for plugin_name in plugins:
+                        plugin = load_plugin(plugin_name)
+                        settings = plugins[plugin_name]
+                        if settings is None:
+                            settings = {}
+                        self.plugins.append(plugin(plugin_name, **settings))
+
+            if not (self.actions or self.plugins):
+                raise self.Misconfigured('`actions` or `plugins` must be specified in the configuration file.',
+                                         code=self.Misconfigured.NO_ACTIONS_OR_PLUGINS)
 
         if files is None:
             files = []
@@ -67,7 +86,7 @@ class Runner(object):
             out, err = self.git.status(porcelain=True, untracked_files=untracked_files)
 
             for line in out.splitlines():
-                file_status = Status.from_string(line)
+                file_status = Status(line)
 
                 # Check if staged files were modified since being staged
                 if file_status.is_staged and file_status.is_modified:
@@ -85,56 +104,16 @@ class Runner(object):
 
         self.files = files
 
-    def _execute_action(self, name):
-        """Executes a single action."""
-        start_time = time.time()
-        action = self.actions.get(name)
-        files = self.files
-
-        result = Result(action, status=Result.SKIP)
-
-        if action.include:
-            spec = PathSpec(map(GitWildMatchPattern, action.include))
-            files = list(spec.match_files(files))
-
-        if action.exclude:
-            spec = PathSpec(map(GitWildMatchPattern, action.exclude))
-            exclude = list(spec.match_files(files))
-            files = list(filter(lambda f: f not in exclude, files))
-
-        if action.run and files:
-            file_list = ' '.join(files)
-            run_command = action.run.format(files=file_list)
-
-            try:
-                pipes = subprocess.Popen(run_command, shell=True, cwd=self.cwd, stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE)
-            except OSError as err:
-                result.error = 'OSError {}'.format(str(err))
-                result.status = Result.ERROR
-            else:
-                std_out, std_err = pipes.communicate()
-
-                result.output = std_out.decode('utf-8')
-                result.error = std_err.decode('utf-8')
-                result.status = Result.SUCCESS if pipes.returncode == 0 else Result.FAILURE
-
-        result.execution_time = time.time() - start_time
-        return result
-
-    def run_action(self, name):
+    def run_process(self, process):
         """Runs a single action."""
-        action = self.actions.get(name)
-
-        description = action.description if action.description else action.name
         message = '#{bright}'
-        message += '{} '.format(description[:68]).ljust(69, '.')
+        message += '{} '.format(str(process)[:68]).ljust(69, '.')
 
         if not self.include_unstaged_changes:
             self.git.stash(keep_index=True, quiet=True)
 
         try:
-            result = self._execute_action(name)
+            result = process(files=self.files, cwd=self.cwd)
         except:
             raise
         finally:

@@ -1,8 +1,7 @@
 """
-Smart pre-commit hook for git.
+A smart pre-commit hook for git.
 """
 import os
-import re
 
 from setuptools import find_packages, setup
 
@@ -11,18 +10,12 @@ DEPENDENCIES = ['click', 'colorama', 'pathspec', 'PyYAML', 'six']
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
-def get_version():
-    versionfile = os.path.join(ROOT, 'therapist', '_version.py')
-    verstrline = open(versionfile, 'rt').read()
-    mo = re.search(r"""^__version__ = ['"]([^'"]*)['"]""", verstrline, re.M)
-    if mo:
-        return mo.group(1)
-    else:
-        raise RuntimeError('Unable to find version string in {0}.'.format(versionfile))
+version = __import__('therapist').__version__
+
 
 setup(
     name='therapist',
-    version=get_version(),
+    version=version,
     url='https://github.com/rehandalal/therapist',
     license='Mozilla Public License Version 2.0',
     author='Rehan Dalal',

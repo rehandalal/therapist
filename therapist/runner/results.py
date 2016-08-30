@@ -1,22 +1,24 @@
+import time
+
 from xml.etree import ElementTree
 
-from therapist.runner.actions import Action
-from therapist.runner.collections import Collection
+from therapist.collections import Collection
+from therapist.processes import Process
 
 
 class Result(object):
     SUCCESS = 0
     FAILURE = 1
-    SKIP = 2
-    ERROR = 3
+    ERROR = 2
 
-    def __init__(self, action, status=SKIP, output=None, error=None, execution_time=0.0):
-        self._action = None
-        self.action = action
+    def __init__(self, process, status=None):
+        self._process = None
+        self.process = process
         self.status = status
-        self.output = output
-        self.error = error
-        self.execution_time = execution_time
+        self.output = None
+        self.error = None
+        self.start_time = time.time()
+        self.end_time = self.start_time
 
     def __str__(self):
         if self.is_success:
@@ -29,17 +31,18 @@ class Result(object):
             return 'ERROR'
 
     def __repr__(self):
-        return '<Result {}>'.format(self.action)
+        return '<Result {}>'.format(self.process)
 
     @property
-    def action(self):
-        return self._action
+    def process(self):
+        return self._process
 
-    @action.setter
-    def action(self, value):
-        if not isinstance(value, Action):
-            raise TypeError('Expected an `Action` object.')
-        self._action = value
+    @process.setter
+    def process(self, value):
+        if not (isinstance(value, Process)):
+            raise TypeError('Expected a `Process` object.')
+
+        self._process = value
 
     @property
     def is_success(self):
@@ -50,12 +53,23 @@ class Result(object):
         return self.status == self.FAILURE
 
     @property
-    def is_skip(self):
-        return self.status == self.SKIP
-
-    @property
     def is_error(self):
         return self.status == self.ERROR
+
+    @property
+    def is_skip(self):
+        return not (self.is_success or self.is_failure or self.is_error)
+
+    @property
+    def execution_time(self):
+        return self.end_time - self.start_time
+
+    def mark_complete(self, status=None, output=None, error=None):
+        if status is not None:
+            self.status = status
+        self.output = output
+        self.error = error
+        self.end_time = time.time()
 
 
 class ResultCollection(Collection):
@@ -106,6 +120,13 @@ class ResultCollection(Collection):
             return count
         return len(self.objects)
 
+    def count_skipped(self):
+        count = 0
+        for result in self.objects:
+            if result.status is None:
+                count += 1
+        return count
+
     def dump(self):
         """Returns the results in string format."""
         text = ''
@@ -115,8 +136,7 @@ class ResultCollection(Collection):
                 text += '{}\n'.format(''.ljust(79, '='))
 
                 status = 'FAILED' if result.is_failure else 'ERROR'
-                text += '{}: {}\n'.format(status, result.action)
-
+                text += '{}: {}\n'.format(status, result.process)
                 text += '{}\n'.format(''.ljust(79, '='))
 
                 if result.error:
@@ -135,12 +155,12 @@ class ResultCollection(Collection):
             failures = '1' if result.is_failure else '0'
             errors = '1' if result.is_error else '0'
 
-            testsuite = ElementTree.SubElement(testsuites, 'testsuite', id=result.action.name,
-                                               name=str(result.action), time=str(round(result.execution_time, 2)),
+            testsuite = ElementTree.SubElement(testsuites, 'testsuite', id=result.process.name,
+                                               name=str(result.process), time=str(round(result.execution_time, 2)),
                                                tests='1', failures=failures, errors=errors)
 
             testcase = ElementTree.SubElement(testsuite, 'testcase', time=str(round(result.execution_time, 2)))
-            testcase.attrib['name'] = result.action.run if result.action.run else result.action.name
+            testcase.attrib['name'] = result.process.name
 
             if result.is_failure or result.is_error:
                 if result.is_failure:

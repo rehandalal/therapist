@@ -1,10 +1,20 @@
 import os
 import shutil
 
+from contextlib import contextmanager
+
 import six
 import yaml
 
-from therapist.git import Git
+from therapist.utils.git import Git
+
+
+@contextmanager
+def chdir(path):
+    cwd = os.path.abspath(os.curdir)
+    os.chdir(path)
+    yield
+    os.chdir(cwd)
 
 
 class Project(object):

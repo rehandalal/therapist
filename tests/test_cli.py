@@ -1,9 +1,9 @@
 import re
 
-from therapist import cli
-from therapist._version import __version__
-from therapist.context_managers import chdir
-from therapist.utils import identify_hook
+from therapist import cli, __version__
+from therapist.utils.hook import identify_hook
+
+from . import chdir
 
 
 class TestCLI(object):
@@ -338,8 +338,8 @@ class TestRun(object):
             result = cli_runner.invoke(cli.run, ['-a', 'notanaction'])
             assert 'Available actions:' in result.output
             assert 'lint' in result.output
-            assert not result.exception
-            assert result.exit_code == 0
+            assert result.exception
+            assert result.exit_code == 1
 
     def test_on_file(self, cli_runner, project):
         project.write('pass.py')
