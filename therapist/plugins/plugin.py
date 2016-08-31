@@ -1,6 +1,6 @@
-from therapist.collections import Collection
+from therapist.collection import Collection
 from therapist.exc import Error
-from therapist.processes import Process
+from therapist.process import Process
 
 
 class Plugin(Process):
@@ -8,7 +8,7 @@ class Plugin(Process):
         return '<Plugin {}>'.format(self.name)
 
     def execute(self, **kwargs):
-        raise NotImplementedError()  # pragma: nocover
+        raise NotImplementedError()  # pragma: no cover
 
 
 class PluginCollection(Collection):

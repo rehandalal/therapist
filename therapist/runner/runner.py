@@ -3,8 +3,8 @@ import yaml
 
 from therapist.exc import Error
 from therapist.plugins.loader import load_plugin
-from therapist.plugins.plugins import PluginCollection
-from therapist.runner.actions import Action, ActionCollection
+from therapist.plugins.plugin import PluginCollection
+from therapist.runner.action import Action, ActionCollection
 from therapist.utils.git import Git, Status
 
 
@@ -130,4 +130,4 @@ class Runner(object):
         elif result.is_error:
             message += ' #{red}[ERROR!!]'
 
-        return result, message
+        return result, message.decode('utf-8')

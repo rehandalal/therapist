@@ -14,4 +14,4 @@ class Process(object):
         return '<{} {}>'.format(self.__class__.__name__, self.name)
 
     def execute(self, **kwargs):
-        raise NotImplementedError()  # pragma: nocover
+        raise NotImplementedError()  # pragma: no cover

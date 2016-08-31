@@ -3,10 +3,10 @@ import subprocess
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
-from therapist.collections import Collection
+from therapist.collection import Collection
 from therapist.exc import Error
-from therapist.processes import Process
-from therapist.runner.results import Result
+from therapist.process import Process
+from therapist.runner.result import Result
 
 
 class Action(Process):

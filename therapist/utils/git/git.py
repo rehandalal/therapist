@@ -44,8 +44,8 @@ class Git(object):
         name = name.replace('_', '-')
         return Git(self.current + [name], repo_path=self.repo_path)
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return str(self.current)
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return '<Git {}>'.format(str(self))

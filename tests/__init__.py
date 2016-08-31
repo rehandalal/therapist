@@ -6,6 +6,8 @@ from contextlib import contextmanager
 import six
 import yaml
 
+from therapist.plugins import Plugin
+from therapist.runner.result import Result
 from therapist.utils.git import Git
 
 
@@ -103,3 +105,20 @@ class Project(object):
         """Modify file permissions."""
         path = os.path.join(self.path, path)
         os.chmod(path, mode)
+
+
+class SimplePlugin(Plugin):
+    """A very basic implementation of a plugin."""
+
+    def execute(self, **kwargs):
+        files = kwargs.get('files')
+        result = Result(self)
+
+        for filename in files:
+            with open(filename, 'r') as f:
+                if 'PLUGIN: FAIL' in f.read():
+                    result.mark_complete(status=Result.FAILURE)
+                    return result
+
+        result.mark_complete(status=Result.SUCCESS)
+        return result

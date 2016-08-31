@@ -3,8 +3,8 @@ import pytest
 import six
 
 from therapist.runner import Runner
-from therapist.runner.actions import Action, ActionCollection
-from therapist.runner.results import Result, ResultCollection
+from therapist.runner.action import Action, ActionCollection
+from therapist.runner.result import Result, ResultCollection
 
 from . import Project
 
@@ -64,11 +64,6 @@ class TestResult(object):
 
         r.status = Result.ERROR
         assert str(r) == 'ERROR'
-
-    def test_repr(self):
-        a = Action('flake8')
-        r = Result(a)
-        assert r.__repr__() == '<Result flake8>'
 
     def test_action_validation(self):
         with pytest.raises(TypeError):
@@ -298,9 +293,10 @@ class TestRunner(object):
 
         assert err.value.code == Runner.Misconfigured.EMPTY_CONFIG
 
-    def test_no_actions_in_config(self, project):
+    def test_no_actions_or_plugins_in_config(self, project):
         data = project.get_config_data()
         data.pop('actions')
+        data.pop('plugins')
         project.set_config_data(data)
 
         with pytest.raises(Runner.Misconfigured) as err:
@@ -393,7 +389,7 @@ class TestRunner(object):
         with pytest.raises(r.actions.DoesNotExist):
             r.run_process(r.actions.get('notanaction'))
 
-    def test_run_action_success(self, project):
+    def test_run_process_success(self, project):
         project.write('pass.py')
         project.git.add('.')
 
@@ -405,7 +401,7 @@ class TestRunner(object):
         assert message == ('#{bright}Linting ............................................................. '
                            '#{green}[SUCCESS]')
 
-    def test_run_action_failure(self, project):
+    def test_run_process_failure(self, project):
         project.write('fail.txt')
         project.git.add('.')
 
@@ -417,7 +413,7 @@ class TestRunner(object):
         assert message == ('#{bright}Linting ............................................................. '
                            '#{red}[FAILURE]')
 
-    def test_run_action_skipped(self, project):
+    def test_run_process_skipped(self, project):
         project.write('.ignore.pass.py')
         project.git.add('.')
 
@@ -428,7 +424,7 @@ class TestRunner(object):
         assert message == ('#{bright}Linting ............................................................. '
                            '#{cyan}[SKIPPED]')
 
-    def test_run_action_error(self, project):
+    def test_run_process_error(self, project):
         for i in range(1000):
             project.write('pass{}.txt'.format(str(i).ljust(200, '_')))
         project.git.add('.')
@@ -441,7 +437,7 @@ class TestRunner(object):
         assert message == ('#{bright}Linting ............................................................. '
                            '#{red}[ERROR!!]')
 
-    def test_run_action_skips_deleted(self, project):
+    def test_run_process_skips_deleted(self, project):
         project.write('pass.py')
         project.git.add('.')
         project.git.commit(m='Add file.')
@@ -535,7 +531,7 @@ class TestRunner(object):
 
         assert project.read('pass.py') == 'changed'
 
-    def test_output_encoded(self, project, capsys):
+    def test_output_encoded(self, project):
         project.write('fail.txt')
         project.git.add('.')
 
@@ -546,8 +542,24 @@ class TestRunner(object):
 
         assert 'fail.txt' in r.files
 
-        out, err = capsys.readouterr()
+        assert isinstance(message, six.text_type)
+        assert 'b"' not in message
+        assert "b'" not in message
 
-        assert isinstance(out, six.text_type)
-        assert 'b"' not in out
-        assert "b'" not in out
+    def test_run_process_no_settings(self, tmpdir):
+        config_data = {
+            'actions': {
+                'no-settings': None
+            }
+        }
+        project = Project(tmpdir.strpath, config_data=config_data)
+
+        project.write('pass.py')
+        project.git.add('.')
+
+        r = Runner(project.path)
+        result, message = r.run_process(r.actions.get('no-settings'))
+
+        assert 'pass.py' in r.files
+        assert message == ('#{bright}no-settings ......................................................... '
+                           '#{cyan}[SKIPPED]')

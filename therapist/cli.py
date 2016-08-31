@@ -18,7 +18,7 @@ from therapist.messages import (NOT_GIT_REPO_MSG, HOOK_ALREADY_INSTALLED_MSG, EX
                                 REMOVING_LEGACY_HOOK_MSG, DONE_REMOVING_LEGACY_HOOK_MSG, UNINSTALLING_HOOK_MSG,
                                 DONE_UNINSTALLING_HOOK_MSG, MISCONFIGURED_MSG, UNSTAGED_CHANGES_MSG)
 from therapist.runner import Runner
-from therapist.runner.results import ResultCollection
+from therapist.runner.result import ResultCollection
 from therapist.utils.filesystem import current_git_dir, list_files
 from therapist.utils.hook import identify_hook
 from therapist.utils.git import Git

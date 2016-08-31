@@ -21,7 +21,7 @@ class Status(object):
             status = '{:3}{}'.format(status, self.path)
         return status
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return '<Status {}>'.format(self.path)
 
     @property

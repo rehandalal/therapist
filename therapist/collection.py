@@ -16,10 +16,10 @@ class Collection(object):
     def __getitem__(self, item):
         return self._objects[item]
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return str(self._objects)
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return '<{}>'.format(self.__class__.__name__)
 
     def __bool__(self):

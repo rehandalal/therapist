@@ -470,6 +470,7 @@ class TestRun(object):
     def test_misconfigured(self, cli_runner, project):
         config_data = project.get_config_data()
         config_data.pop('actions')
+        config_data.pop('plugins')
         project.set_config_data(config_data)
 
         with chdir(project.path):
@@ -516,6 +517,10 @@ class TestRun(object):
 
 class TestHook(object):
     def test_action_failure(self, cli_runner, project):
+        config_data = project.get_config_data()
+        config_data.pop('plugins')
+        project.set_config_data(config_data)
+
         with chdir(project.path):
             cli_runner.invoke(cli.install)
         assert project.exists('.git/hooks/pre-commit')
@@ -530,6 +535,10 @@ class TestHook(object):
         assert 'fail.py' in out
 
     def test_action_success(self, cli_runner, project):
+        config_data = project.get_config_data()
+        config_data.pop('plugins')
+        project.set_config_data(config_data)
+
         with chdir(project.path):
             cli_runner.invoke(cli.install)
         assert project.exists('.git/hooks/pre-commit')
@@ -545,6 +554,10 @@ class TestHook(object):
         assert not err
 
     def test_legacy_hook(self, cli_runner, project):
+        config_data = project.get_config_data()
+        config_data.pop('plugins')
+        project.set_config_data(config_data)
+
         with chdir(project.path):
             cli_runner.invoke(cli.install)
         assert project.exists('.git/hooks/pre-commit')
@@ -563,6 +576,10 @@ class TestHook(object):
         assert not err
 
     def test_legacy_hook_fails(self, cli_runner, project):
+        config_data = project.get_config_data()
+        config_data.pop('plugins')
+        project.set_config_data(config_data)
+
         with chdir(project.path):
             cli_runner.invoke(cli.install)
         assert project.exists('.git/hooks/pre-commit')

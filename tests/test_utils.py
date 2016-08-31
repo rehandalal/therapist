@@ -1,17 +1,7 @@
-from therapist.utils.git import Git, Status
+from therapist.utils.git import Status
 
 
-class TestGit(object):
-    def test_str(self):
-        g = Git()
-        assert g.__str__() == "['git']"
-
-    def test_repr(self):
-        g = Git()
-        assert g.__repr__() == "<Git ['git']>"
-
-
-class TestStatus(object):
+class TestGitStatus(object):
     def test_parsing_from_string(self):
         s = Status('M  test.py')
         assert s.state == 'M'
@@ -61,7 +51,3 @@ class TestStatus(object):
         text = 'AM  test.py'
         s = Status(text)
         assert s.__str__() == text
-
-    def test_repr(self):
-        s = Status('M  test.py')
-        assert s.__repr__() == '<Status test.py>'

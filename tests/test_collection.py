@@ -1,18 +1,9 @@
 import pytest
 
-from therapist.collections import Collection
+from therapist.collection import Collection
 
 
 class TestCollection(object):
-    def test_str(self):
-        items = ['a', 'b', 'c']
-        s = Collection(items)
-        assert str(s) == str(items)
-
-    def test_repr(self):
-        s = Collection()
-        assert s.__repr__() == '<Collection>'
-
     def test_append(self):
         s = Collection()
         assert len(s.objects) == 0
@@ -30,3 +21,10 @@ class TestCollection(object):
 
         with pytest.raises(TypeError):
             s.append('True')
+
+    def test_bool(self):
+        s = Collection()
+        assert not bool(s)
+
+        s.append('item')
+        assert bool(s)

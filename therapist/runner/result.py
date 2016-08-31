@@ -2,9 +2,8 @@ import time
 
 from xml.etree import ElementTree
 
-from therapist.collections import Collection
-from therapist.processes import Process
-
+from therapist.collection import Collection
+from therapist.process import Process
 
 class Result(object):
     SUCCESS = 0
@@ -25,12 +24,12 @@ class Result(object):
             return 'SUCCESS'
         elif self.is_failure:
             return 'FAILURE'
-        elif self.is_skip:
-            return 'SKIP'
-        else:
+        elif self.is_error:
             return 'ERROR'
+        else:
+            return 'SKIP'
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return '<Result {}>'.format(self.process)
 
     @property
