@@ -5,6 +5,7 @@ from xml.etree import ElementTree
 from therapist.collection import Collection
 from therapist.process import Process
 
+
 class Result(object):
     SUCCESS = 0
     FAILURE = 1
@@ -136,12 +137,12 @@ class ResultCollection(Collection):
 
                 status = 'FAILED' if result.is_failure else 'ERROR'
                 text += '{}: {}\n'.format(status, result.process)
-                text += '{}\n'.format(''.ljust(79, '='))
+                text += '{}\n#{{reset_all}}'.format(''.ljust(79, '='))
 
                 if result.error:
-                    text += '#{{reset_all}}{}'.format(result.error)
+                    text += result.error
                 else:
-                    text += '#{{reset_all}}{}'.format(result.output)
+                    text += result.output
         return text
 
     def dump_junit(self):

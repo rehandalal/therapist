@@ -1,8 +1,5 @@
 import subprocess
 
-from pathspec import PathSpec
-from pathspec.patterns import GitWildMatchPattern
-
 from therapist.collection import Collection
 from therapist.exc import Error
 from therapist.process import Process
@@ -10,49 +7,6 @@ from therapist.runner.result import Result
 
 
 class Action(Process):
-    def __init__(self, *args, **kwargs):
-        self._include = None
-        self.include = kwargs.pop('include', None)
-
-        self._exclude = None
-        self.exclude = kwargs.pop('exclude', None)
-
-        super(Action, self).__init__(*args, **kwargs)
-
-    @property
-    def include(self):
-        return self._include
-
-    @include.setter
-    def include(self, value):
-        if value is None:
-            self._include = []
-        else:
-            self._include = value if isinstance(value, list) else [value]
-
-    @property
-    def exclude(self):
-        return self._exclude
-
-    @exclude.setter
-    def exclude(self, value):
-        if value is None:
-            self._exclude = []
-        else:
-            self._exclude = value if isinstance(value, list) else [value]
-
-    def filter_files(self, files):
-        if self.include:
-            spec = PathSpec(map(GitWildMatchPattern, self.include))
-            files = list(spec.match_files(files))
-
-        if self.exclude:
-            spec = PathSpec(map(GitWildMatchPattern, self.exclude))
-            exclude = list(spec.match_files(files))
-            files = list(filter(lambda f: f not in exclude, files))
-
-        return files
-
     def execute(self, **kwargs):
         files = self.filter_files(kwargs.get('files'))
 

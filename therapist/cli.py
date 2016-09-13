@@ -174,7 +174,7 @@ def uninstall(**kwargs):
 @click.option('--use-tracked-files', is_flag=True, help='Runs actions against all tracked files.')
 @click.option('--quiet', '-q', is_flag=True, help='Suppress all output, unless an error occurs.')
 def run(**kwargs):
-    """Run actions as a batch or individually."""
+    """Run the Therapist suite."""
     paths = kwargs.pop('paths', ())
     action = kwargs.pop('action')
     plugin = kwargs.pop('plugin')
