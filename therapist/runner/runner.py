@@ -106,8 +106,8 @@ class Runner(object):
 
     def run_process(self, process):
         """Runs a single action."""
-        message = '#{bright}'
-        message += '{} '.format(str(process)[:68]).ljust(69, '.')
+        message = u'#{bright}'
+        message += u'{} '.format(str(process)[:68]).ljust(69, '.')
 
         if not self.include_unstaged_changes:
             self.git.stash(keep_index=True, quiet=True)
@@ -122,12 +122,12 @@ class Runner(object):
                 self.git.stash.pop(index=True, quiet=True)
 
         if result.is_success:
-            message += ' #{green}[SUCCESS]'
+            message += u' #{green}[SUCCESS]'
         elif result.is_failure:
-            message += ' #{red}[FAILURE]'
+            message += u' #{red}[FAILURE]'
         elif result.is_skip:
-            message += ' #{cyan}[SKIPPED]'
+            message += u' #{cyan}[SKIPPED]'
         elif result.is_error:
-            message += ' #{red}[ERROR!!]'
+            message += u' #{red}[ERROR!!]'
 
-        return result, message.decode('utf-8')
+        return result, message
