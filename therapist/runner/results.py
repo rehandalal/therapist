@@ -1,6 +1,5 @@
 from xml.etree import ElementTree
 
-from therapist.printer import BOLD, RED, stylize
 from therapist.runner.actions import Action
 from therapist.runner.collections import Collection
 
@@ -107,27 +106,23 @@ class ResultCollection(Collection):
             return count
         return len(self.objects)
 
-    def dump(self, colors=False):
+    def dump(self):
         """Returns the results in string format."""
-        def _(msg, styles=()):
-            if colors:
-                msg = stylize(msg, styles)
-            return msg
-
         text = ''
         for result in self.objects:
             if result.is_failure or result.is_error:
-                text += _('{}\n'.format(''.ljust(79, '=')), (RED, BOLD,))
+                text += '\n#{red}#{bright}'
+                text += '{}\n'.format(''.ljust(79, '='))
 
                 status = 'FAILED' if result.is_failure else 'ERROR'
-                text += _('{}: {}\n'.format(status, result.action), (RED, BOLD,))
+                text += '{}: {}\n'.format(status, result.action)
 
-                text += _('{}\n'.format(''.ljust(79, '=')), (RED, BOLD,))
+                text += '{}\n'.format(''.ljust(79, '='))
 
                 if result.error:
-                    text += _(result.error)
+                    text += '#{{reset_all}}{}'.format(result.error)
                 else:
-                    text += _(result.output)
+                    text += '#{{reset_all}}{}'.format(result.output)
         return text
 
     def dump_junit(self):

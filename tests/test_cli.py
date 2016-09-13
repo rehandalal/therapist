@@ -38,7 +38,7 @@ class TestInstall(object):
     def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.install)
-        assert cli.NOT_GIT_REPO_MESSAGE in result.output
+        assert 'Not a git repository (or any of the parent directories)' in result.output
         assert result.exception
         assert result.exit_code == 1
 
@@ -160,7 +160,7 @@ class TestUninstall(object):
     def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.uninstall)
-            assert cli.NOT_GIT_REPO_MESSAGE in result.output
+            assert 'Not a git repository (or any of the parent directories)' in result.output
             assert result.exception
             assert result.exit_code == 1
 
@@ -296,7 +296,7 @@ class TestRun(object):
     def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.run)
-        assert cli.NOT_GIT_REPO_MESSAGE in result.output
+        assert 'Not a git repository (or any of the parent directories)' in result.output
         assert result.exception
         assert result.exit_code == 1
 
@@ -475,6 +475,41 @@ class TestRun(object):
         with chdir(project.path):
             result = cli_runner.invoke(cli.run)
             assert 'Misconfigured:' in result.output
+            assert result.exception
+            assert result.exit_code == 1
+
+    def test_quiet(self, cli_runner, project):
+        project.write('fail.py')
+        project.git.add('.')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['--quiet'])
+            assert result.output == ''
+            assert result.exception
+            assert result.exit_code == 2
+
+    def test_junit_xml(self, cli_runner, project):
+        project.write('fail.py')
+        project.git.add('.')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['--junit-xml=junit.xml'])
+            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert result.exception
+            assert result.exit_code == 2
+            assert project.exists('junit.xml')
+
+            junit_xml = project.read('junit.xml')
+            assert junit_xml.startswith('<?xml version="1.0" encoding="UTF-8"?>')
+
+    def test_errors(self, cli_runner, project):
+        for i in range(1000):
+            project.write('pass{}.txt'.format(str(i).ljust(200, '_')))
+        project.git.add('.')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run)
+            assert re.search('Linting.+?\[ERROR!!]', result.output)
             assert result.exception
             assert result.exit_code == 1
 

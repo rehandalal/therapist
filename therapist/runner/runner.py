@@ -7,7 +7,6 @@ from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
 from therapist.git import Git, Status
-from therapist.printer import BOLD, CYAN, fsprint, GREEN, RED
 from therapist.runner.actions import Action, ActionCollection
 from therapist.runner.results import Result
 
@@ -25,14 +24,13 @@ class Runner(object):
             super(self.__class__, self).__init__(*args, **kwargs)
 
     def __init__(self, cwd, files=None, include_unstaged=False, include_untracked=False,
-                 include_unstaged_changes=False, quiet=False):
+                 include_unstaged_changes=False):
         self.actions = ActionCollection()
         self.unstaged_changes = False
 
         self.cwd = os.path.abspath(cwd)
         self.git = Git(repo_path=self.cwd)
         self.include_unstaged_changes = include_unstaged_changes or include_unstaged
-        self.quiet = quiet
 
         # Try and load the config file
         try:
@@ -128,9 +126,9 @@ class Runner(object):
         """Runs a single action."""
         action = self.actions.get(name)
 
-        if not self.quiet:
-            description = action.description if action.description else action.name
-            fsprint('{} '.format(description[:68]).ljust(69, '.'), (BOLD,), end='')
+        description = action.description if action.description else action.name
+        message = '#{bright}'
+        message += '{} '.format(description[:68]).ljust(69, '.')
 
         if not self.include_unstaged_changes:
             self.git.stash(keep_index=True, quiet=True)
@@ -144,14 +142,13 @@ class Runner(object):
                 self.git.reset(hard=True, quiet=True)
                 self.git.stash.pop(index=True, quiet=True)
 
-        if not self.quiet:
-            if result.is_success:
-                fsprint(' [SUCCESS]', (GREEN, BOLD,))
-            elif result.is_failure:
-                fsprint(' [FAILURE]', (RED, BOLD,))
-            elif result.is_skip:
-                fsprint(' [SKIPPED]', (CYAN, BOLD,))
-            elif result.is_error:
-                fsprint(' [ERROR!!]', (RED, BOLD,))
+        if result.is_success:
+            message += ' #{green}[SUCCESS]'
+        elif result.is_failure:
+            message += ' #{red}[FAILURE]'
+        elif result.is_skip:
+            message += ' #{cyan}[SKIPPED]'
+        elif result.is_error:
+            message += ' #{red}[ERROR!!]'
 
-        return result
+        return result, message
