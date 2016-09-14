@@ -17,6 +17,7 @@ from therapist.messages import (NOT_GIT_REPO_MSG, HOOK_ALREADY_INSTALLED_MSG, EX
                                 CONFIRM_RESTORE_LEGACY_HOOK_MSG, COPYING_LEGACY_HOOK_MSG, DONE_COPYING_LEGACY_HOOK_MSG,
                                 REMOVING_LEGACY_HOOK_MSG, DONE_REMOVING_LEGACY_HOOK_MSG, UNINSTALLING_HOOK_MSG,
                                 DONE_UNINSTALLING_HOOK_MSG, MISCONFIGURED_MSG, UNSTAGED_CHANGES_MSG)
+from therapist.plugins.loader import list_plugins
 from therapist.runner import Runner
 from therapist.runner.result import ResultCollection
 from therapist.utils.filesystem import current_git_dir, list_files
@@ -30,7 +31,7 @@ git = Git()
 
 
 def output(message, **kwargs):
-    def repl(match):
+    def repl(match):  # pragma: no cover
         attr = match.group(0)[2:-1].upper()
         if hasattr(colorama.Fore, attr):
             return getattr(colorama.Fore, attr)
@@ -215,6 +216,12 @@ def run(**kwargs):
         runner = Runner(repo_root, **kwargs)
     except Runner.Misconfigured as err:
         output(MISCONFIGURED_MSG.format(err.message))
+
+        if err.code == Runner.Misconfigured.PLUGIN_NOT_INSTALLED:
+            output('Installed plugins:')
+            for p in list_plugins():
+                output(p)
+
         exit(1)
     else:
         results = ResultCollection()

@@ -3,12 +3,12 @@ from therapist.exc import Error
 from therapist.process import Process
 
 
-class Plugin(Process):
+class Plugin(Process):  # pragma: no cover
     def __repr__(self):
         return '<Plugin {}>'.format(self.name)
 
     def execute(self, **kwargs):
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
 
 
 class PluginCollection(Collection):

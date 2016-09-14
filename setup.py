@@ -6,9 +6,15 @@ import os
 from setuptools import find_packages, setup
 
 
-DEPENDENCIES = ['click', 'colorama', 'pathspec', 'PyYAML', 'six']
-ROOT = os.path.abspath(os.path.dirname(__file__))
+DEPENDENCIES = [
+    'click >= 6.6',
+    'colorama >= 0.3.7',
+    'pathspec >= 0.5.0',
+    'PyYAML >= 3.12',
+    'six >= 1.10.0',
+]
 
+ROOT = os.path.abspath(os.path.dirname(__file__))
 
 version = __import__('therapist').__version__
 

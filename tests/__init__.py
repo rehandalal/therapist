@@ -117,7 +117,7 @@ class SimplePlugin(Plugin):
         for filename in files:
             with open(filename, 'r') as f:
                 if 'PLUGIN: FAIL' in f.read():
-                    result.mark_complete(status=Result.FAILURE)
+                    result.mark_complete(status=Result.FAILURE, output='', error='')
                     return result
 
         result.mark_complete(status=Result.SUCCESS)

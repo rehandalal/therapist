@@ -2,6 +2,7 @@ import os
 import yaml
 
 from therapist.exc import Error
+from therapist.plugins.exc import InvalidPlugin, PluginNotInstalled
 from therapist.plugins.loader import load_plugin
 from therapist.plugins.plugin import PluginCollection
 from therapist.runner.action import Action, ActionCollection
@@ -15,6 +16,8 @@ class Runner(object):
         EMPTY_CONFIG = 3
         ACTIONS_WRONGLY_CONFIGURED = 4
         PLUGINS_WRONGLY_CONFIGURED = 5
+        PLUGIN_NOT_INSTALLED = 6
+        PLUGIN_INVALID = 7
 
         def __init__(self, *args, **kwargs):
             self.code = kwargs.pop('code', None)
@@ -69,7 +72,14 @@ class Runner(object):
                                                  code=self.Misconfigured.PLUGINS_WRONGLY_CONFIGURED)
 
                     for plugin_name in plugins:
-                        plugin = load_plugin(plugin_name)
+                        try:
+                            plugin = load_plugin(plugin_name)
+                        except PluginNotInstalled:
+                            raise self.Misconfigured('Plugin `{}` is not installed.'.format(plugin_name),
+                                                     code=self.Misconfigured.PLUGIN_NOT_INSTALLED)
+                        except InvalidPlugin:
+                            raise self.Misconfigured('Plugin `{}` is not a valid plugin.'.format(plugin_name),
+                                                     code=self.Misconfigured.PLUGIN_INVALID)
                         settings = plugins[plugin_name]
                         if settings is None:
                             settings = {}

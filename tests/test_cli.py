@@ -341,6 +341,47 @@ class TestRun(object):
             assert result.exception
             assert result.exit_code == 1
 
+    def test_plugin_not_installed(self, cli_runner, project):
+        project.write('.therapist.yml', 'plugins:\n  notsimple: ~')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run)
+            assert 'Installed plugins:' in result.output
+            assert 'simple' in result.output
+            assert result.exception
+            assert result.exit_code == 1
+
+    def test_plugin(self, cli_runner, project):
+        project.write('pass.py')
+        project.git.add('.')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['-p', 'simple'])
+            assert re.search('simple.+?\[SUCCESS]', result.output)
+            assert not result.exception
+            assert result.exit_code == 0
+
+    def test_plugin_fails(self, cli_runner, project, mock_plugin):
+        project.write('try.py', 'PLUGIN: FAIL')
+        project.git.add('.')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['-p', 'simple'])
+            assert re.search('simple.+?\[FAILURE]', result.output)
+            assert result.exception
+            assert result.exit_code == 2
+
+    def test_plugin_invalid(self, cli_runner, project, mock_plugin):
+        project.write('fail.py')
+        project.git.add('.')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['-p', 'notaplugin'])
+            assert 'Available plugins:' in result.output
+            assert 'simple' in result.output
+            assert result.exception
+            assert result.exit_code == 1
+
     def test_on_file(self, cli_runner, project):
         project.write('pass.py')
         project.git.add('.')

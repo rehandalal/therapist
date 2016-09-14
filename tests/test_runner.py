@@ -319,6 +319,37 @@ class TestRunner(object):
 
         assert err.value.code == Runner.Misconfigured.ACTIONS_WRONGLY_CONFIGURED
 
+    def test_plugins_wrongly_configured(self, project):
+        project.write('.therapist.yml', 'plugins')
+
+        with pytest.raises(Runner.Misconfigured) as err:
+            Runner(project.path)
+
+        assert err.value.code == Runner.Misconfigured.PLUGINS_WRONGLY_CONFIGURED
+
+        project.write('.therapist.yml', 'plugins:\n  simple')
+
+        with pytest.raises(Runner.Misconfigured) as err:
+            Runner(project.path)
+
+        assert err.value.code == Runner.Misconfigured.PLUGINS_WRONGLY_CONFIGURED
+
+    def test_plugin_not_installed(self, project):
+        project.write('.therapist.yml', 'plugins:\n  notsimple: ~')
+
+        with pytest.raises(Runner.Misconfigured) as err:
+            Runner(project.path)
+
+        assert err.value.code == Runner.Misconfigured.PLUGIN_NOT_INSTALLED
+
+    def test_plugin_invalid(self, project, mock_plugin):
+        mock_plugin(plugin_class=Runner)
+
+        with pytest.raises(Runner.Misconfigured) as err:
+            Runner(project.path)
+
+        assert err.value.code == Runner.Misconfigured.PLUGIN_INVALID
+
     def test_unstaged_changes(self, project):
         project.write('pass.txt', 'FAIL')
         project.git.add('.')
