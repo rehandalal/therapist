@@ -106,26 +106,12 @@ class ResultCollection(Collection):
 
     @property
     def execution_time(self):
-        execution_time = 0
-        for result in self.objects:
-            execution_time += result.execution_time
-        return execution_time
+        return sum(result.execution_time for result in self.objects)
 
-    def count(self, status=None):
-        if status:
-            count = 0
-            for result in self.objects:
-                if result.status == status:
-                    count += 1
-            return count
+    def count(self, **kwargs):
+        if 'status' in kwargs:
+            return sum(1 for result in self.objects if result.status == kwargs.get('status'))
         return len(self.objects)
-
-    def count_skipped(self):
-        count = 0
-        for result in self.objects:
-            if result.status is None:
-                count += 1
-        return count
 
     def dump(self):
         """Returns the results in string format."""
@@ -148,8 +134,8 @@ class ResultCollection(Collection):
     def dump_junit(self):
         """Returns a string containing XML mapped to the JUnit schema."""
         testsuites = ElementTree.Element('testsuites', name='therapist', time=str(round(self.execution_time, 2)),
-                                         tests=str(self.count()), failures=str(self.count(Result.FAILURE)),
-                                         errors=str(self.count(Result.ERROR)))
+                                         tests=str(self.count()), failures=str(self.count(status=Result.FAILURE)),
+                                         errors=str(self.count(status=Result.ERROR)))
 
         for result in self.objects:
             failures = '1' if result.is_failure else '0'

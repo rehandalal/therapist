@@ -229,8 +229,7 @@ def run(**kwargs):
         if runner.unstaged_changes and not quiet:
             output(UNSTAGED_CHANGES_MSG, end='\n\n')
 
-        processes = [a for a in runner.actions]
-        processes += [p for p in runner.plugins]
+        processes = list(runner.actions) + list(runner.plugins)
 
         if plugin:
             try:

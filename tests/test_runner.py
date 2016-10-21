@@ -76,8 +76,8 @@ class TestResultCollection(object):
         r2 = Result(Action('eslint'))
         rs = ResultCollection([r1, r2])
         assert rs.count() == 2
-        assert rs.count_skipped() == 1
-        assert rs.count(Result.FAILURE) == 0
+        assert rs.count(status=None) == 1
+        assert rs.count(status=Result.FAILURE) == 0
 
     def test_has_success(self):
         r = Result(Action('flake8'), status=Result.SUCCESS)
