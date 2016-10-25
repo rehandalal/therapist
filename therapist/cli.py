@@ -8,9 +8,7 @@ import colorama
 
 from six import print_
 
-from therapist import Runner
-from therapist._version import __version__
-from therapist.git import Git
+from therapist import __version__
 from therapist.messages import (NOT_GIT_REPO_MSG, HOOK_ALREADY_INSTALLED_MSG, EXISTING_HOOK_MSG,
                                 CONFIRM_PRESERVE_LEGACY_HOOK_MSG, COPYING_HOOK_MSG, DONE_COPYING_HOOK_MSG,
                                 CONFIRM_REPLACE_HOOK_MSG, INSTALL_ABORTED_MSG, INSTALLING_HOOK_MSG,
@@ -19,8 +17,12 @@ from therapist.messages import (NOT_GIT_REPO_MSG, HOOK_ALREADY_INSTALLED_MSG, EX
                                 CONFIRM_RESTORE_LEGACY_HOOK_MSG, COPYING_LEGACY_HOOK_MSG, DONE_COPYING_LEGACY_HOOK_MSG,
                                 REMOVING_LEGACY_HOOK_MSG, DONE_REMOVING_LEGACY_HOOK_MSG, UNINSTALLING_HOOK_MSG,
                                 DONE_UNINSTALLING_HOOK_MSG, MISCONFIGURED_MSG, UNSTAGED_CHANGES_MSG)
-from therapist.runner.results import ResultCollection
-from therapist.utils import current_git_dir, identify_hook, list_files
+from therapist.plugins.loader import list_plugins
+from therapist.runner import Runner
+from therapist.runner.result import ResultCollection
+from therapist.utils.filesystem import current_git_dir, list_files
+from therapist.utils.hook import identify_hook
+from therapist.utils.git import Git
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -29,7 +31,7 @@ git = Git()
 
 
 def output(message, **kwargs):
-    def repl(match):
+    def repl(match):  # pragma: no cover
         attr = match.group(0)[2:-1].upper()
         if hasattr(colorama.Fore, attr):
             return getattr(colorama.Fore, attr)
@@ -169,12 +171,14 @@ def uninstall(**kwargs):
 @click.option('--include-untracked', is_flag=True, help='Include untracked files.')
 @click.option('--junit-xml', default=None, help='Create a junit-xml style report file at the given path.')
 @click.option('--no-color', is_flag=True, help='Disables colors and other rich output.')
+@click.option('--plugin', '-p', default=None, help='A name of a specific plugin to be run.')
 @click.option('--use-tracked-files', is_flag=True, help='Runs actions against all tracked files.')
 @click.option('--quiet', '-q', is_flag=True, help='Suppress all output, unless an error occurs.')
 def run(**kwargs):
-    """Run actions as a batch or individually."""
+    """Run the Therapist suite."""
     paths = kwargs.pop('paths', ())
     action = kwargs.pop('action')
+    plugin = kwargs.pop('plugin')
     junit_xml = kwargs.pop('junit_xml')
     use_tracked_files = kwargs.pop('use_tracked_files')
     quiet = kwargs.pop('quiet')
@@ -212,6 +216,12 @@ def run(**kwargs):
         runner = Runner(repo_root, **kwargs)
     except Runner.Misconfigured as err:
         output(MISCONFIGURED_MSG.format(err.message))
+
+        if err.code == Runner.Misconfigured.PLUGIN_NOT_INSTALLED:
+            output('Installed plugins:')
+            for p in list_plugins():
+                output(p)
+
         exit(1)
     else:
         results = ResultCollection()
@@ -219,25 +229,34 @@ def run(**kwargs):
         if runner.unstaged_changes and not quiet:
             output(UNSTAGED_CHANGES_MSG, end='\n\n')
 
-        actions = [a.name for a in runner.actions]
+        processes = list(runner.actions) + list(runner.plugins)
+
+        if plugin:
+            try:
+                processes = [runner.plugins.get(plugin)]
+            except runner.plugins.DoesNotExist as err:
+                output('{}\nAvailable plugins:'.format(err.message))
+
+                for p in runner.plugins:
+                    output(p.name)
+                exit(1)
 
         if action:
-            actions = [action]
+            try:
+                processes = [runner.actions.get(action)]
+            except runner.actions.DoesNotExist as err:
+                output('{}\nAvailable actions:'.format(err.message))
 
-        try:
-            for action in actions:
-                result, message = runner.run_action(action)
-                results.append(result)
+                for a in runner.actions:
+                    output(a.name)
+                exit(1)
 
-                if not quiet:
-                    output(message)
-        except runner.actions.DoesNotExist as err:
-            output('{}\nAvailable actions:'.format(err.message))
+        for process in processes:
+            result, message = runner.run_process(process)
+            results.append(result)
 
-            for action in runner.actions:
-                output(action.name)
-
-            exit(0)
+            if not quiet:
+                output(message)
 
         if junit_xml:
             with open(junit_xml, 'w+') as f:

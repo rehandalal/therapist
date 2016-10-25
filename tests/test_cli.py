@@ -1,9 +1,9 @@
 import re
 
-from therapist import cli
-from therapist._version import __version__
-from therapist.context_managers import chdir
-from therapist.utils import identify_hook
+from therapist import cli, __version__
+from therapist.utils.hook import identify_hook
+
+from . import chdir
 
 
 class TestCLI(object):
@@ -338,8 +338,49 @@ class TestRun(object):
             result = cli_runner.invoke(cli.run, ['-a', 'notanaction'])
             assert 'Available actions:' in result.output
             assert 'lint' in result.output
+            assert result.exception
+            assert result.exit_code == 1
+
+    def test_plugin_not_installed(self, cli_runner, project):
+        project.write('.therapist.yml', 'plugins:\n  notsimple: ~')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run)
+            assert 'Installed plugins:' in result.output
+            assert 'simple' in result.output
+            assert result.exception
+            assert result.exit_code == 1
+
+    def test_plugin(self, cli_runner, project):
+        project.write('pass.py')
+        project.git.add('.')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['-p', 'simple'])
+            assert re.search('simple.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
+
+    def test_plugin_fails(self, cli_runner, project, mock_plugin):
+        project.write('try.py', 'PLUGIN: FAIL')
+        project.git.add('.')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['-p', 'simple'])
+            assert re.search('simple.+?\[FAILURE]', result.output)
+            assert result.exception
+            assert result.exit_code == 2
+
+    def test_plugin_invalid(self, cli_runner, project, mock_plugin):
+        project.write('fail.py')
+        project.git.add('.')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['-p', 'notaplugin'])
+            assert 'Available plugins:' in result.output
+            assert 'simple' in result.output
+            assert result.exception
+            assert result.exit_code == 1
 
     def test_on_file(self, cli_runner, project):
         project.write('pass.py')
@@ -470,6 +511,7 @@ class TestRun(object):
     def test_misconfigured(self, cli_runner, project):
         config_data = project.get_config_data()
         config_data.pop('actions')
+        config_data.pop('plugins')
         project.set_config_data(config_data)
 
         with chdir(project.path):
@@ -516,6 +558,10 @@ class TestRun(object):
 
 class TestHook(object):
     def test_action_failure(self, cli_runner, project):
+        config_data = project.get_config_data()
+        config_data.pop('plugins')
+        project.set_config_data(config_data)
+
         with chdir(project.path):
             cli_runner.invoke(cli.install)
         assert project.exists('.git/hooks/pre-commit')
@@ -530,6 +576,10 @@ class TestHook(object):
         assert 'fail.py' in out
 
     def test_action_success(self, cli_runner, project):
+        config_data = project.get_config_data()
+        config_data.pop('plugins')
+        project.set_config_data(config_data)
+
         with chdir(project.path):
             cli_runner.invoke(cli.install)
         assert project.exists('.git/hooks/pre-commit')
@@ -545,6 +595,10 @@ class TestHook(object):
         assert not err
 
     def test_legacy_hook(self, cli_runner, project):
+        config_data = project.get_config_data()
+        config_data.pop('plugins')
+        project.set_config_data(config_data)
+
         with chdir(project.path):
             cli_runner.invoke(cli.install)
         assert project.exists('.git/hooks/pre-commit')
@@ -563,6 +617,10 @@ class TestHook(object):
         assert not err
 
     def test_legacy_hook_fails(self, cli_runner, project):
+        config_data = project.get_config_data()
+        config_data.pop('plugins')
+        project.set_config_data(config_data)
+
         with chdir(project.path):
             cli_runner.invoke(cli.install)
         assert project.exists('.git/hooks/pre-commit')

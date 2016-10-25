@@ -6,3 +6,5 @@ actions:
       - "*.py"
     exclude: ".ignore*"
     run: ./scripts/lint.py {files}
+plugins:
+  simple: ~

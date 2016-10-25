@@ -1,45 +1,48 @@
+import time
+
 from xml.etree import ElementTree
 
-from therapist.runner.actions import Action
-from therapist.runner.collections import Collection
+from therapist.collection import Collection
+from therapist.process import Process
 
 
 class Result(object):
     SUCCESS = 0
     FAILURE = 1
-    SKIP = 2
-    ERROR = 3
+    ERROR = 2
 
-    def __init__(self, action, status=SKIP, output=None, error=None, execution_time=0.0):
-        self._action = None
-        self.action = action
+    def __init__(self, process, status=None):
+        self._process = None
+        self.process = process
         self.status = status
-        self.output = output
-        self.error = error
-        self.execution_time = execution_time
+        self.output = None
+        self.error = None
+        self.start_time = time.time()
+        self.end_time = self.start_time
 
     def __str__(self):
         if self.is_success:
             return 'SUCCESS'
         elif self.is_failure:
             return 'FAILURE'
-        elif self.is_skip:
-            return 'SKIP'
-        else:
+        elif self.is_error:
             return 'ERROR'
+        else:
+            return 'SKIP'
 
-    def __repr__(self):
-        return '<Result {}>'.format(self.action)
+    def __repr__(self):  # pragma: no cover
+        return '<Result {}>'.format(self.process)
 
     @property
-    def action(self):
-        return self._action
+    def process(self):
+        return self._process
 
-    @action.setter
-    def action(self, value):
-        if not isinstance(value, Action):
-            raise TypeError('Expected an `Action` object.')
-        self._action = value
+    @process.setter
+    def process(self, value):
+        if not (isinstance(value, Process)):
+            raise TypeError('Expected a `Process` object.')
+
+        self._process = value
 
     @property
     def is_success(self):
@@ -50,12 +53,23 @@ class Result(object):
         return self.status == self.FAILURE
 
     @property
-    def is_skip(self):
-        return self.status == self.SKIP
-
-    @property
     def is_error(self):
         return self.status == self.ERROR
+
+    @property
+    def is_skip(self):
+        return not (self.is_success or self.is_failure or self.is_error)
+
+    @property
+    def execution_time(self):
+        return self.end_time - self.start_time
+
+    def mark_complete(self, status=None, output=None, error=None):
+        if status is not None:
+            self.status = status
+        self.output = output
+        self.error = error
+        self.end_time = time.time()
 
 
 class ResultCollection(Collection):
@@ -92,18 +106,11 @@ class ResultCollection(Collection):
 
     @property
     def execution_time(self):
-        execution_time = 0
-        for result in self.objects:
-            execution_time += result.execution_time
-        return execution_time
+        return sum(result.execution_time for result in self.objects)
 
-    def count(self, status=None):
-        if status:
-            count = 0
-            for result in self.objects:
-                if result.status == status:
-                    count += 1
-            return count
+    def count(self, **kwargs):
+        if 'status' in kwargs:
+            return sum(1 for result in self.objects if result.status == kwargs.get('status'))
         return len(self.objects)
 
     def dump(self):
@@ -115,32 +122,31 @@ class ResultCollection(Collection):
                 text += '{}\n'.format(''.ljust(79, '='))
 
                 status = 'FAILED' if result.is_failure else 'ERROR'
-                text += '{}: {}\n'.format(status, result.action)
-
-                text += '{}\n'.format(''.ljust(79, '='))
+                text += '{}: {}\n'.format(status, result.process)
+                text += '{}\n#{{reset_all}}'.format(''.ljust(79, '='))
 
                 if result.error:
-                    text += '#{{reset_all}}{}'.format(result.error)
+                    text += result.error
                 else:
-                    text += '#{{reset_all}}{}'.format(result.output)
+                    text += result.output
         return text
 
     def dump_junit(self):
         """Returns a string containing XML mapped to the JUnit schema."""
         testsuites = ElementTree.Element('testsuites', name='therapist', time=str(round(self.execution_time, 2)),
-                                         tests=str(self.count()), failures=str(self.count(Result.FAILURE)),
-                                         errors=str(self.count(Result.ERROR)))
+                                         tests=str(self.count()), failures=str(self.count(status=Result.FAILURE)),
+                                         errors=str(self.count(status=Result.ERROR)))
 
         for result in self.objects:
             failures = '1' if result.is_failure else '0'
             errors = '1' if result.is_error else '0'
 
-            testsuite = ElementTree.SubElement(testsuites, 'testsuite', id=result.action.name,
-                                               name=str(result.action), time=str(round(result.execution_time, 2)),
+            testsuite = ElementTree.SubElement(testsuites, 'testsuite', id=result.process.name,
+                                               name=str(result.process), time=str(round(result.execution_time, 2)),
                                                tests='1', failures=failures, errors=errors)
 
             testcase = ElementTree.SubElement(testsuite, 'testcase', time=str(round(result.execution_time, 2)))
-            testcase.attrib['name'] = result.action.run if result.action.run else result.action.name
+            testcase.attrib['name'] = result.process.name
 
             if result.is_failure or result.is_error:
                 if result.is_failure:

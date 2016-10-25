@@ -2,41 +2,11 @@ import pytest
 
 import six
 
-from therapist import Runner
-from therapist.runner.actions import Action, ActionCollection
-from therapist.runner.collections import Collection
-from therapist.runner.results import Result, ResultCollection
+from therapist.runner import Runner
+from therapist.runner.action import Action, ActionCollection
+from therapist.runner.result import Result, ResultCollection
 
 from . import Project
-
-
-class TestCollection(object):
-    def test_str(self):
-        items = ['a', 'b', 'c']
-        s = Collection(items)
-        assert str(s) == str(items)
-
-    def test_repr(self):
-        s = Collection()
-        assert s.__repr__() == '<Collection>'
-
-    def test_append(self):
-        s = Collection()
-        assert len(s.objects) == 0
-
-        s.append('item')
-        assert len(s.objects) == 1
-        assert s[0] == 'item'
-
-    def test_object_class(self):
-        class BooleanCollection(Collection):
-            class Meta:
-                object_class = bool
-
-        s = BooleanCollection([True])
-
-        with pytest.raises(TypeError):
-            s.append('True')
 
 
 class TestAction(object):
@@ -89,16 +59,11 @@ class TestResult(object):
         r.status = Result.FAILURE
         assert str(r) == 'FAILURE'
 
-        r.status = Result.SKIP
+        r.status = None
         assert str(r) == 'SKIP'
 
         r.status = Result.ERROR
         assert str(r) == 'ERROR'
-
-    def test_repr(self):
-        a = Action('flake8')
-        r = Result(a)
-        assert r.__repr__() == '<Result flake8>'
 
     def test_action_validation(self):
         with pytest.raises(TypeError):
@@ -107,15 +72,15 @@ class TestResult(object):
 
 class TestResultCollection(object):
     def test_count(self):
-        r1 = Result(action=Action('flake8'), status=Result.SUCCESS)
-        r2 = Result(action=Action('eslint'), status=Result.SKIP)
+        r1 = Result(Action('flake8'), status=Result.SUCCESS)
+        r2 = Result(Action('eslint'))
         rs = ResultCollection([r1, r2])
         assert rs.count() == 2
-        assert rs.count(Result.SKIP) == 1
-        assert rs.count(Result.FAILURE) == 0
+        assert rs.count(status=None) == 1
+        assert rs.count(status=Result.FAILURE) == 0
 
     def test_has_success(self):
-        r = Result(action=Action('flake8'), status=Result.SUCCESS)
+        r = Result(Action('flake8'), status=Result.SUCCESS)
 
         rs = ResultCollection()
         assert not rs.has_success
@@ -124,7 +89,7 @@ class TestResultCollection(object):
         assert rs.has_success
 
     def test_has_failure(self):
-        r = Result(action=Action('flake8'), status=Result.FAILURE)
+        r = Result(Action('flake8'), status=Result.FAILURE)
 
         rs = ResultCollection()
         assert not rs.has_failure
@@ -133,7 +98,7 @@ class TestResultCollection(object):
         assert rs.has_failure
 
     def test_has_skip(self):
-        r = Result(action=Action('flake8'), status=Result.SKIP)
+        r = Result(Action('flake8'))
 
         rs = ResultCollection()
         assert not rs.has_skip
@@ -142,7 +107,7 @@ class TestResultCollection(object):
         assert rs.has_skip
 
     def test_has_error(self):
-        r = Result(action=Action('flake8'), status=Result.ERROR)
+        r = Result(Action('flake8'), status=Result.ERROR)
 
         rs = ResultCollection()
         assert not rs.has_error
@@ -151,7 +116,8 @@ class TestResultCollection(object):
         assert rs.has_error
 
     def test_dump_colors(self):
-        r = Result(action=Action('flake8'), status=Result.FAILURE, output='Failed!')
+        r = Result(Action('flake8'), status=Result.FAILURE)
+        r.mark_complete(output='Failed!')
         rs = ResultCollection([r])
         assert rs.dump() == (
             '\n#{red}#{bright}'
@@ -162,12 +128,13 @@ class TestResultCollection(object):
         )
 
     def test_dump_success(self):
-        r = Result(action=Action('flake8'), status=Result.SUCCESS)
+        r = Result(Action('flake8'), status=Result.SUCCESS)
         rs = ResultCollection([r])
         assert rs.dump() == ''
 
     def test_dump_failure(self):
-        r = Result(action=Action('flake8'), status=Result.FAILURE, output='Failed!')
+        r = Result(Action('flake8'), status=Result.FAILURE)
+        r.mark_complete(output='Failed!')
         rs = ResultCollection([r])
         assert rs.dump() == (
             '\n#{red}#{bright}'
@@ -177,7 +144,8 @@ class TestResultCollection(object):
             '#{reset_all}Failed!'
         )
 
-        r = Result(action=Action('flake8'), status=Result.FAILURE, error='ERR!', output='Failed!')
+        r = Result(Action('flake8'), status=Result.FAILURE)
+        r.mark_complete(error='ERR!', output='Failed!')
         rs = ResultCollection([r])
         assert rs.dump() == (
             '\n#{red}#{bright}'
@@ -188,12 +156,13 @@ class TestResultCollection(object):
         )
 
     def test_dump_skip(self):
-        r = Result(action=Action('flake8'), status=Result.SKIP)
+        r = Result(Action('flake8'))
         rs = ResultCollection([r])
         assert rs.dump() == ''
 
     def test_dump_error(self):
-        r = Result(action=Action('flake8'), status=Result.ERROR, output='OH NOES!')
+        r = Result(Action('flake8'), status=Result.ERROR)
+        r.mark_complete(output='OH NOES!')
         rs = ResultCollection([r])
         assert rs.dump() == (
             '\n#{red}#{bright}'
@@ -203,7 +172,8 @@ class TestResultCollection(object):
             '#{reset_all}OH NOES!'
         )
 
-        r = Result(action=Action('flake8'), status=Result.ERROR, error='ERR!', output='Failed!')
+        r = Result(Action('flake8'), status=Result.ERROR)
+        r.mark_complete(error='ERR!', output='Failed!')
         rs = ResultCollection([r])
         assert rs.dump() == (
             '\n#{red}#{bright}'
@@ -215,39 +185,44 @@ class TestResultCollection(object):
 
     def test_dump_junit_success(self):
         a = Action('flake8', run='flake8 {files}')
-        r = Result(action=a, status=Result.SUCCESS, execution_time=1.0)
+        r = Result(a, status=Result.SUCCESS)
+        r.end_time = r.start_time + 1
         rs = ResultCollection([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<testsuites errors="0" failures="0" name="therapist" tests="1" time="1.0">'
             '<testsuite errors="0" failures="0" id="flake8" name="flake8" tests="1" time="1.0">'
-            '<testcase name="flake8 {files}" time="1.0" />'
+            '<testcase name="flake8" time="1.0" />'
             '</testsuite>'
             '</testsuites>'
         )
 
     def test_dump_junit_failure(self):
         a = Action('flake8', run='flake8 {files}')
-        r = Result(action=a, status=Result.FAILURE, output='Failed!', execution_time=1.0)
+        r = Result(a, status=Result.FAILURE)
+        r.mark_complete(output='Failed!')
+        r.end_time = r.start_time + 1
         rs = ResultCollection([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<testsuites errors="0" failures="1" name="therapist" tests="1" time="1.0">'
             '<testsuite errors="0" failures="1" id="flake8" name="flake8" tests="1" time="1.0">'
-            '<testcase name="flake8 {files}" time="1.0">'
+            '<testcase name="flake8" time="1.0">'
             '<failure type="failure">Failed!</failure>'
             '</testcase>'
             '</testsuite>'
             '</testsuites>'
         )
 
-        r = Result(action=a, status=Result.FAILURE, error='ERR!', output='Failed!', execution_time=1.0)
+        r = Result(a, status=Result.FAILURE)
+        r.mark_complete(error='ERR!', output='Failed!')
+        r.end_time = r.start_time + 1
         rs = ResultCollection([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<testsuites errors="0" failures="1" name="therapist" tests="1" time="1.0">'
             '<testsuite errors="0" failures="1" id="flake8" name="flake8" tests="1" time="1.0">'
-            '<testcase name="flake8 {files}" time="1.0">'
+            '<testcase name="flake8" time="1.0">'
             '<failure type="failure">ERR!</failure>'
             '</testcase>'
             '</testsuite>'
@@ -256,39 +231,43 @@ class TestResultCollection(object):
 
     def test_dump_junit_skip(self):
         a = Action('flake8', run='flake8 {files}')
-        r = Result(action=a, status=Result.SKIP, execution_time=1.0)
+        r = Result(a)
         rs = ResultCollection([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
-            '<testsuites errors="0" failures="0" name="therapist" tests="1" time="1.0">'
-            '<testsuite errors="0" failures="0" id="flake8" name="flake8" tests="1" time="1.0">'
-            '<testcase name="flake8 {files}" time="1.0" />'
+            '<testsuites errors="0" failures="0" name="therapist" tests="1" time="0.0">'
+            '<testsuite errors="0" failures="0" id="flake8" name="flake8" tests="1" time="0.0">'
+            '<testcase name="flake8" time="0.0" />'
             '</testsuite>'
             '</testsuites>'
         )
 
     def test_dump_junit_error(self):
         a = Action('flake8', run='flake8 {files}')
-        r = Result(action=a, status=Result.ERROR, output='Error!', execution_time=1.0)
+        r = Result(a, status=Result.ERROR)
+        r.mark_complete(output='Error!')
+        r.end_time = r.start_time + 1
         rs = ResultCollection([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<testsuites errors="1" failures="0" name="therapist" tests="1" time="1.0">'
             '<testsuite errors="1" failures="0" id="flake8" name="flake8" tests="1" time="1.0">'
-            '<testcase name="flake8 {files}" time="1.0">'
+            '<testcase name="flake8" time="1.0">'
             '<error type="error">Error!</error>'
             '</testcase>'
             '</testsuite>'
             '</testsuites>'
         )
 
-        r = Result(action=a, status=Result.ERROR, error='ERR!', output='Error!', execution_time=1.0)
+        r = Result(a, status=Result.ERROR)
+        r.mark_complete(error='ERR!', output='Error!')
+        r.end_time = r.start_time + 1
         rs = ResultCollection([r])
         assert rs.dump_junit() == (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<testsuites errors="1" failures="0" name="therapist" tests="1" time="1.0">'
             '<testsuite errors="1" failures="0" id="flake8" name="flake8" tests="1" time="1.0">'
-            '<testcase name="flake8 {files}" time="1.0">'
+            '<testcase name="flake8" time="1.0">'
             '<error type="error">ERR!</error>'
             '</testcase>'
             '</testsuite>'
@@ -314,15 +293,16 @@ class TestRunner(object):
 
         assert err.value.code == Runner.Misconfigured.EMPTY_CONFIG
 
-    def test_no_actions_in_config(self, project):
+    def test_no_actions_or_plugins_in_config(self, project):
         data = project.get_config_data()
         data.pop('actions')
+        data.pop('plugins')
         project.set_config_data(data)
 
         with pytest.raises(Runner.Misconfigured) as err:
             Runner(project.path)
 
-        assert err.value.code == Runner.Misconfigured.NO_ACTIONS
+        assert err.value.code == Runner.Misconfigured.NO_ACTIONS_OR_PLUGINS
 
     def test_actions_wrongly_configured(self, project):
         project.write('.therapist.yml', 'actions')
@@ -339,6 +319,37 @@ class TestRunner(object):
 
         assert err.value.code == Runner.Misconfigured.ACTIONS_WRONGLY_CONFIGURED
 
+    def test_plugins_wrongly_configured(self, project):
+        project.write('.therapist.yml', 'plugins')
+
+        with pytest.raises(Runner.Misconfigured) as err:
+            Runner(project.path)
+
+        assert err.value.code == Runner.Misconfigured.PLUGINS_WRONGLY_CONFIGURED
+
+        project.write('.therapist.yml', 'plugins:\n  simple')
+
+        with pytest.raises(Runner.Misconfigured) as err:
+            Runner(project.path)
+
+        assert err.value.code == Runner.Misconfigured.PLUGINS_WRONGLY_CONFIGURED
+
+    def test_plugin_not_installed(self, project):
+        project.write('.therapist.yml', 'plugins:\n  notsimple: ~')
+
+        with pytest.raises(Runner.Misconfigured) as err:
+            Runner(project.path)
+
+        assert err.value.code == Runner.Misconfigured.PLUGIN_NOT_INSTALLED
+
+    def test_plugin_invalid(self, project, mock_plugin):
+        mock_plugin(plugin_class=Runner)
+
+        with pytest.raises(Runner.Misconfigured) as err:
+            Runner(project.path)
+
+        assert err.value.code == Runner.Misconfigured.PLUGIN_INVALID
+
     def test_unstaged_changes(self, project):
         project.write('pass.txt', 'FAIL')
         project.git.add('.')
@@ -349,7 +360,7 @@ class TestRunner(object):
         assert 'AM pass.txt' in out
 
         r = Runner(project.path)
-        result, message = r.run_action('lint')
+        result, message = r.run_process(r.actions.get('lint'))
 
         assert result.is_failure
 
@@ -362,7 +373,7 @@ class TestRunner(object):
         project.write('fail.txt')
 
         r = Runner(project.path, include_untracked=True)
-        result, message = r.run_action('lint')
+        result, message = r.run_process(r.actions.get('lint'))
         assert result.is_failure
 
         assert 'fail.txt' in r.files
@@ -378,7 +389,7 @@ class TestRunner(object):
         project.write('fail.txt', 'x')
 
         r = Runner(project.path, include_unstaged=True)
-        result, message = r.run_action('lint')
+        result, message = r.run_process(r.actions.get('lint'))
         assert result.is_failure
 
         assert 'fail.txt' in r.files
@@ -395,7 +406,7 @@ class TestRunner(object):
         assert 'AM pass.txt' in out
 
         r = Runner(project.path, include_unstaged_changes=True)
-        result, message = r.run_action('lint')
+        result, message = r.run_process(r.actions.get('lint'))
         assert result.is_success
 
         assert project.read('pass.txt') == 'x'
@@ -407,64 +418,64 @@ class TestRunner(object):
         r = Runner(project.path)
 
         with pytest.raises(r.actions.DoesNotExist):
-            r.run_action('notanaction')
+            r.run_process(r.actions.get('notanaction'))
 
-    def test_run_action_success(self, project):
+    def test_run_process_success(self, project):
         project.write('pass.py')
         project.git.add('.')
 
         r = Runner(project.path)
-        result, message = r.run_action('lint')
+        result, message = r.run_process(r.actions.get('lint'))
 
         assert result.is_success
         assert 'pass.py' in r.files
         assert message == ('#{bright}Linting ............................................................. '
                            '#{green}[SUCCESS]')
 
-    def test_run_action_failure(self, project):
+    def test_run_process_failure(self, project):
         project.write('fail.txt')
         project.git.add('.')
 
         r = Runner(project.path)
-        result, message = r.run_action('lint')
+        result, message = r.run_process(r.actions.get('lint'))
         assert result.is_failure
 
         assert 'fail.txt' in r.files
         assert message == ('#{bright}Linting ............................................................. '
                            '#{red}[FAILURE]')
 
-    def test_run_action_skipped(self, project):
+    def test_run_process_skipped(self, project):
         project.write('.ignore.pass.py')
         project.git.add('.')
 
         r = Runner(project.path)
-        result, message = r.run_action('lint')
+        result, message = r.run_process(r.actions.get('lint'))
 
         assert '.ignore.pass.py' in r.files
         assert message == ('#{bright}Linting ............................................................. '
                            '#{cyan}[SKIPPED]')
 
-    def test_run_action_error(self, project):
+    def test_run_process_error(self, project):
         for i in range(1000):
             project.write('pass{}.txt'.format(str(i).ljust(200, '_')))
         project.git.add('.')
 
         r = Runner(project.path)
-        result, message = r.run_action('lint')
+        result, message = r.run_process(r.actions.get('lint'))
         assert result.is_error
 
         assert len(r.files) == 1000
         assert message == ('#{bright}Linting ............................................................. '
                            '#{red}[ERROR!!]')
 
-    def test_run_action_skips_deleted(self, project):
+    def test_run_process_skips_deleted(self, project):
         project.write('pass.py')
         project.git.add('.')
         project.git.commit(m='Add file.')
         project.git.rm('pass.py')
 
         r = Runner(project.path)
-        r.run_action('lint')
+        r.run_process(r.actions.get('lint'))
 
         assert len(r.files) == 0
 
@@ -482,7 +493,7 @@ class TestRunner(object):
         project.git.add('.')
 
         r = Runner(project.path)
-        result, message = r.run_action('norun')
+        result, message = r.run_process(r.actions.get('norun'))
 
         assert 'pass.py' in r.files
         assert message == ('#{bright}Skips ............................................................... '
@@ -503,7 +514,7 @@ class TestRunner(object):
         project.git.add('.')
 
         r = Runner(project.path)
-        result, message = r.run_action('runissue')
+        result, message = r.run_process(r.actions.get('runissue'))
         assert result.is_failure
 
         assert 'pass.py' in r.files
@@ -516,7 +527,7 @@ class TestRunner(object):
         project.git.add('.')
 
         r = Runner(project.path)
-        result, message = r.run_action('lint')
+        result, message = r.run_process(r.actions.get('lint'))
 
         assert 'fail.js' in r.files
         assert message == ('#{bright}Linting ............................................................. '
@@ -528,7 +539,7 @@ class TestRunner(object):
         project.git.add('.')
 
         r = Runner(project.path)
-        result, message = r.run_action('lint')
+        result, message = r.run_process(r.actions.get('lint'))
 
         assert '.ignore.fail.txt' in r.files
         assert message == ('#{bright}Linting ............................................................. '
@@ -547,23 +558,39 @@ class TestRunner(object):
         monkeypatch.setattr('time.time', raise_exc)
 
         with pytest.raises(Exception):
-            r.run_action('lint')
+            r.run_process(r.actions.get('lint'))
 
         assert project.read('pass.py') == 'changed'
 
-    def test_output_encoded(self, project, capsys):
+    def test_output_encoded(self, project):
         project.write('fail.txt')
         project.git.add('.')
 
         r = Runner(project.path)
-        result, message = r.run_action('lint')
+        result, message = r.run_process(r.actions.get('lint'))
 
         assert result.is_failure
 
         assert 'fail.txt' in r.files
 
-        out, err = capsys.readouterr()
+        assert isinstance(message, six.text_type)
+        assert 'b"' not in message
+        assert "b'" not in message
 
-        assert isinstance(out, six.text_type)
-        assert 'b"' not in out
-        assert "b'" not in out
+    def test_run_process_no_settings(self, tmpdir):
+        config_data = {
+            'actions': {
+                'no-settings': None
+            }
+        }
+        project = Project(tmpdir.strpath, config_data=config_data)
+
+        project.write('pass.py')
+        project.git.add('.')
+
+        r = Runner(project.path)
+        result, message = r.run_process(r.actions.get('no-settings'))
+
+        assert 'pass.py' in r.files
+        assert message == ('#{bright}no-settings ......................................................... '
+                           '#{cyan}[SKIPPED]')
