@@ -126,9 +126,13 @@ class ResultCollection(Collection):
                 text += '{}\n#{{reset_all}}'.format(''.ljust(79, '='))
 
                 if result.error:
-                    text += result.error
+                    text = '{}{}'.format(text, result.error)
                 else:
-                    text += result.output
+                    text = '{}{}'.format(text, result.output)
+
+                if not text.endswith('\n'):
+                    text += '\n'
+
         return text
 
     def dump_junit(self):
