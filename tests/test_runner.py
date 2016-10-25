@@ -124,7 +124,7 @@ class TestResultCollection(object):
             '===============================================================================\n'
             'FAILED: flake8\n'
             '===============================================================================\n'
-            '#{reset_all}Failed!'
+            '#{reset_all}Failed!\n'
         )
 
     def test_dump_success(self):
@@ -141,7 +141,7 @@ class TestResultCollection(object):
             '===============================================================================\n'
             'FAILED: flake8\n'
             '===============================================================================\n'
-            '#{reset_all}Failed!'
+            '#{reset_all}Failed!\n'
         )
 
         r = Result(Action('flake8'), status=Result.FAILURE)
@@ -152,7 +152,7 @@ class TestResultCollection(object):
             '===============================================================================\n'
             'FAILED: flake8\n'
             '===============================================================================\n'
-            '#{reset_all}ERR!'
+            '#{reset_all}ERR!\n'
         )
 
     def test_dump_skip(self):
@@ -169,7 +169,7 @@ class TestResultCollection(object):
             '===============================================================================\n'
             'ERROR: flake8\n'
             '===============================================================================\n'
-            '#{reset_all}OH NOES!'
+            '#{reset_all}OH NOES!\n'
         )
 
         r = Result(Action('flake8'), status=Result.ERROR)
@@ -180,7 +180,7 @@ class TestResultCollection(object):
             '===============================================================================\n'
             'ERROR: flake8\n'
             '===============================================================================\n'
-            '#{reset_all}ERR!'
+            '#{reset_all}ERR!\n'
         )
 
     def test_dump_junit_success(self):
