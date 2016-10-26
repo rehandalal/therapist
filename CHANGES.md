@@ -1,9 +1,20 @@
 # Changelog
 
+### v1.0.0
+
+- Added a new plugin system which allows for custom linting plugin to be
+  written specifically for Therapist.
+- Uses [colorama](https://github.com/tartley/colorama) to handle ANSI 
+  colors.
+- Added the `--no-color` flag to disable colors from being printed in
+  the output.
+- Added the `--plugin` option to the `run` command to allow configured
+  plugins to be run individually.
+
 ### v0.3.2
 
-- Added the `--junit-xml` to allow for a JUnit XML style report to be 
-  output to a given path.
+- Added the `--junit-xml` flag to allow for a JUnit XML style report to
+  be output to a given path.
 - Added the `--quiet` flag that suppresses output from the `run`
   command.
 
