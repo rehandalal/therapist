@@ -67,7 +67,7 @@ def install(**kwargs):
     colorama.init(strip=kwargs.get('no_color'))
 
     stdout = subprocess.check_output('which therapist', shell=True)
-    therapist_bin = stdout.split()[0]
+    therapist_bin = stdout.decode('utf-8').split()[0]
 
     git_dir = current_git_dir()
 
