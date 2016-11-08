@@ -8,14 +8,6 @@ pushd "$(dirname "$0")" > /dev/null
 CWD=$(pwd)
 popd > /dev/null
 
-# Check if the therapist CLI exists
-which therapist &> /dev/null
-
-if [ $? -ne 0 ]; then
-    echo "\`therapist\` was not found. Did you forget to activate your virtualenv?"
-    exit 1
-fi
-
 # Run the legacy pre-commit if it exists
 if [ -x "$CWD"/pre-commit.legacy ]; then
     "$CWD"/pre-commit.legacy
@@ -24,7 +16,7 @@ if [ -x "$CWD"/pre-commit.legacy ]; then
     fi
 fi
 
-therapist run
+%therapist_bin% run
 if [ $? -ne 0 ]; then
     exitcode=1
 fi
