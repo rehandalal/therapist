@@ -2,6 +2,7 @@ import hashlib
 import os
 import re
 import shutil
+import subprocess
 
 import click
 import colorama
@@ -65,6 +66,9 @@ def install(**kwargs):
 
     colorama.init(strip=kwargs.get('no_color'))
 
+    stdout = subprocess.check_output('which therapist', shell=True)
+    therapist_bin = stdout.decode('utf-8').split()[0]
+
     git_dir = current_git_dir()
 
     if git_dir is None:
@@ -99,7 +103,9 @@ def install(**kwargs):
 
     output(INSTALLING_HOOK_MSG, end='')
     with open(dsthook_path, 'w+') as f:
-        f.write(srchook.replace('%hash%', srchook_hash))
+        srchook = srchook.replace('%hash%', srchook_hash)
+        srchook = srchook.replace('%therapist_bin%', therapist_bin)
+        f.write(srchook)
     os.chmod(dsthook_path, 0o775)
     output(DONE_INSTALLING_HOOK_MSG)
 
