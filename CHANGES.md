@@ -1,5 +1,10 @@
 # Changelog
 
+### v1.1.0
+
+- Therapist hook now has the full path to the therapist added during
+  installation.
+
 ### v1.0.0
 
 - Added a new plugin system which allows for custom linting plugin to be
