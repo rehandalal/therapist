@@ -1,5 +1,11 @@
 # Changelog
 
+### v1.2.0
+
+- Fixed [issue #14](https://github.com/rehandalal/therapist/issues/14) 
+  which was resulting in permanent loss of files or changes in certain
+  edge cases where the stash process fails.
+
 ### v1.1.0
 
 - Therapist hook now has the full path to the therapist added during
