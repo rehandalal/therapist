@@ -212,7 +212,7 @@ def run(**kwargs):
                     files.append(f)
     elif use_tracked_files:
         # If the use tracked files flag was passed, get a list of all the tracked files
-        out, err = git.ls_files()
+        out, err, code = git.ls_files()
         files = out.splitlines()
 
     if files or paths:
