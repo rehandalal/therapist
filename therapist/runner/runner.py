@@ -120,7 +120,7 @@ class Runner(object):
         message += u'{} '.format(str(process)[:68]).ljust(69, '.')
 
         stashed = False
-        if not self.include_unstaged_changes:
+        if self.unstaged_changes and not self.include_unstaged_changes:
             out, err, code = self.git.stash(keep_index=True, quiet=True)
             stashed = code == 0
 
