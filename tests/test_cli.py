@@ -569,10 +569,10 @@ class TestHook(object):
         project.write('fail.py')
         project.git.add('.')
 
-        out, err = project.git.commit(m='Should not get committed.')
+        out, err, code = project.git.commit(m='Should not get committed.')
         assert 'FAIL!  {}'.format(project.abspath('fail.py')) in err
 
-        out, err = project.git.status(porcelain=True)
+        out, err, code = project.git.status(porcelain=True)
         assert 'fail.py' in out
 
     def test_action_success(self, cli_runner, project):
@@ -587,10 +587,10 @@ class TestHook(object):
         project.write('pass.py')
         project.git.add('.')
 
-        out, err = project.git.commit(m='Add a file.')
+        out, err, code = project.git.commit(m='Add a file.')
         assert '[SUCCESS]' in err
 
-        out, err = project.git.status(porcelain=True)
+        out, err, code = project.git.status(porcelain=True)
         assert not out
         assert not err
 
@@ -609,10 +609,10 @@ class TestHook(object):
         project.write('pass.py')
         project.git.add('.')
 
-        out, err = project.git.commit(m='Add a file.')
+        out, err, code = project.git.commit(m='Add a file.')
         assert 'LEGACY' in err
 
-        out, err = project.git.status(porcelain=True)
+        out, err, code = project.git.status(porcelain=True)
         assert not out
         assert not err
 
@@ -633,6 +633,6 @@ class TestHook(object):
 
         project.git.commit(m='Add a file.')
 
-        out, err = project.git.status(porcelain=True)
+        out, err, code = project.git.status(porcelain=True)
         assert 'pass.py' in out
         assert not err

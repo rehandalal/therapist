@@ -93,7 +93,7 @@ class Runner(object):
             files = []
 
             untracked_files = 'all' if include_untracked else 'no'
-            out, err = self.git.status(porcelain=True, untracked_files=untracked_files)
+            out, err, code = self.git.status(porcelain=True, untracked_files=untracked_files)
 
             for line in out.splitlines():
                 file_status = Status(line)
@@ -119,15 +119,17 @@ class Runner(object):
         message = u'#{bright}'
         message += u'{} '.format(str(process)[:68]).ljust(69, '.')
 
-        if not self.include_unstaged_changes:
-            self.git.stash(keep_index=True, quiet=True)
+        stashed = False
+        if self.unstaged_changes and not self.include_unstaged_changes:
+            out, err, code = self.git.stash(keep_index=True, quiet=True)
+            stashed = code == 0
 
         try:
             result = process(files=self.files, cwd=self.cwd)
         except:
             raise
         finally:
-            if not self.include_unstaged_changes:
+            if stashed:
                 self.git.reset(hard=True, quiet=True)
                 self.git.stash.pop(index=True, quiet=True)
 

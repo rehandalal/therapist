@@ -1,5 +1,4 @@
 import pytest
-
 import six
 
 from therapist.runner import Runner
@@ -356,7 +355,7 @@ class TestRunner(object):
 
         project.write('pass.txt', 'x')
 
-        out, err = project.git.status(porcelain=True)
+        out, err, code = project.git.status(porcelain=True)
         assert 'AM pass.txt' in out
 
         r = Runner(project.path)
@@ -366,7 +365,7 @@ class TestRunner(object):
 
         assert project.read('pass.txt') == 'x'
 
-        out, err = project.git.status(porcelain=True)
+        out, err, code = project.git.status(porcelain=True)
         assert 'AM pass.txt' in out
 
     def test_include_untracked(self, project):
@@ -402,7 +401,7 @@ class TestRunner(object):
 
         project.write('pass.txt', 'x')
 
-        out, err = project.git.status(porcelain=True)
+        out, err, code = project.git.status(porcelain=True)
         assert 'AM pass.txt' in out
 
         r = Runner(project.path, include_unstaged_changes=True)
@@ -411,7 +410,7 @@ class TestRunner(object):
 
         assert project.read('pass.txt') == 'x'
 
-        out, err = project.git.status(porcelain=True)
+        out, err, code = project.git.status(porcelain=True)
         assert 'AM pass.txt' in out
 
     def test_run_action_does_not_exist(self, project):
@@ -594,3 +593,44 @@ class TestRunner(object):
         assert 'pass.py' in r.files
         assert message == ('#{bright}no-settings ......................................................... '
                            '#{cyan}[SKIPPED]')
+
+    def test_user_stashed_files_are_not_unstashed(self, project):
+        project.write('test.txt', 'unchanged')
+        project.git.add('.')
+        project.git.commit(m='first commit')
+
+        project.write('test.txt', 'changed')
+        project.git.stash()
+        out, err, code = project.git.stash.list()
+
+        assert project.read('test.txt') == 'unchanged'
+        assert out.startswith('stash@{0}')
+
+        r = Runner(project.path)
+        result, message = r.run_process(r.actions.get('lint'))
+        out, err, code = project.git.stash.list()
+
+        assert result.is_skip
+        assert out.startswith('stash@{0}')
+
+    def test_files_are_not_deleted_when_stash_fails(self, tmpdir):
+        project = Project(tmpdir.strpath, blank=True)
+
+        config = {
+            'actions': {
+                'lint': {
+                    'run': 'false'
+                }
+            }
+        }
+
+        project.set_config_data(config, commit=False)
+
+        project.write('fail.txt')
+        project.git.add('.')
+
+        r = Runner(project.path)
+        result, message = r.run_process(r.actions.get('lint'))
+
+        assert result.is_failure
+        assert project.exists('fail.txt')
