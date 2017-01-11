@@ -1,5 +1,4 @@
 import pytest
-
 import six
 
 from therapist.runner import Runner
@@ -613,3 +612,25 @@ class TestRunner(object):
 
         assert result.is_skip
         assert out.startswith('stash@{0}')
+
+    def test_files_are_not_deleted_when_stash_fails(self, tmpdir):
+        project = Project(tmpdir.strpath, blank=True)
+
+        config = {
+            'actions': {
+                'lint': {
+                    'run': 'false'
+                }
+            }
+        }
+
+        project.set_config_data(config, commit=False)
+
+        project.write('fail.txt')
+        project.git.add('.')
+
+        r = Runner(project.path)
+        result, message = r.run_process(r.actions.get('lint'))
+
+        assert result.is_failure
+        assert project.exists('fail.txt')

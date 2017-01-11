@@ -27,8 +27,13 @@ class Project(object):
         self.path = os.path.join(os.path.abspath(path), 'project')
         self.config_file = os.path.join(self.path, '.therapist.yml')
 
-        sample_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'sample_project')
-        shutil.copytree(sample_path, self.path)
+        blank = kwargs.get('blank', False)
+
+        if not blank:
+            sample_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'sample_project')
+            shutil.copytree(sample_path, self.path)
+        else:
+            os.makedirs(self.path)
 
         # Initialize a git repo and configure
         self.git = Git(repo_path=self.path)
@@ -37,25 +42,27 @@ class Project(object):
         self.git.config('user.email', 'test-suite@therapist.xyz')
         self.git.config('commit.gpgsign', 'false')
 
-        # Commit all files to the repo
-        self.git.add('.')
-        self.git.commit(m='Initial commit')
+        if not blank:
+            # Commit all files to the repo
+            self.git.add('.')
+            self.git.commit(m='Initial commit')
 
-        if config_data:
-            self.set_config_data(config_data)
+            if config_data:
+                self.set_config_data(config_data)
 
     def get_config_data(self):
         with open(self.config_file, 'r') as f:
             data = yaml.safe_load(f)
         return data
 
-    def set_config_data(self, data):
+    def set_config_data(self, data, commit=True):
         with open(self.config_file, 'w+') as f:
             f.write(six.u(yaml.dump(data, default_flow_style=False)))
 
-        # Commit changes to the config file
-        self.git.add(self.config_file)
-        self.git.commit(m='Update .therapist.yml')
+        if commit:
+            # Commit changes to the config file
+            self.git.add(self.config_file)
+            self.git.commit(m='Update .therapist.yml')
 
     def abspath(self, path):
         """Converts a path relative to the project root to an absolute path."""
