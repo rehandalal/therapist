@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 
 
 DEPENDENCIES = [
-    'click >= 6.6',
+    'click >= 6.7',
     'colorama >= 0.3.7',
     'pathspec >= 0.5.0',
     'PyYAML >= 3.12',
