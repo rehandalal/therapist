@@ -356,7 +356,7 @@ class TestRunner(object):
 
         project.write('pass.txt', 'x')
 
-        out, err = project.git.status(porcelain=True)
+        out, err, code = project.git.status(porcelain=True)
         assert 'AM pass.txt' in out
 
         r = Runner(project.path)
@@ -366,7 +366,7 @@ class TestRunner(object):
 
         assert project.read('pass.txt') == 'x'
 
-        out, err = project.git.status(porcelain=True)
+        out, err, code = project.git.status(porcelain=True)
         assert 'AM pass.txt' in out
 
     def test_include_untracked(self, project):
@@ -402,7 +402,7 @@ class TestRunner(object):
 
         project.write('pass.txt', 'x')
 
-        out, err = project.git.status(porcelain=True)
+        out, err, code = project.git.status(porcelain=True)
         assert 'AM pass.txt' in out
 
         r = Runner(project.path, include_unstaged_changes=True)
@@ -411,7 +411,7 @@ class TestRunner(object):
 
         assert project.read('pass.txt') == 'x'
 
-        out, err = project.git.status(porcelain=True)
+        out, err, code = project.git.status(porcelain=True)
         assert 'AM pass.txt' in out
 
     def test_run_action_does_not_exist(self, project):
