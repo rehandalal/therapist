@@ -594,3 +594,22 @@ class TestRunner(object):
         assert 'pass.py' in r.files
         assert message == ('#{bright}no-settings ......................................................... '
                            '#{cyan}[SKIPPED]')
+
+    def test_user_stashed_files_are_not_unstashed(self, project):
+        project.write('test.txt', 'unchanged')
+        project.git.add('.')
+        project.git.commit(m='first commit')
+
+        project.write('test.txt', 'changed')
+        project.git.stash()
+        out, err, code = project.git.stash.list()
+
+        assert project.read('test.txt') == 'unchanged'
+        assert out.startswith('stash@{0}')
+
+        r = Runner(project.path)
+        result, message = r.run_process(r.actions.get('lint'))
+        out, err, code = project.git.stash.list()
+
+        assert result.is_skip
+        assert out.startswith('stash@{0}')
