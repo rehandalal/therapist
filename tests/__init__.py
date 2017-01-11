@@ -23,17 +23,16 @@ class Project(object):
     """Creates a project that's ready to use for testing."""
     config_data = {}
 
-    def __init__(self, path, config_data=None, *args, **kwargs):
+    def __init__(self, path, config_data=None, blank=False, *args, **kwargs):
         self.path = os.path.join(os.path.abspath(path), 'project')
         self.config_file = os.path.join(self.path, '.therapist.yml')
 
-        blank = kwargs.get('blank', False)
-
-        if not blank:
+        # Set up the project folder
+        if blank:
+            os.makedirs(self.path)
+        else:
             sample_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'sample_project')
             shutil.copytree(sample_path, self.path)
-        else:
-            os.makedirs(self.path)
 
         # Initialize a git repo and configure
         self.git = Git(repo_path=self.path)
