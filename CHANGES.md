@@ -1,5 +1,9 @@
 # Changelog
 
+### v1.2.1
+
+- Include missing commits due to packaging error.
+
 ### v1.2.0
 
 - Fixed [issue #14](https://github.com/rehandalal/therapist/issues/14) 
