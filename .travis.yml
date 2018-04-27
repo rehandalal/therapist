@@ -2,17 +2,13 @@ sudo: false
 language: python
 python:
  - "2.7"
- - "3.3"
  - "3.4"
  - "3.5"
-addons:
-  apt:
-    sources:
-      - debian-sid
-    packages:
-      - shellcheck
+ - "3.6"
 cache: pip
-install: pip install flake8 tox-travis .
+install:
+  - pip install --upgrade pip
+  - pip install flake8 tox-travis .
 script:
   - therapist run --use-tracked-files
   - tox

@@ -126,7 +126,7 @@ class Runner(object):
 
         try:
             result = process(files=self.files, cwd=self.cwd)
-        except:
+        except:  # noqa: E722
             raise
         finally:
             if stashed:
