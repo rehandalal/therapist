@@ -1,5 +1,10 @@
 # Changelog
 
+### v1.3.0
+
+- Drops support for Python 3.3.
+- Processes are now sorted by name for stable result sets.
+
 ### v1.2.1
 
 - Include missing commits due to packaging error.
