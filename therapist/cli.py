@@ -236,6 +236,7 @@ def run(**kwargs):
             output(UNSTAGED_CHANGES_MSG, end='\n\n')
 
         processes = list(runner.actions) + list(runner.plugins)
+        processes.sort(key=lambda x: x.name)  # Sort the list of processes for consistent results
 
         if plugin:
             try:
