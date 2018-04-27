@@ -2,6 +2,7 @@
 
 dist/
 build/
+.eggs/
 *.egg-info/
 docs/_build
 
