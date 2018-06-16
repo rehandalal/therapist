@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import pytest
 import six
 
@@ -124,6 +126,18 @@ class TestResultCollection(object):
             'FAILED: flake8\n'
             '===============================================================================\n'
             '#{reset_all}Failed!\n'
+        )
+
+    def test_dump_unicode(self):
+        r = Result(Action('flake8'), status=Result.FAILURE)
+        r.mark_complete(output='✖')
+        rs = ResultCollection([r])
+        assert rs.dump() == (
+            '\n#{red}#{bright}'
+            '===============================================================================\n'
+            'FAILED: flake8\n'
+            '===============================================================================\n'
+            '#{reset_all}✖\n'
         )
 
     def test_dump_success(self):
