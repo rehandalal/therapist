@@ -126,9 +126,9 @@ class ResultCollection(Collection):
                 text += '{}\n#{{reset_all}}'.format(''.ljust(79, '='))
 
                 if result.error:
-                    text = '{}{}'.format(text, result.error)
+                    text = '{}{}'.format(text, result.error.encode('utf-8'))
                 else:
-                    text = '{}{}'.format(text, result.output)
+                    text = '{}{}'.format(text, result.output.encode('utf-8'))
 
                 if not text.endswith('\n'):
                     text += '\n'
