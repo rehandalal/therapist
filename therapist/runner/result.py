@@ -125,10 +125,10 @@ class ResultCollection(Collection):
                 text += '{}: {}\n'.format(status, result.process)
                 text += '{}\n#{{reset_all}}'.format(''.ljust(79, '='))
 
-                if result.error:
-                    text += result.error
-                else:
+                if result.output:
                     text += result.output
+                else:
+                    text += result.error
 
                 if not text.endswith('\n'):
                     text += '\n'
