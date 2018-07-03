@@ -1,5 +1,9 @@
 # Changelog
 
+### v1.3.2
+
+- Results now show both stdout and stderr details if both are present.
+
 ### v1.3.1
 
 - Better support for unicode in results output.
