@@ -127,7 +127,12 @@ class ResultCollection(Collection):
 
                 if result.output:
                     text += result.output
-                else:
+
+                if result.error:
+                    if result.output:
+                        text += '\n{}\n'.format(''.ljust(79, '-'))
+                        text += 'Additional error output:\n'
+                        text += '{}\n'.format(''.ljust(79, '-'))
                     text += result.error
 
                 if not text.endswith('\n'):

@@ -165,7 +165,11 @@ class TestResultCollection(object):
             '===============================================================================\n'
             'FAILED: flake8\n'
             '===============================================================================\n'
-            '#{reset_all}ERR!\n'
+            '#{reset_all}Failed!\n'
+            '-------------------------------------------------------------------------------\n'
+            'Additional error output:\n'
+            '-------------------------------------------------------------------------------\n'
+            'ERR!\n'
         )
 
     def test_dump_skip(self):
@@ -186,6 +190,17 @@ class TestResultCollection(object):
         )
 
         r = Result(Action('flake8'), status=Result.ERROR)
+        r.mark_complete(error='Yikes!')
+        rs = ResultCollection([r])
+        assert rs.dump() == (
+            '\n#{red}#{bright}'
+            '===============================================================================\n'
+            'ERROR: flake8\n'
+            '===============================================================================\n'
+            '#{reset_all}Yikes!\n'
+        )
+
+        r = Result(Action('flake8'), status=Result.ERROR)
         r.mark_complete(error='ERR!', output='Failed!')
         rs = ResultCollection([r])
         assert rs.dump() == (
@@ -193,7 +208,11 @@ class TestResultCollection(object):
             '===============================================================================\n'
             'ERROR: flake8\n'
             '===============================================================================\n'
-            '#{reset_all}ERR!\n'
+            '#{reset_all}Failed!\n'
+            '-------------------------------------------------------------------------------\n'
+            'Additional error output:\n'
+            '-------------------------------------------------------------------------------\n'
+            'ERR!\n'
         )
 
     def test_dump_junit_success(self):
