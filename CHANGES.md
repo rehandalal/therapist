@@ -1,5 +1,9 @@
 # Changelog
 
+### v1.3.1
+
+- Better support for unicode in results output.
+
 ### v1.3.0
 
 - Drops support for Python 3.3.
