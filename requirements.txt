@@ -1,5 +1,5 @@
 click==6.7
 colorama==0.3.9
 pathspec==0.5.6
-PyYAML==4.1
+PyYAML==3.12
 six==1.11.0
