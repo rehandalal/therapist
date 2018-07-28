@@ -1,5 +1,14 @@
 # Changelog
 
+### v1.4.0
+
+- Added the `--fix` flag to the `run` command to automatically fix
+  issues when possible.
+- New `fix` parameter for 
+  [action definitions](https://therapist.readthedocs.io/en/v1.4.0/configuration.html#action-definitions).
+- Added the `--fix` flag to the `install` command to configure the hook
+  to use `--fix` with `run`.
+
 ### v1.3.2
 
 - Results now show both stdout and stderr details if both are present.
