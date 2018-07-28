@@ -1,5 +1,5 @@
-Getting Started
-===============
+Quickstart
+==========
 
 The first thing you should do is to install the git pre-commit hook. You can do
 this by running:

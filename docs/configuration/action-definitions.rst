@@ -9,6 +9,11 @@ are:
     ``{files}`` which be replaced with a space-separated list of files that
     were modified and added to the commit.
 
+:fix:
+    This is the command to be run when the ``--fix`` option is used. You may
+    use the named placeholder ``{files}`` which be replaced with a
+    space-separated list of files that were modified and added to the commit.
+
 :description:
     A short description of the command that is used to identify the command in
     the output. If it is longer than 68 characters, it will be truncated. If

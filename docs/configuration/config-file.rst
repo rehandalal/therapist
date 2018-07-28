@@ -19,7 +19,8 @@ configuration file describes a set of actions like so:
                     - "migrations\*.py"
             eslint:
                 description: ESLint
-                run: ./node_modules/bin/eslint {files}
+                run: yarn eslint {files}
+                fix: yarn eslint --fix {files}
                 include:
                     - "*.js"
                     - "*.jsx"

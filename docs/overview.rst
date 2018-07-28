@@ -12,7 +12,7 @@ before you actually commit code to your repo.
 
 .. include:: overview/install.rst
 
-.. include:: overview/getting-started.rst
+.. include:: overview/quickstart.rst
 
 .. include:: overview/uninstall.rst
 
