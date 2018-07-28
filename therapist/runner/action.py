@@ -9,14 +9,20 @@ from therapist.runner.result import Result
 class Action(Process):
     def execute(self, **kwargs):
         files = self.filter_files(kwargs.get('files'))
+        should_fix = kwargs.get('fix')
 
         result = Result(self)
 
-        if 'run' in self.config and files:
-            run_command = self.config.get('run').format(files=' '.join(files))
+        if should_fix and 'fix' in self.config:
+            command = self.config.get('fix')
+        else:
+            command = self.config.get('run')
+
+        if command and files:
+            command_with_args = command.format(files=' '.join(files))
 
             try:
-                pipes = subprocess.Popen(run_command, shell=True, cwd=kwargs.get('cwd'), stdout=subprocess.PIPE,
+                pipes = subprocess.Popen(command_with_args, shell=True, cwd=kwargs.get('cwd'), stdout=subprocess.PIPE,
                                          stderr=subprocess.PIPE)
             except OSError as err:
                 result.mark_complete(status=Result.ERROR, error='OSError {}'.format(str(err)))

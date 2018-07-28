@@ -24,7 +24,7 @@ class Runner(object):
             super(self.__class__, self).__init__(*args, **kwargs)
 
     def __init__(self, cwd, files=None, include_unstaged=False, include_untracked=False,
-                 include_unstaged_changes=False):
+                 include_unstaged_changes=False, fix=False):
         self.actions = ActionCollection()
         self.plugins = PluginCollection()
         self.unstaged_changes = False
@@ -32,6 +32,7 @@ class Runner(object):
         self.cwd = os.path.abspath(cwd)
         self.git = Git(repo_path=self.cwd)
         self.include_unstaged_changes = include_unstaged_changes or include_unstaged
+        self.fix = fix
 
         # Try and load the config file
         try:
@@ -125,7 +126,7 @@ class Runner(object):
             stashed = code == 0
 
         try:
-            result = process(files=self.files, cwd=self.cwd)
+            result = process(files=self.files, cwd=self.cwd, fix=self.fix)
         except:  # noqa: E722
             raise
         finally:

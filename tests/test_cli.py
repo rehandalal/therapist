@@ -52,6 +52,19 @@ class TestInstall(object):
             assert not result.exception
             assert result.exit_code == 0
 
+    def test_reinstall_with_fix(self, cli_runner, project):
+        with chdir(project.path):
+            cli_runner.invoke(cli.install)
+            assert project.exists('.git/hooks/pre-commit')
+            old_hash = project.hash('.git/hooks/pre-commit')
+
+            result = cli_runner.invoke(cli.install, ['--fix'])
+            assert 'The pre-commit hook has already been installed.' not in result.output
+            assert not result.exception
+            assert result.exit_code == 0
+            new_hash = project.hash('.git/hooks/pre-commit')
+            assert old_hash != new_hash
+
     def test_update_outdated(self, cli_runner, project):
         with chdir(project.path):
             cli_runner.invoke(cli.install)
@@ -319,6 +332,18 @@ class TestRun(object):
             assert re.search('Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
+
+    def test_action_with_fix(self, cli_runner, project):
+        project.write('pass.py', 'UNFIXED')
+        project.git.add('.')
+        assert project.read('pass.py') == 'UNFIXED'
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['-a', 'lint', '--fix'])
+            assert re.search('Linting.+?\[SUCCESS]', result.output)
+            assert not result.exception
+            assert result.exit_code == 0
+            assert project.read('pass.py') == 'FIXED'
 
     def test_action_fails(self, cli_runner, project):
         project.write('fail.py')

@@ -15,7 +15,7 @@ if [ -x "$CWD"/pre-commit.legacy ]; then
     fi
 fi
 
-if ! %therapist_bin% run; then
+if ! %therapist_bin% run %fix%; then
     exitcode=1
 fi
 

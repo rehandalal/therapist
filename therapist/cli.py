@@ -1,4 +1,3 @@
-import hashlib
 import os
 import re
 import shutil
@@ -7,7 +6,7 @@ import subprocess
 import click
 import colorama
 
-from six import print_
+from six import iteritems, print_
 
 from therapist import __version__
 from therapist.messages import (NOT_GIT_REPO_MSG, HOOK_ALREADY_INSTALLED_MSG, EXISTING_HOOK_MSG,
@@ -22,7 +21,7 @@ from therapist.plugins.loader import list_plugins
 from therapist.runner import Runner
 from therapist.runner.result import ResultCollection
 from therapist.utils.filesystem import current_git_dir, list_files
-from therapist.utils.hook import identify_hook
+from therapist.utils.hook import hash_hook, identify_hook
 from therapist.utils.git import Git
 
 
@@ -57,6 +56,7 @@ def cli(version):
 @cli.command()
 @click.option('--force', '-f', is_flag=True, help='Force installation of the hook. This will replace any existing hook '
                                                   'unless you also use the --preserve-legacy option.')
+@click.option('--fix', is_flag=True, help='The hook will automatically fix problems where possible.')
 @click.option('--no-color', is_flag=True, help='Disables colors and other rich output.')
 @click.option('--preserve-legacy', is_flag=True, help='Preserves any existing pre-commit hook.')
 def install(**kwargs):
@@ -75,9 +75,15 @@ def install(**kwargs):
         output(NOT_GIT_REPO_MSG)
         exit(1)
 
-    with open(os.path.join(BASE_DIR, 'hooks', 'pre-commit-template'), 'r') as f:
+    hook_options = {
+        'fix': '--fix' if kwargs.get('fix') else '',
+        'therapist_bin': therapist_bin,
+    }
+
+    srchook_path = os.path.join(BASE_DIR, 'hooks', 'pre-commit-template')
+    with open(srchook_path, 'r') as f:
         srchook = f.read()
-        srchook_hash = hashlib.md5(srchook.encode()).hexdigest()
+    srchook_hash = hash_hook(srchook_path, hook_options)
 
     dsthook_path = os.path.join(git_dir, 'hooks', 'pre-commit')
 
@@ -104,7 +110,8 @@ def install(**kwargs):
     output(INSTALLING_HOOK_MSG, end='')
     with open(dsthook_path, 'w+') as f:
         srchook = srchook.replace('%hash%', srchook_hash)
-        srchook = srchook.replace('%therapist_bin%', therapist_bin)
+        for k, v in iteritems(hook_options):
+            srchook = srchook.replace('%{}%'.format(k), v)
         f.write(srchook)
     os.chmod(dsthook_path, 0o775)
     output(DONE_INSTALLING_HOOK_MSG)
@@ -172,6 +179,7 @@ def uninstall(**kwargs):
 @cli.command()
 @click.argument('paths', nargs=-1)
 @click.option('--action', '-a', default=None, help='A name of a specific action to be run.')
+@click.option('--fix', is_flag=True, help='Automatically fixes problems where possible.')
 @click.option('--include-unstaged', is_flag=True, help='Include unstaged files.')
 @click.option('--include-unstaged-changes', is_flag=True, help='Include unstaged changes to staged files.')
 @click.option('--include-untracked', is_flag=True, help='Include untracked files.')

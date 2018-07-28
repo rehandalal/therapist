@@ -13,14 +13,27 @@ def check(f):
             exit(1)
 
 
-for path in sys.argv[1:]:
+def fix(f):
+    with open(f, 'w') as fp:
+        fp.write('FIXED')
+
+
+def do(path, fn):
     path = os.path.join(BASE_DIR, path)
     if os.path.exists(path):
         if os.path.isdir(path):
             for stats in os.walk(path):
                 for f in stats[2]:
-                    check(os.path.join(stats[0], f))
+                    fn(os.path.join(stats[0], f))
         else:
-            check(path)
+            fn(path)
+
+
+if '--fix' in sys.argv[1:]:
+    for path in sys.argv[1:]:
+        do(path, fix)
+else:
+    for path in sys.argv[1:]:
+        do(path, check)
 
 print('SUCCESS!')

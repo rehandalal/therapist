@@ -1,3 +1,4 @@
+import hashlib
 import os
 import shutil
 
@@ -111,6 +112,12 @@ class Project(object):
         """Modify file permissions."""
         path = os.path.join(self.path, path)
         os.chmod(path, mode)
+
+    def hash(self, path):
+        """Gets the MD5 hash of a file"""
+        with open(path, 'r') as f:
+            data = f.read()
+        return hashlib.md5(data.encode()).hexdigest()
 
 
 class SimplePlugin(Plugin):
