@@ -1,5 +1,14 @@
 # Changelog
 
+### v1.4.1
+
+- Added the `--stage-modified-files` flag to the `run` command. When
+  this is used any files modified by the actions will be staged after
+  running.
+- Added the `--no-stage-modified-files` flag to the `install` command.
+  This prevents the default hook behaviour of staging any files
+  modified by the hook while it's running.
+
 ### v1.4.0
 
 - Added the `--fix` flag to the `run` command to automatically fix
