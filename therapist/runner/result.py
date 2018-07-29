@@ -1,5 +1,6 @@
 import time
 
+from six import iterkeys
 from xml.etree import ElementTree
 
 from therapist.collection import Collection
@@ -19,6 +20,7 @@ class Result(object):
         self.error = None
         self.start_time = time.time()
         self.end_time = self.start_time
+        self.modified_files = []
 
     def __str__(self):
         if self.is_success:
@@ -71,6 +73,13 @@ class Result(object):
         self.error = error
         self.end_time = time.time()
 
+    @property
+    def has_modified_files(self):
+        return len(self.modified_files) > 0
+
+    def add_modified_file(self, path):
+        self.modified_files.append(path)
+
 
 class ResultCollection(Collection):
     class Meta:
@@ -108,6 +117,26 @@ class ResultCollection(Collection):
     def execution_time(self):
         return sum(result.execution_time for result in self.objects)
 
+    @property
+    def has_modified_files(self):
+        for result in self.objects:
+            if result.has_modified_files:
+                return True
+        return False
+
+    @property
+    def modified_files(self):
+        modified_files = {}
+
+        for result in self.objects:
+            if result.has_modified_files:
+                for path in result.modified_files:
+                    if path not in modified_files:
+                        modified_files[path] = []
+                    modified_files[path].append(str(result.process))
+
+        return [(path, modified_files[path]) for path in sorted(iterkeys(modified_files))]
+
     def count(self, **kwargs):
         if 'status' in kwargs:
             return sum(1 for result in self.objects if result.status == kwargs.get('status'))
@@ -116,6 +145,7 @@ class ResultCollection(Collection):
     def dump(self):
         """Returns the results in string format."""
         text = ''
+
         for result in self.objects:
             if result.is_failure or result.is_error:
                 text += '\n#{red}#{bright}'
@@ -137,6 +167,11 @@ class ResultCollection(Collection):
 
                 if not text.endswith('\n'):
                     text += '\n'
+
+        if self.has_modified_files:
+            text += '\n#{yellow}Modified files:#{reset_all}\n'
+            for path, modified_by in self.modified_files:
+                text += '{} <- {}\n'.format(path, ', '.join(modified_by))
 
         return text
 

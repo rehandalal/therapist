@@ -341,9 +341,25 @@ class TestRun(object):
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['-a', 'lint', '--fix'])
             assert re.search('Linting.+?\[SUCCESS]', result.output)
+            assert re.search('Modified files:.+?\npass.py <- Linting', result.output)
             assert not result.exception
             assert result.exit_code == 0
             assert project.read('pass.py') == 'FIXED'
+            assert project.git.status(porcelain=True) == ('AM pass.py\n', '', 0)
+
+    def test_action_stage_modified_files(self, cli_runner, project):
+        project.write('pass.py', 'UNFIXED')
+        project.git.add('.')
+        assert project.read('pass.py') == 'UNFIXED'
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['-a', 'lint', '--fix', '--stage-modified-files'])
+            assert re.search('Linting.+?\[SUCCESS]', result.output)
+            assert re.search('Modified files:.+?\npass.py <- Linting', result.output)
+            assert not result.exception
+            assert result.exit_code == 0
+            assert project.read('pass.py') == 'FIXED'
+            assert project.git.status(porcelain=True) == ('A  pass.py\n', '', 0)
 
     def test_action_fails(self, cli_runner, project):
         project.write('fail.py')
@@ -596,6 +612,7 @@ class TestHook(object):
 
         out, err, code = project.git.commit(m='Should not get committed.')
         assert 'FAIL!  {}'.format(project.abspath('fail.py')) in err
+        assert 'Modified files' not in err
 
         out, err, code = project.git.status(porcelain=True)
         assert 'fail.py' in out
@@ -614,6 +631,7 @@ class TestHook(object):
 
         out, err, code = project.git.commit(m='Add a file.')
         assert '[SUCCESS]' in err
+        assert 'Modified files' not in err
 
         out, err, code = project.git.status(porcelain=True)
         assert not out
@@ -661,3 +679,45 @@ class TestHook(object):
         out, err, code = project.git.status(porcelain=True)
         assert 'pass.py' in out
         assert not err
+
+    def test_hook_with_fix(self, cli_runner, project):
+        config_data = project.get_config_data()
+        config_data.pop('plugins')
+        project.set_config_data(config_data)
+
+        with chdir(project.path):
+            cli_runner.invoke(cli.install, ['--fix'])
+        assert project.exists('.git/hooks/pre-commit')
+
+        project.write('pass.py', 'UNFIXED')
+        project.git.add('.')
+
+        out, err, code = project.git.commit(m='Add a file.')
+        assert re.search('Modified files:.+?\npass.py <- Linting', err)
+        assert '[SUCCESS]' in err
+
+        out, err, code = project.git.status(porcelain=True)
+        assert not out
+        assert not err
+        assert project.read('pass.py') == 'FIXED'
+
+    def test_hook_with_fix_without_stage_modified_files(self, cli_runner, project):
+        config_data = project.get_config_data()
+        config_data.pop('plugins')
+        project.set_config_data(config_data)
+
+        with chdir(project.path):
+            cli_runner.invoke(cli.install, ['--fix', '--no-stage-modified-files'])
+        assert project.exists('.git/hooks/pre-commit')
+
+        project.write('pass.py', 'UNFIXED')
+        project.git.add('.')
+
+        out, err, code = project.git.commit(m='Add a file.')
+        assert re.search('Modified files:.+?\npass.py <- Linting', err)
+        assert '[SUCCESS]' in err
+
+        out, err, code = project.git.status(porcelain=True)
+        assert out == ' M pass.py\n'
+        assert not err
+        assert project.read('pass.py') == 'FIXED'
