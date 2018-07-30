@@ -134,10 +134,13 @@ class Runner(object):
         try:
             result = process(files=self.files, cwd=self.cwd, fix=self.fix)
 
+            # Check for modified files
             out, err, code = self.git.status(porcelain=True, untracked_files='no')
             for line in out.splitlines():
                 file_status = Status(line)
-                if file_status.is_modified:
+
+                # Make sure the file is one of the files that was processed
+                if file_status.path in self.files and file_status.is_modified:
                     mtime = os.path.getmtime(file_status.path) if os.path.exists(file_status.path) else 0
                     if mtime > self.file_mtimes.get(file_status.path, 0):
                         result.add_modified_file(file_status.path)
