@@ -1,5 +1,10 @@
 # Changelog
 
+### v1.4.3
+
+- Fix a second issue with false positives in detecting files modified
+  by actions.
+
 ### v1.4.2
 
 - Fixes an issue with false positives in detecting files modified by
