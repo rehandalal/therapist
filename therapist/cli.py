@@ -9,6 +9,7 @@ import colorama
 from six import iteritems, print_
 
 from therapist import __version__
+from therapist.config import Config
 from therapist.messages import (NOT_GIT_REPO_MSG, HOOK_ALREADY_INSTALLED_MSG, EXISTING_HOOK_MSG,
                                 CONFIRM_PRESERVE_LEGACY_HOOK_MSG, COPYING_HOOK_MSG, DONE_COPYING_HOOK_MSG,
                                 CONFIRM_REPLACE_HOOK_MSG, INSTALL_ABORTED_MSG, INSTALLING_HOOK_MSG,
@@ -230,42 +231,43 @@ def run(**kwargs):
         kwargs['files'] = files
 
     try:
-        runner = Runner(repo_root, **kwargs)
-    except Runner.Misconfigured as err:
+        config = Config(repo_root)
+    except Config.Misconfigured as err:
         output(MISCONFIGURED_MSG.format(err.message))
 
-        if err.code == Runner.Misconfigured.PLUGIN_NOT_INSTALLED:
+        if err.code == Config.Misconfigured.PLUGIN_NOT_INSTALLED:
             output('Installed plugins:')
             for p in list_plugins():
                 output(p)
 
         exit(1)
     else:
+        runner = Runner(config.cwd, **kwargs)
         results = ResultCollection()
 
         if runner.unstaged_changes and not quiet:
             output(UNSTAGED_CHANGES_MSG, end='\n\n')
 
-        processes = list(runner.actions) + list(runner.plugins)
+        processes = list(config.actions) + list(config.plugins)
         processes.sort(key=lambda x: x.name)  # Sort the list of processes for consistent results
 
         if plugin:
             try:
-                processes = [runner.plugins.get(plugin)]
-            except runner.plugins.DoesNotExist as err:
+                processes = [config.plugins.get(plugin)]
+            except config.plugins.DoesNotExist as err:
                 output('{}\nAvailable plugins:'.format(err.message))
 
-                for p in runner.plugins:
+                for p in config.plugins:
                     output(p.name)
                 exit(1)
 
         if action:
             try:
-                processes = [runner.actions.get(action)]
-            except runner.actions.DoesNotExist as err:
+                processes = [config.actions.get(action)]
+            except config.actions.DoesNotExist as err:
                 output('{}\nAvailable actions:'.format(err.message))
 
-                for a in runner.actions:
+                for a in config.actions:
                     output(a.name)
                 exit(1)
 
