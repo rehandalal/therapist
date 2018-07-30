@@ -341,7 +341,7 @@ class TestRun(object):
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['-a', 'lint', '--fix'])
             assert re.search('Linting.+?\[SUCCESS]', result.output)
-            assert re.search('Modified files:.+?\npass.py <- Linting', result.output)
+            assert re.search('Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
             assert not result.exception
             assert result.exit_code == 0
             assert project.read('pass.py') == 'FIXED'
@@ -355,7 +355,7 @@ class TestRun(object):
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['-a', 'lint', '--fix', '--stage-modified-files'])
             assert re.search('Linting.+?\[SUCCESS]', result.output)
-            assert re.search('Modified files:.+?\npass.py <- Linting', result.output)
+            assert re.search('Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
             assert not result.exception
             assert result.exit_code == 0
             assert project.read('pass.py') == 'FIXED'
@@ -708,7 +708,7 @@ class TestHook(object):
         project.git.add('.')
 
         out, err, code = project.git.commit(m='Add a file.')
-        assert re.search('Modified files:.+?\npass.py <- Linting', err)
+        assert re.search('Modified files:.+?pass.py.+?<- Linting', err, flags=re.DOTALL)
         assert '[SUCCESS]' in err
 
         out, err, code = project.git.status(porcelain=True)
@@ -729,7 +729,7 @@ class TestHook(object):
         project.git.add('.')
 
         out, err, code = project.git.commit(m='Add a file.')
-        assert re.search('Modified files:.+?\npass.py <- Linting', err)
+        assert re.search('Modified files:.+?pass.py.+?<- Linting', err, flags=re.DOTALL)
         assert '[SUCCESS]' in err
 
         out, err, code = project.git.status(porcelain=True)

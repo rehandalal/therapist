@@ -169,9 +169,11 @@ class ResultCollection(Collection):
                     text += '\n'
 
         if self.has_modified_files:
-            text += '\n#{yellow}Modified files:#{reset_all}\n'
+            text += '\n#{{yellow}}#{{bright}}{}\n'.format(''.ljust(79, '-'))
+            text += 'Modified files:\n'
+            text += '{}\n'.format(''.ljust(79, '-'))
             for path, modified_by in self.modified_files:
-                text += '{} <- {}\n'.format(path, ', '.join(modified_by))
+                text += '#{{reset_all}}{} #{{cyan}}<- {}\n'.format(path, ', '.join(modified_by))
 
         return text
 
