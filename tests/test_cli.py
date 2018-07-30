@@ -560,6 +560,10 @@ class TestRun(object):
             assert result.exit_code == 2
             assert 'Modified files' not in result.output
 
+            result = cli_runner.invoke(cli.run, ['foo.py'])
+            assert result.exit_code == 0
+            assert 'Modified files' not in result.output
+
     def test_misconfigured(self, cli_runner, project):
         config_data = project.get_config_data()
         config_data.pop('actions')
