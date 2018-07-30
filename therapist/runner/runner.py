@@ -34,6 +34,7 @@ class Runner(object):
         self.include_unstaged_changes = include_unstaged_changes or include_unstaged
         self.fix = fix
         self.stage_modified_files = stage_modified_files
+        self.file_mtimes = {}
 
         # Try and load the config file
         try:
@@ -114,6 +115,9 @@ class Runner(object):
 
                 files.append(file_status.path)
 
+        for path in files:
+            self.file_mtimes[path] = os.path.getmtime(path)
+
         self.files = files
 
     def run_process(self, process):
@@ -133,9 +137,11 @@ class Runner(object):
             for line in out.splitlines():
                 file_status = Status(line)
                 if file_status.is_modified:
-                    result.add_modified_file(file_status.path)
-                    if self.stage_modified_files:
-                        self.git.add(file_status.path)
+                    mtime = os.path.getmtime(file_status.path)
+                    if mtime > self.file_mtimes.get(file_status.path, 0):
+                        result.add_modified_file(file_status.path)
+                        if self.stage_modified_files:
+                            self.git.add(file_status.path)
 
         except:  # noqa: E722
             raise
