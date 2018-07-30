@@ -116,7 +116,8 @@ class Runner(object):
                 files.append(file_status.path)
 
         for path in files:
-            self.file_mtimes[path] = os.path.getmtime(path)
+            if os.path.exists(path):
+                self.file_mtimes[path] = os.path.getmtime(path)
 
         self.files = files
 
@@ -137,7 +138,7 @@ class Runner(object):
             for line in out.splitlines():
                 file_status = Status(line)
                 if file_status.is_modified:
-                    mtime = os.path.getmtime(file_status.path)
+                    mtime = os.path.getmtime(file_status.path) if os.path.exists(file_status.path) else 0
                     if mtime > self.file_mtimes.get(file_status.path, 0):
                         result.add_modified_file(file_status.path)
                         if self.stage_modified_files:

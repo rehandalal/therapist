@@ -549,6 +549,17 @@ class TestRun(object):
             assert result.exception
             assert result.exit_code == 2
 
+    def test_no_false_positive_modified_files(self, cli_runner, project):
+        project.write('fail.py')
+        project.git.add('.')
+        project.git.commit(m='Add file.')
+        project.write('fail.py', 'CHANGE')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['--use-tracked-files'])
+            assert result.exit_code == 2
+            assert 'Modified files' not in result.output
+
     def test_misconfigured(self, cli_runner, project):
         config_data = project.get_config_data()
         config_data.pop('actions')
