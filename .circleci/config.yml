@@ -21,12 +21,14 @@ jobs:
       - run:
           name: Create virtualenv
           command: |
-            python -m venv ~/.venv
+            mkdir -p ~/.venv
+            virtualenv ~/.venv
             echo "source ~/.venv/bin/activate" >> $BASH_ENV
 
       - run:
           name: Install dependencies
           command: |
+            python --version
             pip install -r requirements-dev.txt
             pip install .
 
