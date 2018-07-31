@@ -1,10 +1,22 @@
+shortcuts:
+  lint:
+    options:
+      action: lint
+    flags:
+      - use-tracked-files
+      - include-untracked
+  "lint:fix":
+    extends: lint
+    flags: fix
 actions:
   lint:
     description: Linting
     include:
       - "*.txt"
       - "*.py"
-    exclude: ".ignore*"
+    exclude:
+      - ".ignore*"
+      - "scripts/"
     run: ./scripts/lint.py {files}
     fix: ./scripts/lint.py --fix {files}
 plugins:

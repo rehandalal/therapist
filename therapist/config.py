@@ -89,8 +89,15 @@ class Config(object):
                     raise self.Misconfigured('`shortcuts` was not configured correctly.',
                                              code=self.Misconfigured.SHORTCUTS_WRONGLY_CONFIGURED)
                 else:
+                    if not isinstance(shortcuts, dict):
+                        raise self.Misconfigured('`shortcuts` was not configured correctly.',
+                                                 code=self.Misconfigured.SHORTCUTS_WRONGLY_CONFIGURED)
+
                     for shortcut_name in shortcuts:
-                        self.shortcuts.append(Shortcut(shortcut_name, **shortcuts[shortcut_name]))
+                        settings = shortcuts[shortcut_name]
+                        if settings is None:
+                            settings = {}
+                        self.shortcuts.append(Shortcut(shortcut_name, **settings))
 
             if not (self.actions or self.plugins):
                 raise self.Misconfigured('`actions` or `plugins` must be specified in the configuration file.',

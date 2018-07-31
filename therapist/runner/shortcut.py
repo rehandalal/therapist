@@ -49,7 +49,7 @@ class Shortcut(object):
         options.update(apply.options)
 
         flags = self.flags
-        flags.union(apply.flags)
+        flags = flags.union(apply.flags)
 
         return Shortcut(apply.name, options=options, flags=flags)
 

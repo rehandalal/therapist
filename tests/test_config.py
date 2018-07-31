@@ -77,3 +77,29 @@ class TestConfig(object):
             Config(project.path)
 
         assert err.value.code == Config.Misconfigured.PLUGIN_INVALID
+
+    def test_shortcuts_wrongly_configured(self, project):
+        project.write('.therapist.yml', 'shortcuts')
+
+        with pytest.raises(Config.Misconfigured) as err:
+            Config(project.path)
+
+        assert err.value.code == Config.Misconfigured.SHORTCUTS_WRONGLY_CONFIGURED
+
+        project.write('.therapist.yml', 'shortcuts:\n  flake8')
+
+        with pytest.raises(Config.Misconfigured) as err:
+            Config(project.path)
+
+        assert err.value.code == Config.Misconfigured.SHORTCUTS_WRONGLY_CONFIGURED
+
+    def test_empty_shortcut(self, project):
+        project.write('.therapist.yml', 'actions:\n  flake8: ~\nshortcuts:\n  flake8: ~')
+        config = Config(project.path)
+        assert config.shortcuts[0].name == 'flake8'
+
+    def test_shortcut_option_string(self, project):
+        project.write('.therapist.yml', 'actions:\n  flake8: ~\nshortcuts:\n  flake8:\n    options: fix')
+        config = Config(project.path)
+        assert config.shortcuts[0].name == 'flake8'
+        assert config.shortcuts[0].options == {'fix': True}

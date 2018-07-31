@@ -334,8 +334,8 @@ def use(ctx, shortcut):
             options[flag.replace('-', '_')] = True
 
         options_string = ''
-        for k, v in iteritems(options):
-            options_string += ' --{}'.format(k)
+        for k, v in sorted(iteritems(options)):
+            options_string += ' --{}'.format(k.replace('_', '-'))
             if v is not True:
                 options_string += ' {}'.format(v)
 
