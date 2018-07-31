@@ -35,7 +35,7 @@ jobs:
       - save_cache:
           paths:
             - "~/.venv"
-          key: v1-python
+          key: v1-python-{{ .Environment.PY_VERSION }}
 
       - run:
           name: Lint
@@ -120,5 +120,7 @@ workflows:
             - test-py35
             - test-py36
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /^v.*/
