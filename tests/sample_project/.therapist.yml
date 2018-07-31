@@ -3,11 +3,18 @@ shortcuts:
     options:
       action: lint
     flags:
-      - use-tracked-files
       - include-untracked
-  "lint:fix":
+  "lint:all":
+    extends: lint
+    flags:
+      - use-tracked-files
+  fix:
     extends: lint
     flags: fix
+  "fix:all":
+    extends: fix
+    flags:
+      - use-tracked-files
 actions:
   lint:
     description: Linting

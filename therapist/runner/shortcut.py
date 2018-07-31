@@ -51,7 +51,7 @@ class Shortcut(object):
         flags = self.flags
         flags = flags.union(apply.flags)
 
-        return Shortcut(apply.name, options=options, flags=flags)
+        return Shortcut(apply.name, extends=self.extends, options=options, flags=flags)
 
 
 class ShortcutCollection(Collection):

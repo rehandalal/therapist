@@ -639,7 +639,7 @@ class TestUse(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.use, ['lint'])
-            assert '$ therapist run --action lint --include-untracked --use-tracked-files' in result.output
+            assert '$ therapist run --action lint --include-untracked' in result.output
             assert re.search('Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
@@ -650,7 +650,22 @@ class TestUse(object):
         assert project.read('pass.py') == 'UNFIXED'
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.use, ['lint:fix'])
+            result = cli_runner.invoke(cli.use, ['fix'])
+            assert '$ therapist run --action lint --fix --include-untracked' in result.output
+            assert re.search('Linting.+?\[SUCCESS]', result.output)
+            assert re.search('Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
+            assert not result.exception
+            assert result.exit_code == 0
+            assert project.read('pass.py') == 'FIXED'
+            assert project.git.status(porcelain=True) == ('AM pass.py\n', '', 0)
+
+    def test_extend_extended_shortcut(self, cli_runner, project):
+        project.write('pass.py', 'UNFIXED')
+        project.git.add('.')
+        assert project.read('pass.py') == 'UNFIXED'
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.use, ['fix:all'])
             assert '$ therapist run --action lint --fix --include-untracked --use-tracked-files' in result.output
             assert re.search('Linting.+?\[SUCCESS]', result.output)
             assert re.search('Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
@@ -667,7 +682,7 @@ class TestUse(object):
             result = cli_runner.invoke(cli.use, ['notarealshortcut'])
             assert 'Available shortcuts:' in result.output
             assert 'lint' in result.output
-            assert 'lint:fix' in result.output
+            assert 'fix' in result.output
             assert result.exception
             assert result.exit_code == 1
 
