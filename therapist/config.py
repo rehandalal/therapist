@@ -6,6 +6,7 @@ from therapist.plugins.exc import InvalidPlugin, PluginNotInstalled
 from therapist.plugins.loader import load_plugin
 from therapist.plugins.plugin import PluginCollection
 from therapist.runner.action import Action, ActionCollection
+from therapist.runner.shortcut import Shortcut, ShortcutCollection
 
 
 class Config(object):
@@ -17,6 +18,7 @@ class Config(object):
         PLUGINS_WRONGLY_CONFIGURED = 5
         PLUGIN_NOT_INSTALLED = 6
         PLUGIN_INVALID = 7
+        SHORTCUTS_WRONGLY_CONFIGURED = 6
 
         def __init__(self, *args, **kwargs):
             self.code = kwargs.pop('code', None)
@@ -26,6 +28,7 @@ class Config(object):
         self.cwd = os.path.abspath(cwd)
         self.actions = ActionCollection()
         self.plugins = PluginCollection()
+        self.shortcuts = ShortcutCollection()
 
         # Try and load the config file
         try:
@@ -78,6 +81,16 @@ class Config(object):
                         if settings is None:
                             settings = {}
                         self.plugins.append(plugin(plugin_name, **settings))
+
+            if 'shortcuts' in config:
+                try:
+                    shortcuts = config['shortcuts']
+                except TypeError:
+                    raise self.Misconfigured('`shortcuts` was not configured correctly.',
+                                             code=self.Misconfigured.SHORTCUTS_WRONGLY_CONFIGURED)
+                else:
+                    for shortcut_name in shortcuts:
+                        self.shortcuts.append(Shortcut(shortcut_name, **shortcuts[shortcut_name]))
 
             if not (self.actions or self.plugins):
                 raise self.Misconfigured('`actions` or `plugins` must be specified in the configuration file.',
