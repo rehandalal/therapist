@@ -9,6 +9,7 @@ import colorama
 from six import iteritems, print_
 
 from therapist import __version__
+from therapist.config import Config
 from therapist.messages import (NOT_GIT_REPO_MSG, HOOK_ALREADY_INSTALLED_MSG, EXISTING_HOOK_MSG,
                                 CONFIRM_PRESERVE_LEGACY_HOOK_MSG, COPYING_HOOK_MSG, DONE_COPYING_HOOK_MSG,
                                 CONFIRM_REPLACE_HOOK_MSG, INSTALL_ABORTED_MSG, INSTALLING_HOOK_MSG,
@@ -28,6 +29,22 @@ from therapist.utils.git import Git
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 git = Git()
+
+
+def get_config(path):
+    try:
+        config = Config(path)
+    except Config.Misconfigured as err:
+        output(MISCONFIGURED_MSG.format(err.message))
+
+        if err.code == Config.Misconfigured.PLUGIN_NOT_INSTALLED:
+            output('Installed plugins:')
+            for p in list_plugins():
+                output(p)
+
+        exit(1)
+    else:
+        return config
 
 
 def output(message, **kwargs):
@@ -226,65 +243,101 @@ def run(**kwargs):
         out, err, code = git.ls_files()
         files = out.splitlines()
 
+        if kwargs.get('include_untracked'):
+            out, err, code = git.ls_files(o=True, exclude_standard=True)
+            files += out.splitlines()
+
     if files or paths:
         kwargs['files'] = files
 
-    try:
-        runner = Runner(repo_root, **kwargs)
-    except Runner.Misconfigured as err:
-        output(MISCONFIGURED_MSG.format(err.message))
+    config = get_config(repo_root)
+    runner = Runner(config.cwd, **kwargs)
+    results = ResultCollection()
 
-        if err.code == Runner.Misconfigured.PLUGIN_NOT_INSTALLED:
-            output('Installed plugins:')
-            for p in list_plugins():
-                output(p)
+    if runner.unstaged_changes and not quiet:
+        output(UNSTAGED_CHANGES_MSG, end='\n\n')
 
-        exit(1)
-    else:
-        results = ResultCollection()
+    processes = list(config.actions) + list(config.plugins)
+    processes.sort(key=lambda x: x.name)  # Sort the list of processes for consistent results
 
-        if runner.unstaged_changes and not quiet:
-            output(UNSTAGED_CHANGES_MSG, end='\n\n')
+    if plugin:
+        try:
+            processes = [config.plugins.get(plugin)]
+        except config.plugins.DoesNotExist as err:
+            output('{}\nAvailable plugins:'.format(err.message))
 
-        processes = list(runner.actions) + list(runner.plugins)
-        processes.sort(key=lambda x: x.name)  # Sort the list of processes for consistent results
+            for p in config.plugins:
+                output(p.name)
+            exit(1)
 
-        if plugin:
-            try:
-                processes = [runner.plugins.get(plugin)]
-            except runner.plugins.DoesNotExist as err:
-                output('{}\nAvailable plugins:'.format(err.message))
+    if action:
+        try:
+            processes = [config.actions.get(action)]
+        except config.actions.DoesNotExist as err:
+            output('{}\nAvailable actions:'.format(err.message))
 
-                for p in runner.plugins:
-                    output(p.name)
-                exit(1)
+            for a in config.actions:
+                output(a.name)
+            exit(1)
 
-        if action:
-            try:
-                processes = [runner.actions.get(action)]
-            except runner.actions.DoesNotExist as err:
-                output('{}\nAvailable actions:'.format(err.message))
-
-                for a in runner.actions:
-                    output(a.name)
-                exit(1)
-
-        for process in processes:
-            result, message = runner.run_process(process)
-            results.append(result)
-
-            if not quiet:
-                output(message)
-
-        if junit_xml:
-            with open(junit_xml, 'w+') as f:
-                f.write('{}'.format(results.dump_junit()))
+    for process in processes:
+        result, message = runner.run_process(process)
+        results.append(result)
 
         if not quiet:
-            output(results.dump())
-            output('#{{bright}}{}\nCompleted in: {}s'.format(''.ljust(79, '-'), round(results.execution_time, 2)))
+            output(message)
 
-        if results.has_error:
-            exit(1)
-        elif results.has_failure:
-            exit(2)
+    if junit_xml:
+        with open(junit_xml, 'w+') as f:
+            f.write('{}'.format(results.dump_junit()))
+
+    if not quiet:
+        output(results.dump())
+        output('#{{bright}}{}\nCompleted in: {}s'.format(''.ljust(79, '-'), round(results.execution_time, 2)))
+
+    if results.has_error:
+        exit(1)
+    elif results.has_failure:
+        exit(2)
+
+
+@cli.command()
+@click.argument('shortcut', nargs=1)
+@click.pass_context
+def use(ctx, shortcut):
+    """Use a shortcut."""
+    git_dir = current_git_dir()
+
+    if git_dir is None:
+        output(NOT_GIT_REPO_MSG)
+        exit(1)
+
+    repo_root = os.path.dirname(git_dir)
+
+    config = get_config(repo_root)
+
+    try:
+        use_shortcut = config.shortcuts.get(shortcut)
+
+        while use_shortcut.extends is not None:
+            base = config.shortcuts.get(use_shortcut.extends)
+            use_shortcut = base.extend(use_shortcut)
+    except config.shortcuts.DoesNotExist as err:
+        output('{}\nAvailable shortcuts:'.format(err.message))
+
+        for s in config.shortcuts:
+            output(s.name)
+        exit(1)
+    else:
+        options = use_shortcut.options
+        for flag in use_shortcut.flags:
+            options[flag.replace('-', '_')] = True
+
+        options_string = ''
+        for k, v in sorted(iteritems(options)):
+            options_string += ' --{}'.format(k.replace('_', '-'))
+            if v is not True:
+                options_string += ' {}'.format(v)
+
+        output('#{{dim}}$ therapist run{}\n'.format(options_string))
+        ctx.invoke(run, **options)

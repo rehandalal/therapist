@@ -3,6 +3,7 @@
 import pytest
 import six
 
+from therapist.config import Config
 from therapist.runner import Runner
 from therapist.runner.action import Action, ActionCollection
 from therapist.runner.result import Result, ResultCollection
@@ -308,80 +309,6 @@ class TestResultCollection(object):
 
 
 class TestRunner(object):
-    def test_instantiation(self, project):
-        Runner(project.path)
-
-    def test_no_config_file(self):
-        with pytest.raises(Runner.Misconfigured) as err:
-            Runner('file/that/doesnt/exist', files=['test'])
-
-        assert err.value.code == Runner.Misconfigured.NO_CONFIG_FILE
-
-    def test_empty_config_file(self, project):
-        project.write('.therapist.yml', '')
-
-        with pytest.raises(Runner.Misconfigured) as err:
-            Runner(project.path)
-
-        assert err.value.code == Runner.Misconfigured.EMPTY_CONFIG
-
-    def test_no_actions_or_plugins_in_config(self, project):
-        data = project.get_config_data()
-        data.pop('actions')
-        data.pop('plugins')
-        project.set_config_data(data)
-
-        with pytest.raises(Runner.Misconfigured) as err:
-            Runner(project.path)
-
-        assert err.value.code == Runner.Misconfigured.NO_ACTIONS_OR_PLUGINS
-
-    def test_actions_wrongly_configured(self, project):
-        project.write('.therapist.yml', 'actions')
-
-        with pytest.raises(Runner.Misconfigured) as err:
-            Runner(project.path)
-
-        assert err.value.code == Runner.Misconfigured.ACTIONS_WRONGLY_CONFIGURED
-
-        project.write('.therapist.yml', 'actions:\n  flake8')
-
-        with pytest.raises(Runner.Misconfigured) as err:
-            Runner(project.path)
-
-        assert err.value.code == Runner.Misconfigured.ACTIONS_WRONGLY_CONFIGURED
-
-    def test_plugins_wrongly_configured(self, project):
-        project.write('.therapist.yml', 'plugins')
-
-        with pytest.raises(Runner.Misconfigured) as err:
-            Runner(project.path)
-
-        assert err.value.code == Runner.Misconfigured.PLUGINS_WRONGLY_CONFIGURED
-
-        project.write('.therapist.yml', 'plugins:\n  simple')
-
-        with pytest.raises(Runner.Misconfigured) as err:
-            Runner(project.path)
-
-        assert err.value.code == Runner.Misconfigured.PLUGINS_WRONGLY_CONFIGURED
-
-    def test_plugin_not_installed(self, project):
-        project.write('.therapist.yml', 'plugins:\n  notsimple: ~')
-
-        with pytest.raises(Runner.Misconfigured) as err:
-            Runner(project.path)
-
-        assert err.value.code == Runner.Misconfigured.PLUGIN_NOT_INSTALLED
-
-    def test_plugin_invalid(self, project, mock_plugin):
-        mock_plugin(plugin_class=Runner)
-
-        with pytest.raises(Runner.Misconfigured) as err:
-            Runner(project.path)
-
-        assert err.value.code == Runner.Misconfigured.PLUGIN_INVALID
-
     def test_unstaged_changes(self, project):
         project.write('pass.txt', 'FAIL')
         project.git.add('.')
@@ -391,8 +318,9 @@ class TestRunner(object):
         out, err, code = project.git.status(porcelain=True)
         assert 'AM pass.txt' in out
 
-        r = Runner(project.path)
-        result, message = r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        result, message = r.run_process(c.actions.get('lint'))
 
         assert result.is_failure
 
@@ -404,8 +332,9 @@ class TestRunner(object):
     def test_include_untracked(self, project):
         project.write('fail.txt')
 
-        r = Runner(project.path, include_untracked=True)
-        result, message = r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd, include_untracked=True)
+        result, message = r.run_process(c.actions.get('lint'))
         assert result.is_failure
 
         assert 'fail.txt' in r.files
@@ -420,8 +349,9 @@ class TestRunner(object):
 
         project.write('fail.txt', 'x')
 
-        r = Runner(project.path, include_unstaged=True)
-        result, message = r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd, include_unstaged=True)
+        result, message = r.run_process(c.actions.get('lint'))
         assert result.is_failure
 
         assert 'fail.txt' in r.files
@@ -437,8 +367,9 @@ class TestRunner(object):
         out, err, code = project.git.status(porcelain=True)
         assert 'AM pass.txt' in out
 
-        r = Runner(project.path, include_unstaged_changes=True)
-        result, message = r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd, include_unstaged_changes=True)
+        result, message = r.run_process(c.actions.get('lint'))
         assert result.is_success
 
         assert project.read('pass.txt') == 'x'
@@ -447,17 +378,19 @@ class TestRunner(object):
         assert 'AM pass.txt' in out
 
     def test_run_action_does_not_exist(self, project):
-        r = Runner(project.path)
+        c = Config(project.path)
+        r = Runner(c.cwd)
 
-        with pytest.raises(r.actions.DoesNotExist):
-            r.run_process(r.actions.get('notanaction'))
+        with pytest.raises(c.actions.DoesNotExist):
+            r.run_process(c.actions.get('notanaction'))
 
     def test_run_process_success(self, project):
         project.write('pass.py')
         project.git.add('.')
 
-        r = Runner(project.path)
-        result, message = r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        result, message = r.run_process(c.actions.get('lint'))
 
         assert result.is_success
         assert 'pass.py' in r.files
@@ -468,8 +401,9 @@ class TestRunner(object):
         project.write('fail.txt')
         project.git.add('.')
 
-        r = Runner(project.path)
-        result, message = r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        result, message = r.run_process(c.actions.get('lint'))
         assert result.is_failure
 
         assert 'fail.txt' in r.files
@@ -480,8 +414,9 @@ class TestRunner(object):
         project.write('.ignore.pass.py')
         project.git.add('.')
 
-        r = Runner(project.path)
-        result, message = r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        result, message = r.run_process(c.actions.get('lint'))
 
         assert '.ignore.pass.py' in r.files
         assert message == ('#{bright}Linting ............................................................. '
@@ -492,8 +427,9 @@ class TestRunner(object):
             project.write('pass{}.txt'.format(str(i).ljust(200, '_')))
         project.git.add('.')
 
-        r = Runner(project.path)
-        result, message = r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        result, message = r.run_process(c.actions.get('lint'))
         assert result.is_error
 
         assert len(r.files) == 1000
@@ -506,8 +442,9 @@ class TestRunner(object):
         project.git.commit(m='Add file.')
         project.git.rm('pass.py')
 
-        r = Runner(project.path)
-        r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        r.run_process(c.actions.get('lint'))
 
         assert len(r.files) == 0
 
@@ -524,8 +461,9 @@ class TestRunner(object):
         project.write('pass.py')
         project.git.add('.')
 
-        r = Runner(project.path)
-        result, message = r.run_process(r.actions.get('norun'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        result, message = r.run_process(c.actions.get('norun'))
 
         assert 'pass.py' in r.files
         assert message == ('#{bright}Skips ............................................................... '
@@ -545,8 +483,9 @@ class TestRunner(object):
         project.write('pass.py')
         project.git.add('.')
 
-        r = Runner(project.path)
-        result, message = r.run_process(r.actions.get('runissue'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        result, message = r.run_process(c.actions.get('runissue'))
         assert result.is_failure
 
         assert 'pass.py' in r.files
@@ -558,8 +497,9 @@ class TestRunner(object):
         project.write('fail.js')
         project.git.add('.')
 
-        r = Runner(project.path)
-        result, message = r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        result, message = r.run_process(c.actions.get('lint'))
 
         assert 'fail.js' in r.files
         assert message == ('#{bright}Linting ............................................................. '
@@ -570,8 +510,9 @@ class TestRunner(object):
         project.write('.ignore.fail.txt')
         project.git.add('.')
 
-        r = Runner(project.path)
-        result, message = r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        result, message = r.run_process(c.actions.get('lint'))
 
         assert '.ignore.fail.txt' in r.files
         assert message == ('#{bright}Linting ............................................................. '
@@ -582,7 +523,8 @@ class TestRunner(object):
         project.git.add('.')
         project.write('pass.py', 'changed')
 
-        r = Runner(project.path)
+        c = Config(project.path)
+        r = Runner(c.cwd)
 
         def raise_exc():
             raise Exception
@@ -590,7 +532,7 @@ class TestRunner(object):
         monkeypatch.setattr('time.time', raise_exc)
 
         with pytest.raises(Exception):
-            r.run_process(r.actions.get('lint'))
+            r.run_process(c.actions.get('lint'))
 
         assert project.read('pass.py') == 'changed'
 
@@ -598,8 +540,9 @@ class TestRunner(object):
         project.write('fail.txt')
         project.git.add('.')
 
-        r = Runner(project.path)
-        result, message = r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        result, message = r.run_process(c.actions.get('lint'))
 
         assert result.is_failure
 
@@ -620,8 +563,9 @@ class TestRunner(object):
         project.write('pass.py')
         project.git.add('.')
 
-        r = Runner(project.path)
-        result, message = r.run_process(r.actions.get('no-settings'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        result, message = r.run_process(c.actions.get('no-settings'))
 
         assert 'pass.py' in r.files
         assert message == ('#{bright}no-settings ......................................................... '
@@ -639,8 +583,9 @@ class TestRunner(object):
         assert project.read('test.txt') == 'unchanged'
         assert out.startswith('stash@{0}')
 
-        r = Runner(project.path)
-        result, message = r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        result, message = r.run_process(c.actions.get('lint'))
         out, err, code = project.git.stash.list()
 
         assert result.is_skip
@@ -662,8 +607,9 @@ class TestRunner(object):
         project.write('fail.txt')
         project.git.add('.')
 
-        r = Runner(project.path)
-        result, message = r.run_process(r.actions.get('lint'))
+        c = Config(project.path)
+        r = Runner(c.cwd)
+        result, message = r.run_process(c.actions.get('lint'))
 
         assert result.is_failure
         assert project.exists('fail.txt')
