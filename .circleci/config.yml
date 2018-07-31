@@ -1,0 +1,86 @@
+version: 2
+jobs:
+  test: &test-defaults
+    steps:
+      - checkout
+
+      - run:
+          name: Install dependencies
+          command: |
+            pip install -r requirements-dev.txt
+            pip install .
+
+      - run:
+          name: Lint
+          command: therapist run --use-tracked-files
+
+      - run:
+          name: Test
+          command: py.test
+
+  test-py27:
+    <<: *test-defaults
+    docker:
+      - image: circleci/python:2.7
+
+  test-py34:
+    <<: *test-defaults
+    docker:
+      - image: circleci/python:3.4
+
+  test-py35:
+    <<: *test-defaults
+    docker:
+      - image: circleci/python:3.5
+
+  test-py36:
+    <<: *test-defaults
+    docker:
+      - image: circleci/python:3.6
+
+  deploy:
+    steps:
+      - checkout
+      
+      - run:
+          name: Install dependencies
+          command: pip install twine
+
+      - run:
+          name: Verify git tag matches version
+          command: python setup.py verify
+
+      - run:
+          name: Create .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = levlaz" >> ~/.pypirc
+            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+
+      - run:
+          name: Create distributions
+          command: |
+            python setup.py sdist
+            python setup.py bdist_wheel
+      
+      - run:
+          name: Upload to PyPI
+          command: twine upload dist/*
+
+workflows:
+  version: 2
+  test_and_deploy:
+    jobs:
+      - test-py27
+      - test-py34
+      - test-py35
+      - test-py36
+      - deploy:
+          requires:
+            - test-py27
+            - test-py34
+            - test-py35
+            - test-py36
+          filters:
+            tags:
+              only: /^v.*/
