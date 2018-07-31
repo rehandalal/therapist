@@ -96,7 +96,7 @@ jobs:
           name: Create .pypirc
           command: |
             echo -e "[pypi]" >> ~/.pypirc
-            echo -e "username = levlaz" >> ~/.pypirc
+            echo -e "username = rehandalal" >> ~/.pypirc
             echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
 
       - run:

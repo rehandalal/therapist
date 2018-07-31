@@ -47,8 +47,6 @@ setup(
     zip_safe=False,
     platforms='any',
     install_requires=DEPENDENCIES,
-    setup_requires=['pytest-runner'],
-    tests_require=['pytest'],
     py_modules=['therapist'],
     entry_points={
         'console_scripts': [
