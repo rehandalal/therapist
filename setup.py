@@ -2,8 +2,10 @@
 A smart pre-commit hook for git.
 """
 import os
+import sys
 
 from setuptools import find_packages, setup
+from setuptools.command.install import install
 
 
 DEPENDENCIES = [
@@ -17,6 +19,18 @@ DEPENDENCIES = [
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
 version = __import__('therapist').__version__
+
+
+class VerifyVersionCommand(install):
+    """Custom command to verify that the git tag matches our version"""
+    description = 'verify that the git tag matches our version'
+
+    def run(self):
+        tag = os.getenv('CIRCLE_TAG')
+
+        if tag != 'v{}'.format(version):
+            info = "Git tag: {0} does not match the version of this app: {1}".format(tag, version)
+            sys.exit(info)
 
 
 setup(
@@ -57,5 +71,8 @@ setup(
         'Topic :: Software Development :: Build Tools',
         'Topic :: Software Development :: Quality Assurance',
         'Topic :: Software Development :: Testing',
-    ]
+    ],
+    cmdclass={
+        'verify': VerifyVersionCommand,
+    }
 )
