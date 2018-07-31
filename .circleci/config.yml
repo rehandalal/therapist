@@ -3,14 +3,12 @@ jobs:
   test: &test-defaults
     docker:
       - image: circleci/python:2.7
-        environment:
-          PY_VERSION: 2.7
 
     steps:
       - checkout
 
       - restore_cache:
-          key: v1-python-{{ .Environment.PY_VERSION }}
+          key: v1-python-{{ .Environment.CIRCLE_JOB }}
 
       - run:
           name: Install shellcheck
@@ -35,7 +33,7 @@ jobs:
       - save_cache:
           paths:
             - "~/.venv"
-          key: v1-python-{{ .Environment.PY_VERSION }}
+          key: v1-python-{{ .Environment.CIRCLE_JOB }}
 
       - run:
           name: Lint
@@ -49,29 +47,21 @@ jobs:
     <<: *test-defaults
     docker:
       - image: circleci/python:2.7
-        environment:
-          PY_VERSION: 2.7
 
   test-py34:
     <<: *test-defaults
     docker:
       - image: circleci/python:3.4
-        environment:
-          PY_VERSION: 3.4
 
   test-py35:
     <<: *test-defaults
     docker:
       - image: circleci/python:3.5
-        environment:
-          PY_VERSION: 3.5
 
   test-py36:
     <<: *test-defaults
     docker:
       - image: circleci/python:3.6
-        environment:
-          PY_VERSION: 3.6
 
   deploy:
     docker:
