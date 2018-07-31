@@ -7,14 +7,14 @@ jobs:
     steps:
       - checkout
 
-      - restore_cache:
-          key: v1-python-{{ .Environment.CIRCLE_JOB }}
-
       - run:
           name: Install shellcheck
           command: |
             sudo apt-get update
             sudo apt-get install shellcheck
+
+      - restore_cache:
+          key: v1-python-{{ .Environment.CIRCLE_JOB }}
 
       - run:
           name: Create virtualenv
@@ -26,7 +26,6 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            python --version
             pip install -r requirements-dev.txt
             pip install .
 
@@ -69,10 +68,25 @@ jobs:
 
     steps:
       - checkout
+
+      - restore_cache:
+          key: v1-python-{{ .Environment.CIRCLE_JOB }}
+
+      - run:
+          name: Create virtualenv
+          command: |
+            mkdir -p ~/.venv
+            virtualenv ~/.venv
+            echo "source ~/.venv/bin/activate" >> $BASH_ENV
       
       - run:
           name: Install dependencies
           command: pip install twine
+
+      - save_cache:
+          paths:
+            - "~/.venv"
+          key: v1-python-{{ .Environment.CIRCLE_JOB }}
 
       - run:
           name: Verify git tag matches version
