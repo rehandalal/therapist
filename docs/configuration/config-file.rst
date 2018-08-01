@@ -24,3 +24,12 @@ configuration file describes a set of actions like so:
                 include:
                     - "*.js"
                     - "*.jsx"
+        shortcuts:
+            lint-all:
+                flags:
+                    - use-tracked-files
+                    - include-untracked
+            flake8-all:
+                extends: lint-all
+                options:
+                    action: flake8

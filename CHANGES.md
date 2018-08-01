@@ -1,5 +1,12 @@
 # Changelog
 
+### v1.5.0
+
+- Fix an issue with detecting which action modified files.
+- Added the ability to configure shortcuts. 
+- When `--include-untracked` and `--use-tracked-files` are used
+  together the files are correctly selected.
+
 ### v1.4.3
 
 - Fix a second issue with false positives in detecting files modified
