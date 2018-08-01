@@ -113,10 +113,22 @@ workflows:
   version: 2
   test_and_deploy:
     jobs:
-      - test-py27
-      - test-py34
-      - test-py35
-      - test-py36
+      - test-py27:
+          filters:
+            tags:
+              only: /^v.*/
+      - test-py34:
+          filters:
+            tags:
+              only: /^v.*/
+      - test-py35:
+          filters:
+            tags:
+              only: /^v.*/
+      - test-py36:
+          filters:
+            tags:
+              only: /^v.*/
       - deploy:
           requires:
             - test-py27
