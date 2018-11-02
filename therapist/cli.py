@@ -263,8 +263,8 @@ def run(**kwargs):
     if plugin:
         try:
             processes = [config.plugins.get(plugin)]
-        except config.plugins.DoesNotExist as err:
-            output('{}\nAvailable plugins:'.format(err.message))
+        except config.plugins.DoesNotExist as e:
+            output('{}\nAvailable plugins:'.format(e.message))
 
             for p in config.plugins:
                 output(p.name)
@@ -273,8 +273,8 @@ def run(**kwargs):
     if action:
         try:
             processes = [config.actions.get(action)]
-        except config.actions.DoesNotExist as err:
-            output('{}\nAvailable actions:'.format(err.message))
+        except config.actions.DoesNotExist as e:
+            output('{}\nAvailable actions:'.format(e.message))
 
             for a in config.actions:
                 output(a.name)
