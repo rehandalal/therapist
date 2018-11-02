@@ -7,7 +7,7 @@ class Status(object):
         self.is_modified = status[1] == 'M'
 
         if self.is_renamed:
-            matches = re.search('(\S+?)\s+->\s+(\S+?)$', status[3:])
+            matches = re.search(r'(\S+?)\s+->\s+(\S+?)$', status[3:])
             self.original_path = matches.groups()[0]
             self.path = matches.groups()[1]
         else:

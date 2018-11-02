@@ -302,7 +302,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run)
-            assert re.search('Linting.+?\[SUCCESS]', result.output)
+            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
 
@@ -319,7 +319,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run)
-            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
 
@@ -329,7 +329,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['-a', 'lint'])
-            assert re.search('Linting.+?\[SUCCESS]', result.output)
+            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
 
@@ -340,8 +340,8 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['-a', 'lint', '--fix'])
-            assert re.search('Linting.+?\[SUCCESS]', result.output)
-            assert re.search('Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
+            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
+            assert re.search(r'Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
             assert not result.exception
             assert result.exit_code == 0
             assert project.read('pass.py') == 'FIXED'
@@ -354,8 +354,8 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['-a', 'lint', '--fix', '--stage-modified-files'])
-            assert re.search('Linting.+?\[SUCCESS]', result.output)
-            assert re.search('Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
+            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
+            assert re.search(r'Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
             assert not result.exception
             assert result.exit_code == 0
             assert project.read('pass.py') == 'FIXED'
@@ -367,7 +367,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['-a', 'lint'])
-            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
 
@@ -398,7 +398,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['-p', 'simple'])
-            assert re.search('simple.+?\[SUCCESS]', result.output)
+            assert re.search(r'simple.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
 
@@ -408,7 +408,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['-p', 'simple'])
-            assert re.search('simple.+?\[FAILURE]', result.output)
+            assert re.search(r'simple.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
 
@@ -429,7 +429,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['pass.py'])
-            assert re.search('Linting.+?\[SUCCESS]', result.output)
+            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
 
@@ -439,7 +439,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['fail.py'])
-            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
 
@@ -449,7 +449,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['dir'])
-            assert re.search('Linting.+?\[SUCCESS]', result.output)
+            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
 
@@ -459,7 +459,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['dir'])
-            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
 
@@ -469,7 +469,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['pass.py'])
-            assert re.search('Linting.+?\[SUCCESS]', result.output)
+            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
 
@@ -479,7 +479,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['fail.py'])
-            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
 
@@ -492,7 +492,7 @@ class TestRun(object):
             assert result.exit_code == 0
 
             result = cli_runner.invoke(cli.run, ['--include-untracked'])
-            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
 
@@ -508,7 +508,7 @@ class TestRun(object):
             assert result.exit_code == 0
 
             result = cli_runner.invoke(cli.run, ['--include-unstaged'])
-            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
 
@@ -520,7 +520,7 @@ class TestRun(object):
         with chdir(project.path):
             result = cli_runner.invoke(cli.run)
             assert 'You have unstaged changes.' in result.output
-            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
             assert project.read('pass.py') == 'x'
@@ -533,7 +533,7 @@ class TestRun(object):
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['--include-unstaged-changes'])
             assert 'You have unstaged changes.' in result.output
-            assert re.search('Linting.+?\[SUCCESS]', result.output)
+            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
             assert project.read('pass.py') == 'x'
@@ -545,7 +545,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['--use-tracked-files'])
-            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
 
@@ -558,7 +558,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['--use-tracked-files', '--include-untracked'])
-            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
 
@@ -605,7 +605,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['--junit-xml=junit.xml'])
-            assert re.search('Linting.+?\[FAILURE]', result.output)
+            assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
             assert project.exists('junit.xml')
@@ -620,7 +620,7 @@ class TestRun(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run)
-            assert re.search('Linting.+?\[ERROR!!]', result.output)
+            assert re.search(r'Linting.+?\[ERROR!!]', result.output)
             assert result.exception
             assert result.exit_code == 1
 
@@ -640,7 +640,7 @@ class TestUse(object):
         with chdir(project.path):
             result = cli_runner.invoke(cli.use, ['lint'])
             assert '$ therapist run --action lint --include-untracked' in result.output
-            assert re.search('Linting.+?\[SUCCESS]', result.output)
+            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
 
@@ -652,8 +652,8 @@ class TestUse(object):
         with chdir(project.path):
             result = cli_runner.invoke(cli.use, ['fix'])
             assert '$ therapist run --action lint --fix --include-untracked' in result.output
-            assert re.search('Linting.+?\[SUCCESS]', result.output)
-            assert re.search('Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
+            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
+            assert re.search(r'Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
             assert not result.exception
             assert result.exit_code == 0
             assert project.read('pass.py') == 'FIXED'
@@ -667,8 +667,8 @@ class TestUse(object):
         with chdir(project.path):
             result = cli_runner.invoke(cli.use, ['fix:all'])
             assert '$ therapist run --action lint --fix --include-untracked --use-tracked-files' in result.output
-            assert re.search('Linting.+?\[SUCCESS]', result.output)
-            assert re.search('Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
+            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
+            assert re.search(r'Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
             assert not result.exception
             assert result.exit_code == 0
             assert project.read('pass.py') == 'FIXED'
@@ -783,7 +783,7 @@ class TestHook(object):
         project.git.add('.')
 
         out, err, code = project.git.commit(m='Add a file.')
-        assert re.search('Modified files:.+?pass.py.+?<- Linting', err, flags=re.DOTALL)
+        assert re.search(r'Modified files:.+?pass.py.+?<- Linting', err, flags=re.DOTALL)
         assert '[SUCCESS]' in err
 
         out, err, code = project.git.status(porcelain=True)
@@ -804,7 +804,7 @@ class TestHook(object):
         project.git.add('.')
 
         out, err, code = project.git.commit(m='Add a file.')
-        assert re.search('Modified files:.+?pass.py.+?<- Linting', err, flags=re.DOTALL)
+        assert re.search(r'Modified files:.+?pass.py.+?<- Linting', err, flags=re.DOTALL)
         assert '[SUCCESS]' in err
 
         out, err, code = project.git.status(porcelain=True)
