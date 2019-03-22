@@ -1,5 +1,10 @@
 # Changelog
 
+### v1.6.0
+
+- **MAJOR BUG FIX**: Therapist now handles copied file correctly.
+  Previously it would fail or overwrite the contents of copied files.
+
 ### v1.5.0
 
 - Fix an issue with detecting which action modified files.
