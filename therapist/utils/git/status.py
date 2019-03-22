@@ -6,7 +6,7 @@ class Status(object):
         self.state = status[0]
         self.is_modified = status[1] == 'M'
 
-        if self.is_renamed:
+        if self.is_renamed or self.is_copied:
             matches = re.search(r'(\S+?)\s+->\s+(\S+?)$', status[3:])
             self.original_path = matches.groups()[0]
             self.path = matches.groups()[1]
@@ -15,7 +15,7 @@ class Status(object):
 
     def __str__(self):
         status = '{:1}{:1}'.format(self.state, 'M' if self.is_modified else '')
-        if self.is_renamed:
+        if self.is_renamed or self.is_copied:
             status = '{:3}{} -> {}'.format(status, self.original_path, self.path)
         else:
             status = '{:3}{}'.format(status, self.path)
@@ -38,6 +38,11 @@ class Status(object):
     def is_renamed(self):
         """Returns true if the file is renamed."""
         return self.state == 'R'
+
+    @property
+    def is_copied(self):
+        """Returns true if the file is copied."""
+        return self.state == 'C'
 
     @property
     def is_deleted(self):

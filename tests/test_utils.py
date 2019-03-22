@@ -21,6 +21,15 @@ class TestGitStatus(object):
         assert not s.is_added
         assert not s.is_deleted
         assert not s.is_untracked
+        assert not s.is_copied
+
+        s = Status('C  test.py -> new_test.py')
+        assert s.is_copied
+        assert s.is_staged
+        assert not s.is_added
+        assert not s.is_deleted
+        assert not s.is_untracked
+        assert not s.is_renamed
 
         s = Status('D  test.py')
         assert s.is_deleted
@@ -28,6 +37,7 @@ class TestGitStatus(object):
         assert not s.is_added
         assert not s.is_renamed
         assert not s.is_untracked
+        assert not s.is_copied
 
         s = Status('??  test.py')
         assert s.is_untracked
@@ -35,6 +45,7 @@ class TestGitStatus(object):
         assert not s.is_deleted
         assert not s.is_renamed
         assert not s.is_staged
+        assert not s.is_copied
 
         s = Status('A  test.py')
         assert s.is_added
@@ -42,9 +53,14 @@ class TestGitStatus(object):
         assert not s.is_deleted
         assert not s.is_renamed
         assert not s.is_untracked
+        assert not s.is_copied
 
     def test_str(self):
         text = 'R  test.py -> new_test.py'
+        s = Status(text)
+        assert s.__str__() == text
+
+        text = 'C  test.py -> new_test.py'
         s = Status(text)
         assert s.__str__() == text
 
