@@ -62,6 +62,11 @@ jobs:
     docker:
       - image: circleci/python:3.6
 
+  test-py37:
+    <<: *test-defaults
+    docker:
+      - image: circleci/python:3.7
+
   deploy:
     docker:
       - image: circleci/python:3.6
@@ -129,12 +134,17 @@ workflows:
           filters:
             tags:
               only: /^v.*/
+      - test-py37:
+          filters:
+            tags:
+              only: /^v.*/
       - deploy:
           requires:
             - test-py27
             - test-py34
             - test-py35
             - test-py36
+            - test-py37
           filters:
             branches:
               ignore: /.*/
