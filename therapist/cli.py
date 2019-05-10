@@ -17,12 +17,13 @@ from therapist.messages import (NOT_GIT_REPO_MSG, HOOK_ALREADY_INSTALLED_MSG, EX
                                 CONFIRM_UNINSTALL_HOOK_MSG, CURRENT_HOOK_NOT_THERAPIST_MSG, LEGACY_HOOK_EXISTS_MSG,
                                 CONFIRM_RESTORE_LEGACY_HOOK_MSG, COPYING_LEGACY_HOOK_MSG, DONE_COPYING_LEGACY_HOOK_MSG,
                                 REMOVING_LEGACY_HOOK_MSG, DONE_REMOVING_LEGACY_HOOK_MSG, UNINSTALLING_HOOK_MSG,
-                                DONE_UNINSTALLING_HOOK_MSG, MISCONFIGURED_MSG, UNSTAGED_CHANGES_MSG)
+                                DONE_UNINSTALLING_HOOK_MSG, MISCONFIGURED_MSG, UNSTAGED_CHANGES_MSG,
+                                NO_THERAPIST_CONFIG_FILE_MSG, UPGRADE_HOOK_MSG)
 from therapist.plugins.loader import list_plugins
 from therapist.runner import Runner
 from therapist.runner.result import ResultCollection
-from therapist.utils.filesystem import current_git_dir, list_files
-from therapist.utils.hook import hash_hook, identify_hook
+from therapist.utils.filesystem import current_git_dir, current_root, list_files
+from therapist.utils.hook import calculate_hook_hash, read_hook_hash, read_hook_version
 from therapist.utils.git import Git
 
 
@@ -102,12 +103,12 @@ def install(**kwargs):
     srchook_path = os.path.join(BASE_DIR, 'hooks', 'pre-commit-template')
     with open(srchook_path, 'r') as f:
         srchook = f.read()
-    srchook_hash = hash_hook(srchook_path, hook_options)
+    srchook_hash = calculate_hook_hash(srchook_path, hook_options)
 
     dsthook_path = os.path.join(git_dir, 'hooks', 'pre-commit')
 
     if os.path.isfile(dsthook_path):
-        dsthook_hash = identify_hook(dsthook_path)
+        dsthook_hash = read_hook_hash(dsthook_path)
         if dsthook_hash:
             if dsthook_hash == srchook_hash:
                 output(HOOK_ALREADY_INSTALLED_MSG)
@@ -161,7 +162,7 @@ def uninstall(**kwargs):
         output(NO_HOOK_INSTALLED_MSG)
         exit(0)
 
-    hook_hash = identify_hook(hook_path)
+    hook_hash = read_hook_hash(hook_path)
 
     if hook_hash:
         if not force:
@@ -206,6 +207,7 @@ def uninstall(**kwargs):
 @click.option('--no-color', is_flag=True, help='Disables colors and other rich output.')
 @click.option('--plugin', '-p', default=None, help='A name of a specific plugin to be run.')
 @click.option('--stage-modified-files', is_flag=True, help='Files that are modified by any actions should be staged.')
+@click.option('--use-git', '-g', is_flag=True, help='Run in git-aware mode.')
 @click.option('--use-tracked-files', is_flag=True, help='Runs actions against all tracked files.')
 @click.option('--quiet', '-q', is_flag=True, help='Suppress all output, unless an error occurs.')
 def run(**kwargs):
@@ -221,11 +223,27 @@ def run(**kwargs):
 
     git_dir = current_git_dir()
 
-    if git_dir is None:
-        output(NOT_GIT_REPO_MSG)
-        exit(1)
+    # Validate any installed hook is the minimum required version
+    if git_dir:
+        hook_path = os.path.join(git_dir, 'hooks', 'pre-commit')
+        if os.path.isfile(hook_path):
+            hook_version = read_hook_version(hook_path)
+            if hook_version and hook_version < 2:
+                output(UPGRADE_HOOK_MSG)
+                exit(1)
 
-    repo_root = os.path.dirname(git_dir)
+    if kwargs.get('use_git'):
+        if git_dir is None:
+            output(NOT_GIT_REPO_MSG)
+            exit(1)
+
+        root_dir = os.path.dirname(git_dir)
+    else:
+        root_dir = current_root()
+
+        if root_dir is None:
+            output(NO_THERAPIST_CONFIG_FILE_MSG)
+            exit(1)
 
     files = []
     if paths:
@@ -235,7 +253,7 @@ def run(**kwargs):
         # If paths were provided get all the files for each path
         for path in paths:
             for f in list_files(path):
-                f = os.path.relpath(f, repo_root)
+                f = os.path.relpath(f, root_dir)
                 if not f.startswith('..'):  # Don't include files outside the repo root.
                     files.append(f)
     elif use_tracked_files:
@@ -250,7 +268,7 @@ def run(**kwargs):
     if files or paths:
         kwargs['files'] = files
 
-    config = get_config(repo_root)
+    config = get_config(root_dir)
     runner = Runner(config.cwd, **kwargs)
     results = ResultCollection()
 
@@ -306,15 +324,13 @@ def run(**kwargs):
 @click.pass_context
 def use(ctx, shortcut):
     """Use a shortcut."""
-    git_dir = current_git_dir()
+    root_dir = current_root()
 
-    if git_dir is None:
-        output(NOT_GIT_REPO_MSG)
+    if root_dir is None:
+        output(NO_THERAPIST_CONFIG_FILE_MSG)
         exit(1)
 
-    repo_root = os.path.dirname(git_dir)
-
-    config = get_config(repo_root)
+    config = get_config(root_dir)
 
     try:
         use_shortcut = config.shortcuts.get(shortcut)

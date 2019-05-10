@@ -3,6 +3,7 @@ shortcuts:
     options:
       action: lint
     flags:
+      - use-git
       - include-untracked
   "lint:all":
     extends: lint

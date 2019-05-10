@@ -48,3 +48,8 @@ DONE_UNINSTALLING_HOOK_MSG = '#{green}#{bright}DONE'
 MISCONFIGURED_MSG = '#{{red}}Misconfigured: {}'
 
 UNSTAGED_CHANGES_MSG = '#{yellow}You have unstaged changes.'
+
+NO_THERAPIST_CONFIG_FILE_MSG = '#{red}No Therapist configuration file was found.'
+
+UPGRADE_HOOK_MSG = ('#{red}The installed pre-commit hook is incompatible with the current version of Therapist.\n'
+                    '#{reset_all}Install the latest pre-commit hook by running `therapist install`.')

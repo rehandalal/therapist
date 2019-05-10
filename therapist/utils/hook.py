@@ -3,7 +3,7 @@ import hashlib
 from six import iterkeys
 
 
-def identify_hook(path):
+def read_hook_hash(path):
     """Verify that the file at path is the therapist hook and return the hash"""
     with open(path, 'r') as f:
         f.readline()  # Discard the shebang line
@@ -12,7 +12,20 @@ def identify_hook(path):
             return version_line.split()[2]
 
 
-def hash_hook(path, options):
+def read_hook_version(path):
+    """Read the hook version from the file."""
+    with open(path, 'r') as f:
+        f.readline()  # Discard the shebang line
+        version_line = f.readline()
+        if version_line.startswith('# THERAPIST'):
+            try:
+                return int(version_line.split()[3][1:])
+            except IndexError:
+                return 1
+        return None
+
+
+def calculate_hook_hash(path, options):
     """Hash a hook file"""
     with open(path, 'r') as f:
         data = f.read()

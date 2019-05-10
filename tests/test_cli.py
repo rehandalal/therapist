@@ -1,7 +1,7 @@
 import re
 
 from therapist import cli, __version__
-from therapist.utils.hook import identify_hook
+from therapist.utils.hook import read_hook_hash
 
 from . import chdir
 
@@ -71,7 +71,7 @@ class TestInstall(object):
             assert project.exists('.git/hooks/pre-commit')
 
             hook = project.read('.git/hooks/pre-commit')
-            hook_hash = identify_hook(project.abspath('.git/hooks/pre-commit'))
+            hook_hash = read_hook_hash(project.abspath('.git/hooks/pre-commit'))
 
             project.write('.git/hooks/pre-commit', hook.replace('# THERAPIST {}'.format(hook_hash), '# THERAPIST hash'))
 
@@ -298,17 +298,26 @@ class TestUninstall(object):
 class TestRun(object):
     def test_run(self, cli_runner, project):
         project.write('pass.py')
-        project.git.add('.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run)
+            result = cli_runner.invoke(cli.run, ['pass.py'])
             assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
 
-    def test_outside_repo(self, cli_runner, tmpdir):
+    def test_run_use_git(self, cli_runner, project):
+        project.write('pass.py')
+        project.git.add('.')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['-g'])
+            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
+            assert not result.exception
+            assert result.exit_code == 0
+
+    def test_use_git_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
-            result = cli_runner.invoke(cli.run)
+            result = cli_runner.invoke(cli.run, ['-g'])
         assert 'Not a git repository (or any of the parent directories)' in result.output
         assert result.exception
         assert result.exit_code == 1
@@ -318,17 +327,16 @@ class TestRun(object):
         project.git.add('.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run)
+            result = cli_runner.invoke(cli.run, ['-g'])
             assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
 
     def test_action(self, cli_runner, project):
         project.write('pass.py')
-        project.git.add('.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['-a', 'lint'])
+            result = cli_runner.invoke(cli.run, ['-a', 'lint', 'pass.py'])
             assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
@@ -339,7 +347,7 @@ class TestRun(object):
         assert project.read('pass.py') == 'UNFIXED'
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['-a', 'lint', '--fix'])
+            result = cli_runner.invoke(cli.run, ['-a', 'lint', '--fix', '-g'])
             assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert re.search(r'Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
             assert not result.exception
@@ -353,7 +361,7 @@ class TestRun(object):
         assert project.read('pass.py') == 'UNFIXED'
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['-a', 'lint', '--fix', '--stage-modified-files'])
+            result = cli_runner.invoke(cli.run, ['-a', 'lint', '--fix', '--stage-modified-files', '-g'])
             assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert re.search(r'Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
             assert not result.exception
@@ -363,20 +371,18 @@ class TestRun(object):
 
     def test_action_fails(self, cli_runner, project):
         project.write('fail.py')
-        project.git.add('.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['-a', 'lint'])
+            result = cli_runner.invoke(cli.run, ['-a', 'lint', 'fail.py'])
             assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
 
     def test_action_invalid(self, cli_runner, project):
         project.write('fail.py')
-        project.git.add('.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['-a', 'notanaction'])
+            result = cli_runner.invoke(cli.run, ['-a', 'notanaction', 'fail.py'])
             assert 'Available actions:' in result.output
             assert 'lint' in result.output
             assert result.exception
@@ -397,7 +403,7 @@ class TestRun(object):
         project.git.add('.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['-p', 'simple'])
+            result = cli_runner.invoke(cli.run, ['-p', 'simple', '-g'])
             assert re.search(r'simple.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
@@ -407,7 +413,7 @@ class TestRun(object):
         project.git.add('.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['-p', 'simple'])
+            result = cli_runner.invoke(cli.run, ['-p', 'simple', '-g'])
             assert re.search(r'simple.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
@@ -417,35 +423,14 @@ class TestRun(object):
         project.git.add('.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['-p', 'notaplugin'])
+            result = cli_runner.invoke(cli.run, ['-p', 'notaplugin', '-g'])
             assert 'Available plugins:' in result.output
             assert 'simple' in result.output
             assert result.exception
             assert result.exit_code == 1
 
-    def test_on_file(self, cli_runner, project):
-        project.write('pass.py')
-        project.git.add('.')
-
-        with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['pass.py'])
-            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
-            assert not result.exception
-            assert result.exit_code == 0
-
-    def test_on_file_fail(self, cli_runner, project):
-        project.write('fail.py')
-        project.git.add('.')
-
-        with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['fail.py'])
-            assert re.search(r'Linting.+?\[FAILURE]', result.output)
-            assert result.exception
-            assert result.exit_code == 2
-
     def test_dir(self, cli_runner, project):
         project.write('dir/pass.py')
-        project.git.add('.')
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['dir'])
@@ -455,7 +440,6 @@ class TestRun(object):
 
     def test_dir_fail(self, cli_runner, project):
         project.write('dir/fail.py')
-        project.git.add('.')
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['dir'])
@@ -465,7 +449,6 @@ class TestRun(object):
 
     def test_file(self, cli_runner, project):
         project.write('pass.py')
-        project.git.add('.')
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['pass.py'])
@@ -475,7 +458,6 @@ class TestRun(object):
 
     def test_file_fail(self, cli_runner, project):
         project.write('fail.py')
-        project.git.add('.')
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['fail.py'])
@@ -491,7 +473,7 @@ class TestRun(object):
             assert not result.exception
             assert result.exit_code == 0
 
-            result = cli_runner.invoke(cli.run, ['--include-untracked'])
+            result = cli_runner.invoke(cli.run, ['--include-untracked', '-g'])
             assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
@@ -507,7 +489,7 @@ class TestRun(object):
             assert not result.exception
             assert result.exit_code == 0
 
-            result = cli_runner.invoke(cli.run, ['--include-unstaged'])
+            result = cli_runner.invoke(cli.run, ['--include-unstaged', '-g'])
             assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
@@ -518,7 +500,7 @@ class TestRun(object):
         project.write('pass.py', 'x')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run)
+            result = cli_runner.invoke(cli.run, ['-g'])
             assert 'You have unstaged changes.' in result.output
             assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
@@ -531,7 +513,7 @@ class TestRun(object):
         project.write('pass.py', 'x')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['--include-unstaged-changes'])
+            result = cli_runner.invoke(cli.run, ['--include-unstaged-changes', '-g'])
             assert 'You have unstaged changes.' in result.output
             assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
@@ -544,7 +526,7 @@ class TestRun(object):
         project.git.commit(m='Add file.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['--use-tracked-files'])
+            result = cli_runner.invoke(cli.run, ['--use-tracked-files', '-g'])
             assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
@@ -557,7 +539,7 @@ class TestRun(object):
         project.write('fail.py')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['--use-tracked-files', '--include-untracked'])
+            result = cli_runner.invoke(cli.run, ['--use-tracked-files', '--include-untracked', '-g'])
             assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
@@ -569,7 +551,7 @@ class TestRun(object):
         project.write('fail.py', 'CHANGE')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['--use-tracked-files'])
+            result = cli_runner.invoke(cli.run, ['--use-tracked-files', '-g'])
             assert result.exit_code == 2
             assert 'Modified files' not in result.output
 
@@ -584,7 +566,7 @@ class TestRun(object):
         project.set_config_data(config_data)
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run)
+            result = cli_runner.invoke(cli.run, ['-g'])
             assert 'Misconfigured:' in result.output
             assert result.exception
             assert result.exit_code == 1
@@ -594,7 +576,7 @@ class TestRun(object):
         project.git.add('.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['--quiet'])
+            result = cli_runner.invoke(cli.run, ['--quiet', '-g'])
             assert result.output == ''
             assert result.exception
             assert result.exit_code == 2
@@ -604,7 +586,7 @@ class TestRun(object):
         project.git.add('.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run, ['--junit-xml=junit.xml'])
+            result = cli_runner.invoke(cli.run, ['--junit-xml=junit.xml', '-g'])
             assert re.search(r'Linting.+?\[FAILURE]', result.output)
             assert result.exception
             assert result.exit_code == 2
@@ -619,7 +601,7 @@ class TestRun(object):
         project.git.add('.')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run)
+            result = cli_runner.invoke(cli.run, ['-g'])
             assert re.search(r'Linting.+?\[ERROR!!]', result.output)
             assert result.exception
             assert result.exit_code == 1
@@ -629,7 +611,7 @@ class TestUse(object):
     def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.use, ['lint'])
-        assert 'Not a git repository (or any of the parent directories)' in result.output
+        assert 'No Therapist configuration file was found.' in result.output
         assert result.exception
         assert result.exit_code == 1
 
@@ -639,7 +621,7 @@ class TestUse(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.use, ['lint'])
-            assert '$ therapist run --action lint --include-untracked' in result.output
+            assert '$ therapist run --action lint --include-untracked --use-git' in result.output
             assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert not result.exception
             assert result.exit_code == 0
@@ -651,7 +633,7 @@ class TestUse(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.use, ['fix'])
-            assert '$ therapist run --action lint --fix --include-untracked' in result.output
+            assert '$ therapist run --action lint --fix --include-untracked --use-git' in result.output
             assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert re.search(r'Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
             assert not result.exception
@@ -666,7 +648,8 @@ class TestUse(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.use, ['fix:all'])
-            assert '$ therapist run --action lint --fix --include-untracked --use-tracked-files' in result.output
+            message = '$ therapist run --action lint --fix --include-untracked --use-git --use-tracked-files'
+            assert message in result.output
             assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert re.search(r'Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
             assert not result.exception
