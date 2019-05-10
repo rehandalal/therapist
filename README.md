@@ -1,5 +1,6 @@
 # Therapist
-Work out your commitment issues. A smart pre-commit hook for git.
+
+A lint suite runner with Git-aware capabilities and a smart pre-commit hook. 
 
 ![PyPI](https://img.shields.io/pypi/v/therapist.svg)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/therapist.svg)

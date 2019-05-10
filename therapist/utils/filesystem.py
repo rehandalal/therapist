@@ -11,17 +11,18 @@ def current_root():
         if next_path == path:
             return None
         path = next_path
-    return None
 
 
 def current_git_dir():
     """Locate the .git directory."""
     path = os.path.abspath(os.curdir)
-    while path != '/':
+    while path:
         if os.path.isdir(os.path.join(path, '.git')):
             return os.path.join(path, '.git')
-        path = os.path.dirname(path)
-    return None
+        next_path = os.path.dirname(path)
+        if next_path == path:
+            return None
+        path = next_path
 
 
 def list_files(path):

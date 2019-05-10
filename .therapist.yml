@@ -8,3 +8,18 @@ actions:
       - "*.sh"
       - pre-commit-template
     run: shellcheck {files}
+shortcuts:
+  lint:
+    flags:
+      - use-git
+      - include-unstaged
+      - include-untracked
+  "lint:all":
+    extends: lint
+    flags: use-tracked-files
+  fix:
+    extends: lint
+    flags: fix
+  "fix:all":
+    extends: fix
+    flags: use-tracked-files

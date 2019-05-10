@@ -606,6 +606,34 @@ class TestRun(object):
             assert result.exception
             assert result.exit_code == 1
 
+    def test_run_with_expired_hook(self, cli_runner, project):
+        with chdir(project.path):
+            cli_runner.invoke(cli.install)
+            hook = project.read('.git/hooks/pre-commit')
+            project.write(
+                '.git/hooks/pre-commit',
+                re.sub(r'^# THERAPIST(.+?)v[0-9]+?$', '# THERAPIST\1v1', hook, flags=re.MULTILINE))
+
+            result = cli_runner.invoke(cli.run)
+            message = 'The installed pre-commit hook is incompatible with the current version of Therapist.'
+            assert message in result.output
+            assert result.exception
+            assert result.exit_code == 1
+
+    def test_run_with_expired_hook_no_version(self, cli_runner, project):
+        with chdir(project.path):
+            cli_runner.invoke(cli.install)
+            hook = project.read('.git/hooks/pre-commit')
+            project.write(
+                '.git/hooks/pre-commit',
+                re.sub(r'^# THERAPIST(.+?)v[0-9]+?$', '# THERAPIST\1', hook, flags=re.MULTILINE))
+
+            result = cli_runner.invoke(cli.run)
+            message = 'The installed pre-commit hook is incompatible with the current version of Therapist.'
+            assert message in result.output
+            assert result.exception
+            assert result.exit_code == 1
+
 
 class TestUse(object):
     def test_outside_repo(self, cli_runner, tmpdir):

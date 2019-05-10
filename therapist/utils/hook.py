@@ -22,7 +22,6 @@ def read_hook_version(path):
                 return int(version_line.split()[3][1:])
             except IndexError:
                 return 1
-        return None
 
 
 def calculate_hook_hash(path, options):

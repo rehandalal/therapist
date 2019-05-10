@@ -321,8 +321,9 @@ def run(**kwargs):
 
 @cli.command()
 @click.argument('shortcut', nargs=1)
+@click.argument('paths', nargs=-1)
 @click.pass_context
-def use(ctx, shortcut):
+def use(ctx, shortcut, paths):
     """Use a shortcut."""
     root_dir = current_root()
 
@@ -355,5 +356,7 @@ def use(ctx, shortcut):
             if v is not True:
                 options_string += ' {}'.format(v)
 
-        output('#{{dim}}$ therapist run{}\n'.format(options_string))
+        output('#{{dim}}$ therapist run{} {}\n'.format(options_string, ' '.join(paths)))
+
+        options['paths'] = paths
         ctx.invoke(run, **options)
