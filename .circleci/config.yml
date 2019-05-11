@@ -52,7 +52,11 @@ jobs:
 
       - run:
           name: Test
-          command: py.test
+          command: pytest -vvv --cov
+
+      - run:
+          name: Submit coverage
+          command: coveralls
 
   test-py27:
     <<: *test-defaults
