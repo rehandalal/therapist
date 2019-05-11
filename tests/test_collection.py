@@ -8,9 +8,9 @@ class TestCollection(object):
         s = Collection()
         assert len(s.objects) == 0
 
-        s.append('item')
+        s.append("item")
         assert len(s.objects) == 1
-        assert s[0] == 'item'
+        assert s[0] == "item"
 
     def test_object_class(self):
         class BooleanCollection(Collection):
@@ -20,11 +20,11 @@ class TestCollection(object):
         s = BooleanCollection([True])
 
         with pytest.raises(TypeError):
-            s.append('True')
+            s.append("True")
 
     def test_bool(self):
         s = Collection()
         assert not bool(s)
 
-        s.append('item')
+        s.append("item")
         assert bool(s)

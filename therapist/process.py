@@ -5,13 +5,13 @@ from pathspec.patterns import GitWildMatchPattern
 class Process(object):
     def __init__(self, name, **kwargs):
         self.name = name
-        self.description = kwargs.pop('description', None)
+        self.description = kwargs.pop("description", None)
 
         self._include = None
-        self.include = kwargs.pop('include', None)
+        self.include = kwargs.pop("include", None)
 
         self._exclude = None
-        self.exclude = kwargs.pop('exclude', None)
+        self.exclude = kwargs.pop("exclude", None)
 
         self.config = kwargs
 
@@ -22,7 +22,7 @@ class Process(object):
         return self.description if self.description else self.name
 
     def __repr__(self):
-        return '<{} {}>'.format(self.__class__.__name__, self.name)
+        return "<{} {}>".format(self.__class__.__name__, self.name)
 
     @property
     def include(self):

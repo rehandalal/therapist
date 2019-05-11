@@ -6,14 +6,14 @@ from click.testing import CliRunner
 from . import Project, SimplePlugin
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture(scope="class")
 def cli_runner():
     return CliRunner()
 
 
 @pytest.fixture
 def mock_plugin(monkeypatch):
-    def _mock_plugin(name='simple', plugin_class=SimplePlugin):
+    def _mock_plugin(name="simple", plugin_class=SimplePlugin):
         class MockedEntryPoint(object):
             def __init__(self):
                 self.name = name
@@ -22,13 +22,13 @@ def mock_plugin(monkeypatch):
                 return plugin_class
 
         def mock_iter_entry_points(*args, **kwargs):
-            ep_name = kwargs.pop('name', name)
+            ep_name = kwargs.pop("name", name)
             if ep_name == name:
                 return [MockedEntryPoint()]
             else:
                 return []
 
-        monkeypatch.setattr(pkg_resources, 'iter_entry_points', mock_iter_entry_points)
+        monkeypatch.setattr(pkg_resources, "iter_entry_points", mock_iter_entry_points)
 
     return _mock_plugin
 

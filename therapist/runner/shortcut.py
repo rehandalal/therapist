@@ -5,13 +5,13 @@ from therapist.exc import Error
 class Shortcut(object):
     def __init__(self, name, **kwargs):
         self.name = name
-        self.extends = kwargs.pop('extends', None)
+        self.extends = kwargs.pop("extends", None)
 
         self._options = None
-        self.options = kwargs.pop('options', None)
+        self.options = kwargs.pop("options", None)
 
         self._flags = None
-        self.flags = kwargs.pop('flags', None)
+        self.flags = kwargs.pop("flags", None)
 
     @property
     def options(self):
@@ -24,9 +24,9 @@ class Shortcut(object):
         elif isinstance(value, dict):
             self._options = {}
             for key in value:
-                self._options[key.replace('-', '_')] = value[key]
+                self._options[key.replace("-", "_")] = value[key]
         else:
-            self.options = {value.replace('-', '_'): True}
+            self.options = {value.replace("-", "_"): True}
 
     @property
     def flags(self):
@@ -65,4 +65,4 @@ class ShortcutCollection(Collection):
         for shortcut in self.objects:
             if shortcut.name == name:
                 return shortcut
-        raise self.DoesNotExist('`{}` is not a valid shortcut.'.format(name))
+        raise self.DoesNotExist("`{}` is not a valid shortcut.".format(name))

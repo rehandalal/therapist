@@ -5,7 +5,7 @@ from therapist.process import Process
 
 class Plugin(Process):  # pragma: no cover
     def __repr__(self):
-        return '<Plugin {}>'.format(self.name)
+        return "<Plugin {}>".format(self.name)
 
     def execute(self, **kwargs):
         raise NotImplementedError()
@@ -22,4 +22,4 @@ class PluginCollection(Collection):
         for plugin in self.objects:
             if plugin.name == name:
                 return plugin
-        raise self.DoesNotExist('`{}` is not a valid plugin.'.format(name))
+        raise self.DoesNotExist("`{}` is not a valid plugin.".format(name))
