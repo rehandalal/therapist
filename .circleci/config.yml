@@ -54,7 +54,7 @@ jobs:
 
       - run:
           name: Test
-          command: pytest -vvv --cov
+          command: pytest -vvv --cov-report=xml --cov
 
       - codecov/upload:
           file: .coverage
