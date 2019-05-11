@@ -48,6 +48,7 @@ jobs:
           name: Install dependencies
           command: |
             pip install -r requirements-dev.txt
+            pip install .
 
       - run:
           name: Test
