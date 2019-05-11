@@ -1,5 +1,8 @@
 """
-A smart pre-commit hook for git.
+A lint suite runner with Git-aware capabilities and a smart pre-commit hook.
+
+Full documentation for this tool is available at:
+http://therapist.readthedocs.io/
 """
 import os
 import sys
@@ -40,7 +43,7 @@ setup(
     license='Mozilla Public License Version 2.0',
     author='Rehan Dalal',
     author_email='rehan@meet-rehan.com',
-    description='A smart pre-commit hook for git.',
+    description='A lint suite runner with Git-aware capabilities and a smart pre-commit hook.',
     long_description=__doc__,
     packages=find_packages(exclude=['tests', 'docs']),
     include_package_data=True,
