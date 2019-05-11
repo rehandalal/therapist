@@ -341,13 +341,27 @@ class TestRun(object):
             assert not result.exception
             assert result.exit_code == 0
 
-    def test_action_with_fix(self, cli_runner, project):
+    def test_action_with_fix_use_git(self, cli_runner, project):
         project.write('pass.py', 'UNFIXED')
         project.git.add('.')
         assert project.read('pass.py') == 'UNFIXED'
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['-a', 'lint', '--fix', '-g'])
+            assert re.search(r'Linting.+?\[SUCCESS]', result.output)
+            assert re.search(r'Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
+            assert not result.exception
+            assert result.exit_code == 0
+            assert project.read('pass.py') == 'FIXED'
+            assert project.git.status(porcelain=True) == ('AM pass.py\n', '', 0)
+
+    def test_action_with_fix(self, cli_runner, project):
+        project.write('pass.py', 'UNFIXED')
+        project.git.add('.')
+        assert project.read('pass.py') == 'UNFIXED'
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run, ['-a', 'lint', '--fix', 'pass.py'])
             assert re.search(r'Linting.+?\[SUCCESS]', result.output)
             assert re.search(r'Modified files:.+?pass.py.+?<- Linting', result.output, flags=re.DOTALL)
             assert not result.exception
@@ -485,7 +499,7 @@ class TestRun(object):
         project.write('fail.py', 'x')
 
         with chdir(project.path):
-            result = cli_runner.invoke(cli.run)
+            result = cli_runner.invoke(cli.run, ['-g'])
             assert not result.exception
             assert result.exit_code == 0
 
@@ -603,6 +617,16 @@ class TestRun(object):
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ['-g'])
             assert re.search(r'Linting.+?\[ERROR!!]', result.output)
+            assert result.exception
+            assert result.exit_code == 1
+
+    def test_run_without_git_no_config(self, cli_runner, project):
+        project.remove('.therapist.yml')
+        project.write('pass.py')
+
+        with chdir(project.path):
+            result = cli_runner.invoke(cli.run)
+            assert 'No Therapist configuration file was found.' in result.output
             assert result.exception
             assert result.exit_code == 1
 
