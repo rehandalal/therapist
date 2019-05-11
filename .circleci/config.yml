@@ -1,8 +1,8 @@
 version: 2
 jobs:
-  test: &test-defaults
+  lint:
     docker:
-      - image: circleci/python:2.7
+      - image: circleci/python:3.7
 
     steps:
       - checkout
@@ -13,8 +13,29 @@ jobs:
             sudo apt-get update
             sudo apt-get install shellcheck
 
-      - restore_cache:
-          key: v1-python-{{ .Environment.CIRCLE_JOB }}
+      - run:
+          name: Create virtualenv
+          command: |
+            mkdir -p ~/.venv
+            virtualenv ~/.venv
+            echo "source ~/.venv/bin/activate" >> $BASH_ENV
+
+      - run:
+          name: Install dependencies
+          command: |
+            pip install -r requirements-lint.txt
+            pip install .
+
+      - run:
+          name: Lint
+          command: therapist run --use-tracked-files
+
+  test: &test-defaults
+    docker:
+      - image: circleci/python:2.7
+
+    steps:
+      - checkout
 
       - run:
           name: Create virtualenv
@@ -28,15 +49,6 @@ jobs:
           command: |
             pip install -r requirements-dev.txt
             pip install .
-
-      - save_cache:
-          paths:
-            - "~/.venv"
-          key: v1-python-{{ .Environment.CIRCLE_JOB }}
-
-      - run:
-          name: Lint
-          command: therapist run --use-tracked-files
 
       - run:
           name: Test
@@ -118,6 +130,10 @@ workflows:
   version: 2
   test_and_deploy:
     jobs:
+      - lint:
+          filters:
+            tags:
+              only: /^v.*/
       - test-py27:
           filters:
             tags:
@@ -140,6 +156,7 @@ workflows:
               only: /^v.*/
       - deploy:
           requires:
+            - lint
             - test-py27
             - test-py34
             - test-py35

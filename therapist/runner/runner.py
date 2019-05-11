@@ -6,14 +6,14 @@ from therapist.utils.git import Git, Status
 class Runner(object):
     def __init__(self, cwd, files=None, **kwargs):
         # Options from kwargs:
-        fix = kwargs.get('fix', False)
+        fix = kwargs.get("fix", False)
 
         # Git related options
-        use_git = kwargs.get('use_git', False)
-        include_unstaged = kwargs.get('include_unstaged', False)
-        include_untracked = kwargs.get('include_untracked', False)
-        include_unstaged_changes = kwargs.get('include_unstaged_changes', False)
-        stage_modified_files = kwargs.get('stage_modified_files', False)
+        use_git = kwargs.get("use_git", False)
+        include_unstaged = kwargs.get("include_unstaged", False)
+        include_untracked = kwargs.get("include_untracked", False)
+        include_unstaged_changes = kwargs.get("include_unstaged_changes", False)
+        stage_modified_files = kwargs.get("stage_modified_files", False)
 
         self.cwd = os.path.abspath(cwd)
         self.unstaged_changes = False
@@ -28,8 +28,10 @@ class Runner(object):
             files = []
 
             if self.git:
-                untracked_files = 'all' if include_untracked else 'no'
-                out, err, code = self.git.status(porcelain=True, untracked_files=untracked_files)
+                untracked_files = "all" if include_untracked else "no"
+                out, err, code = self.git.status(
+                    porcelain=True, untracked_files=untracked_files
+                )
 
                 for line in out.splitlines():
                     file_status = Status(line)
@@ -39,7 +41,11 @@ class Runner(object):
                         self.unstaged_changes = True
 
                     # Skip unstaged files if the `unstaged` flag is False
-                    if not file_status.is_staged and not include_unstaged and not include_untracked:
+                    if (
+                        not file_status.is_staged
+                        and not include_unstaged
+                        and not include_untracked
+                    ):
                         continue
 
                     # Skip deleted files
@@ -56,8 +62,8 @@ class Runner(object):
 
     def run_process(self, process):
         """Runs a single action."""
-        message = u'#{bright}'
-        message += u'{} '.format(str(process)[:68]).ljust(69, '.')
+        message = u"#{bright}"
+        message += u"{} ".format(str(process)[:68]).ljust(69, ".")
 
         stashed = False
         if self.git and self.unstaged_changes and not self.include_unstaged_changes:
@@ -69,13 +75,17 @@ class Runner(object):
 
             # Check for modified files
             if self.git:
-                out, err, code = self.git.status(porcelain=True, untracked_files='no')
+                out, err, code = self.git.status(porcelain=True, untracked_files="no")
                 for line in out.splitlines():
                     file_status = Status(line)
 
                     # Make sure the file is one of the files that was processed
                     if file_status.path in self.files and file_status.is_modified:
-                        mtime = os.path.getmtime(file_status.path) if os.path.exists(file_status.path) else 0
+                        mtime = (
+                            os.path.getmtime(file_status.path)
+                            if os.path.exists(file_status.path)
+                            else 0
+                        )
                         if mtime > self.file_mtimes.get(file_status.path, 0):
                             self.file_mtimes[file_status.path] = mtime
                             result.add_modified_file(file_status.path)
@@ -95,12 +105,12 @@ class Runner(object):
                 self.git.stash.pop(index=True, quiet=True)
 
         if result.is_success:
-            message += u' #{green}[SUCCESS]'
+            message += u" #{green}[SUCCESS]"
         elif result.is_failure:
-            message += u' #{red}[FAILURE]'
+            message += u" #{red}[FAILURE]"
         elif result.is_skip:
-            message += u' #{cyan}[SKIPPED]'
+            message += u" #{cyan}[SKIPPED]"
         elif result.is_error:
-            message += u' #{red}[ERROR!!]'
+            message += u" #{red}[ERROR!!]"
 
         return result, message

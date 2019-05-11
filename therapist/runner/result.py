@@ -24,16 +24,16 @@ class Result(object):
 
     def __str__(self):
         if self.is_success:
-            return 'SUCCESS'
+            return "SUCCESS"
         elif self.is_failure:
-            return 'FAILURE'
+            return "FAILURE"
         elif self.is_error:
-            return 'ERROR'
+            return "ERROR"
         else:
-            return 'SKIP'
+            return "SKIP"
 
     def __repr__(self):  # pragma: no cover
-        return '<Result {}>'.format(self.process)
+        return "<Result {}>".format(self.process)
 
     @property
     def process(self):
@@ -42,7 +42,7 @@ class Result(object):
     @process.setter
     def process(self, value):
         if not (isinstance(value, Process)):
-            raise TypeError('Expected a `Process` object.')
+            raise TypeError("Expected a `Process` object.")
 
         self._process = value
 
@@ -135,75 +135,97 @@ class ResultCollection(Collection):
                         modified_files[path] = []
                     modified_files[path].append(str(result.process))
 
-        return [(path, modified_files[path]) for path in sorted(iterkeys(modified_files))]
+        return [
+            (path, modified_files[path]) for path in sorted(iterkeys(modified_files))
+        ]
 
     def count(self, **kwargs):
-        if 'status' in kwargs:
-            return sum(1 for result in self.objects if result.status == kwargs.get('status'))
+        if "status" in kwargs:
+            return sum(
+                1 for result in self.objects if result.status == kwargs.get("status")
+            )
         return len(self.objects)
 
     def dump(self):
         """Returns the results in string format."""
-        text = ''
+        text = ""
 
         for result in self.objects:
             if result.is_failure or result.is_error:
-                text += '\n#{red}#{bright}'
-                text += '{}\n'.format(''.ljust(79, '='))
+                text += "\n#{red}#{bright}"
+                text += "{}\n".format("".ljust(79, "="))
 
-                status = 'FAILED' if result.is_failure else 'ERROR'
-                text += '{}: {}\n'.format(status, result.process)
-                text += '{}\n#{{reset_all}}'.format(''.ljust(79, '='))
+                status = "FAILED" if result.is_failure else "ERROR"
+                text += "{}: {}\n".format(status, result.process)
+                text += "{}\n#{{reset_all}}".format("".ljust(79, "="))
 
                 if result.output:
                     text += result.output
 
                 if result.error:
                     if result.output:
-                        text += '\n{}\n'.format(''.ljust(79, '-'))
-                        text += 'Additional error output:\n'
-                        text += '{}\n'.format(''.ljust(79, '-'))
+                        text += "\n{}\n".format("".ljust(79, "-"))
+                        text += "Additional error output:\n"
+                        text += "{}\n".format("".ljust(79, "-"))
                     text += result.error
 
-                if not text.endswith('\n'):
-                    text += '\n'
+                if not text.endswith("\n"):
+                    text += "\n"
 
         if self.has_modified_files:
-            text += '\n#{{yellow}}#{{bright}}{}\n'.format(''.ljust(79, '-'))
-            text += 'Modified files:\n'
-            text += '{}\n'.format(''.ljust(79, '-'))
+            text += "\n#{{yellow}}#{{bright}}{}\n".format("".ljust(79, "-"))
+            text += "Modified files:\n"
+            text += "{}\n".format("".ljust(79, "-"))
             for path, modified_by in self.modified_files:
-                text += '#{{reset_all}}{} #{{cyan}}<- {}\n'.format(path, ', '.join(modified_by))
+                text += "#{{reset_all}}{} #{{cyan}}<- {}\n".format(
+                    path, ", ".join(modified_by)
+                )
 
         return text
 
     def dump_junit(self):
         """Returns a string containing XML mapped to the JUnit schema."""
-        testsuites = ElementTree.Element('testsuites', name='therapist', time=str(round(self.execution_time, 2)),
-                                         tests=str(self.count()), failures=str(self.count(status=Result.FAILURE)),
-                                         errors=str(self.count(status=Result.ERROR)))
+        testsuites = ElementTree.Element(
+            "testsuites",
+            name="therapist",
+            time=str(round(self.execution_time, 2)),
+            tests=str(self.count()),
+            failures=str(self.count(status=Result.FAILURE)),
+            errors=str(self.count(status=Result.ERROR)),
+        )
 
         for result in self.objects:
-            failures = '1' if result.is_failure else '0'
-            errors = '1' if result.is_error else '0'
+            failures = "1" if result.is_failure else "0"
+            errors = "1" if result.is_error else "0"
 
-            testsuite = ElementTree.SubElement(testsuites, 'testsuite', id=result.process.name,
-                                               name=str(result.process), time=str(round(result.execution_time, 2)),
-                                               tests='1', failures=failures, errors=errors)
+            testsuite = ElementTree.SubElement(
+                testsuites,
+                "testsuite",
+                id=result.process.name,
+                name=str(result.process),
+                time=str(round(result.execution_time, 2)),
+                tests="1",
+                failures=failures,
+                errors=errors,
+            )
 
-            testcase = ElementTree.SubElement(testsuite, 'testcase', time=str(round(result.execution_time, 2)))
-            testcase.attrib['name'] = result.process.name
+            testcase = ElementTree.SubElement(
+                testsuite, "testcase", time=str(round(result.execution_time, 2))
+            )
+            testcase.attrib["name"] = result.process.name
 
             if result.is_failure or result.is_error:
                 if result.is_failure:
-                    element = ElementTree.SubElement(testcase, 'failure', type='failure')
+                    element = ElementTree.SubElement(
+                        testcase, "failure", type="failure"
+                    )
                 else:
-                    element = ElementTree.SubElement(testcase, 'error', type='error')
+                    element = ElementTree.SubElement(testcase, "error", type="error")
 
                 if result.error:
                     element.text = result.error
                 else:
-                    element.text = result.output if result.output else ''
+                    element.text = result.output if result.output else ""
 
-        xmlstr = ElementTree.tostring(testsuites, encoding='utf-8').decode('utf-8')
+        xmlstr = ElementTree.tostring(testsuites, encoding="utf-8").decode("utf-8")
         return '<?xml version="1.0" encoding="UTF-8"?>\n{}'.format(xmlstr)

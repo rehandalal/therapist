@@ -3,19 +3,19 @@ from therapist.utils.git import Status
 
 class TestGitStatus(object):
     def test_parsing_from_string(self):
-        s = Status('M  test.py')
-        assert s.state == 'M'
+        s = Status("M  test.py")
+        assert s.state == "M"
         assert not s.is_modified
-        assert s.path == 'test.py'
+        assert s.path == "test.py"
 
-        s = Status('RM test.py -> new_test.py')
-        assert s.state == 'R'
+        s = Status("RM test.py -> new_test.py")
+        assert s.state == "R"
         assert s.is_modified
-        assert s.path == 'new_test.py'
-        assert s.original_path == 'test.py'
+        assert s.path == "new_test.py"
+        assert s.original_path == "test.py"
 
     def test_properties(self):
-        s = Status('R  test.py -> new_test.py')
+        s = Status("R  test.py -> new_test.py")
         assert s.is_renamed
         assert s.is_staged
         assert not s.is_added
@@ -23,7 +23,7 @@ class TestGitStatus(object):
         assert not s.is_untracked
         assert not s.is_copied
 
-        s = Status('C  test.py -> new_test.py')
+        s = Status("C  test.py -> new_test.py")
         assert s.is_copied
         assert s.is_staged
         assert not s.is_added
@@ -31,7 +31,7 @@ class TestGitStatus(object):
         assert not s.is_untracked
         assert not s.is_renamed
 
-        s = Status('D  test.py')
+        s = Status("D  test.py")
         assert s.is_deleted
         assert s.is_staged
         assert not s.is_added
@@ -39,7 +39,7 @@ class TestGitStatus(object):
         assert not s.is_untracked
         assert not s.is_copied
 
-        s = Status('??  test.py')
+        s = Status("??  test.py")
         assert s.is_untracked
         assert not s.is_added
         assert not s.is_deleted
@@ -47,7 +47,7 @@ class TestGitStatus(object):
         assert not s.is_staged
         assert not s.is_copied
 
-        s = Status('A  test.py')
+        s = Status("A  test.py")
         assert s.is_added
         assert s.is_staged
         assert not s.is_deleted
@@ -56,14 +56,14 @@ class TestGitStatus(object):
         assert not s.is_copied
 
     def test_str(self):
-        text = 'R  test.py -> new_test.py'
+        text = "R  test.py -> new_test.py"
         s = Status(text)
         assert s.__str__() == text
 
-        text = 'C  test.py -> new_test.py'
+        text = "C  test.py -> new_test.py"
         s = Status(text)
         assert s.__str__() == text
 
-        text = 'AM  test.py'
+        text = "AM  test.py"
         s = Status(text)
         assert s.__str__() == text

@@ -1,4 +1,9 @@
 actions:
+  black:
+    include: "*.py"
+    exclude: "docs/*py"
+    run: black --check --diff {files}
+    fix: black {files}
   flake8:
     include: "*.py"
     exclude: "docs/*.py"

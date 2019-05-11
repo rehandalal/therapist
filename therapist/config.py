@@ -21,7 +21,7 @@ class Config(object):
         SHORTCUTS_WRONGLY_CONFIGURED = 6
 
         def __init__(self, *args, **kwargs):
-            self.code = kwargs.pop('code', None)
+            self.code = kwargs.pop("code", None)
             super(self.__class__, self).__init__(*args, **kwargs)
 
     def __init__(self, cwd):
@@ -32,24 +32,32 @@ class Config(object):
 
         # Try and load the config file
         try:
-            with open(os.path.join(self.cwd, '.therapist.yml'), 'r') as f:
+            with open(os.path.join(self.cwd, ".therapist.yml"), "r") as f:
                 config = yaml.safe_load(f)
         except IOError:
-            raise self.Misconfigured('Missing configuration file.', code=self.Misconfigured.NO_CONFIG_FILE)
+            raise self.Misconfigured(
+                "Missing configuration file.", code=self.Misconfigured.NO_CONFIG_FILE
+            )
         else:
             if config is None:
-                raise self.Misconfigured('Empty configuration file.', code=self.Misconfigured.EMPTY_CONFIG)
+                raise self.Misconfigured(
+                    "Empty configuration file.", code=self.Misconfigured.EMPTY_CONFIG
+                )
 
-            if 'actions' in config:
+            if "actions" in config:
                 try:
-                    actions = config['actions']
+                    actions = config["actions"]
                 except TypeError:
-                    raise self.Misconfigured('`actions` was not configured correctly.',
-                                             code=self.Misconfigured.ACTIONS_WRONGLY_CONFIGURED)
+                    raise self.Misconfigured(
+                        "`actions` was not configured correctly.",
+                        code=self.Misconfigured.ACTIONS_WRONGLY_CONFIGURED,
+                    )
                 else:
                     if not isinstance(actions, dict):
-                        raise self.Misconfigured('`actions` was not configured correctly.',
-                                                 code=self.Misconfigured.ACTIONS_WRONGLY_CONFIGURED)
+                        raise self.Misconfigured(
+                            "`actions` was not configured correctly.",
+                            code=self.Misconfigured.ACTIONS_WRONGLY_CONFIGURED,
+                        )
 
                     for action_name in actions:
                         settings = actions[action_name]
@@ -57,41 +65,55 @@ class Config(object):
                             settings = {}
                         self.actions.append(Action(action_name, **settings))
 
-            if 'plugins' in config:
+            if "plugins" in config:
                 try:
-                    plugins = config['plugins']
+                    plugins = config["plugins"]
                 except TypeError:
-                    raise self.Misconfigured('`plugins` was not configured correctly.',
-                                             code=self.Misconfigured.PLUGINS_WRONGLY_CONFIGURED)
+                    raise self.Misconfigured(
+                        "`plugins` was not configured correctly.",
+                        code=self.Misconfigured.PLUGINS_WRONGLY_CONFIGURED,
+                    )
                 else:
                     if not isinstance(plugins, dict):
-                        raise self.Misconfigured('`plugins` was not configured correctly.',
-                                                 code=self.Misconfigured.PLUGINS_WRONGLY_CONFIGURED)
+                        raise self.Misconfigured(
+                            "`plugins` was not configured correctly.",
+                            code=self.Misconfigured.PLUGINS_WRONGLY_CONFIGURED,
+                        )
 
                     for plugin_name in plugins:
                         try:
                             plugin = load_plugin(plugin_name)
                         except PluginNotInstalled:
-                            raise self.Misconfigured('Plugin `{}` is not installed.'.format(plugin_name),
-                                                     code=self.Misconfigured.PLUGIN_NOT_INSTALLED)
+                            raise self.Misconfigured(
+                                "Plugin `{}` is not installed.".format(plugin_name),
+                                code=self.Misconfigured.PLUGIN_NOT_INSTALLED,
+                            )
                         except InvalidPlugin:
-                            raise self.Misconfigured('Plugin `{}` is not a valid plugin.'.format(plugin_name),
-                                                     code=self.Misconfigured.PLUGIN_INVALID)
+                            raise self.Misconfigured(
+                                "Plugin `{}` is not a valid plugin.".format(
+                                    plugin_name
+                                ),
+                                code=self.Misconfigured.PLUGIN_INVALID,
+                            )
                         settings = plugins[plugin_name]
                         if settings is None:
                             settings = {}
                         self.plugins.append(plugin(plugin_name, **settings))
 
-            if 'shortcuts' in config:
+            if "shortcuts" in config:
                 try:
-                    shortcuts = config['shortcuts']
+                    shortcuts = config["shortcuts"]
                 except TypeError:
-                    raise self.Misconfigured('`shortcuts` was not configured correctly.',
-                                             code=self.Misconfigured.SHORTCUTS_WRONGLY_CONFIGURED)
+                    raise self.Misconfigured(
+                        "`shortcuts` was not configured correctly.",
+                        code=self.Misconfigured.SHORTCUTS_WRONGLY_CONFIGURED,
+                    )
                 else:
                     if not isinstance(shortcuts, dict):
-                        raise self.Misconfigured('`shortcuts` was not configured correctly.',
-                                                 code=self.Misconfigured.SHORTCUTS_WRONGLY_CONFIGURED)
+                        raise self.Misconfigured(
+                            "`shortcuts` was not configured correctly.",
+                            code=self.Misconfigured.SHORTCUTS_WRONGLY_CONFIGURED,
+                        )
 
                     for shortcut_name in shortcuts:
                         settings = shortcuts[shortcut_name]
@@ -100,5 +122,7 @@ class Config(object):
                         self.shortcuts.append(Shortcut(shortcut_name, **settings))
 
             if not (self.actions or self.plugins):
-                raise self.Misconfigured('`actions` or `plugins` must be specified in the configuration file.',
-                                         code=self.Misconfigured.NO_ACTIONS_OR_PLUGINS)
+                raise self.Misconfigured(
+                    "`actions` or `plugins` must be specified in the configuration file.",
+                    code=self.Misconfigured.NO_ACTIONS_OR_PLUGINS,
+                )
