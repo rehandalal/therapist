@@ -57,7 +57,7 @@ jobs:
           command: pytest -vvv --cov-report=xml --cov
 
       - codecov/upload:
-          file: .coverage
+          file: coverage.xml
 
   test-py27:
     <<: *test-defaults
