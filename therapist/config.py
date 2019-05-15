@@ -1,12 +1,14 @@
 import os
 import yaml
 
+from therapist import __version__
 from therapist.exc import Error
 from therapist.plugins.exc import InvalidPlugin, PluginNotInstalled
 from therapist.plugins.loader import load_plugin
 from therapist.plugins.plugin import PluginCollection
 from therapist.runner.action import Action, ActionCollection
 from therapist.runner.shortcut import Shortcut, ShortcutCollection
+from therapist.utils import parse_version, version_compare
 
 
 class Config(object):
@@ -18,7 +20,9 @@ class Config(object):
         PLUGINS_WRONGLY_CONFIGURED = 5
         PLUGIN_NOT_INSTALLED = 6
         PLUGIN_INVALID = 7
-        SHORTCUTS_WRONGLY_CONFIGURED = 6
+        SHORTCUTS_WRONGLY_CONFIGURED = 8
+        VERSION_MISMATCH = 9
+        REQUIRES_WRONGLY_CONFIGURED = 10
 
         def __init__(self, *args, **kwargs):
             self.code = kwargs.pop("code", None)
@@ -29,6 +33,7 @@ class Config(object):
         self.actions = ActionCollection()
         self.plugins = PluginCollection()
         self.shortcuts = ShortcutCollection()
+        self.requires = None
 
         # Try and load the config file
         try:
@@ -120,6 +125,61 @@ class Config(object):
                         if settings is None:
                             settings = {}
                         self.shortcuts.append(Shortcut(shortcut_name, **settings))
+
+            if "requires" in config:
+                self.requires = config["requires"]
+
+                if (
+                    isinstance(self.requires, str)
+                    or isinstance(self.requires, float)
+                    or isinstance(self.requires, int)
+                ):
+                    self.requires = {"min": self.requires}
+                elif not isinstance(self.requires, dict):
+                    raise self.Misconfigured(
+                        "`requires` must be of type string, float, int or dict.",
+                        code=self.Misconfigured.REQUIRES_WRONGLY_CONFIGURED,
+                    )
+
+                min_version = self.requires.get("min")
+                max_version = self.requires.get("max")
+
+                mismatch_min = False
+                mismatch_max = False
+
+                try:
+                    if min_version and max_version:
+                        if version_compare(min_version, max_version) > 0:
+                            raise self.Misconfigured(
+                                "`min` value should be less than `max`.",
+                                code=self.Misconfigured.REQUIRES_WRONGLY_CONFIGURED,
+                            )
+                    if min_version:
+                        if version_compare(min_version, __version__) > 0:
+                            mismatch_min = ".".join(
+                                [str(v) for v in parse_version(min_version)]
+                            )
+                    if max_version:
+                        if version_compare(max_version, __version__) < 0:
+                            mismatch_max = ".".join(
+                                [str(v) for v in parse_version(max_version)]
+                            )
+                except ValueError:
+                    raise self.Misconfigured(
+                        "Invalid version specified in `requires`.",
+                        code=self.Misconfigured.REQUIRES_WRONGLY_CONFIGURED,
+                    )
+
+                if mismatch_min:
+                    raise self.Misconfigured(
+                        "You require Therapist >= {}.".format(mismatch_min),
+                        code=self.Misconfigured.VERSION_MISMATCH,
+                    )
+                elif mismatch_max:
+                    raise self.Misconfigured(
+                        "You require Therapist <= {}.".format(mismatch_max),
+                        code=self.Misconfigured.VERSION_MISMATCH,
+                    )
 
             if not (self.actions or self.plugins):
                 raise self.Misconfigured(

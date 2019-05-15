@@ -85,7 +85,13 @@ class Project(object):
         """Write to a file."""
         path = os.path.join(self.path, path)
         self.makedirs(os.path.dirname(path))
-        with open(path, "w+") as f:
+        with open(path, "w") as f:
+            f.write(s)
+
+    def append(self, path, s=""):
+        path = os.path.join(self.path, path)
+        self.makedirs(os.path.dirname(path))
+        with open(path, "a") as f:
             f.write(s)
 
     def read(self, path):
