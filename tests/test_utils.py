@@ -1,3 +1,4 @@
+from therapist.utils import parse_version, version_compare
 from therapist.utils.git import Status
 
 
@@ -67,3 +68,20 @@ class TestGitStatus(object):
         text = "AM  test.py"
         s = Status(text)
         assert s.__str__() == text
+
+
+class TestVersionComparator(object):
+    def test_parse_version(self):
+        assert parse_version("3") == [3, 0, 0]
+        assert parse_version("3.1") == [3, 1, 0]
+        assert parse_version("3.1.2") == [3, 1, 2]
+        assert parse_version(3.2) == [3, 2, 0]
+
+    def test_version_compare(self):
+        assert version_compare("1.5.5", "1.5.5") == 0
+        assert version_compare("2.0.0", "1.5.5") == 1
+        assert version_compare("0.1.0", "1.5.5") == -1
+        assert version_compare("1.6.0", "1.5.5") == 1
+        assert version_compare("1.1.0", "1.5.5") == -1
+        assert version_compare("1.5.6", "1.5.5") == 1
+        assert version_compare("1.5.1", "1.5.5") == -1
