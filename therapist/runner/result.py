@@ -135,15 +135,11 @@ class ResultCollection(Collection):
                         modified_files[path] = []
                     modified_files[path].append(str(result.process))
 
-        return [
-            (path, modified_files[path]) for path in sorted(iterkeys(modified_files))
-        ]
+        return [(path, modified_files[path]) for path in sorted(iterkeys(modified_files))]
 
     def count(self, **kwargs):
         if "status" in kwargs:
-            return sum(
-                1 for result in self.objects if result.status == kwargs.get("status")
-            )
+            return sum(1 for result in self.objects if result.status == kwargs.get("status"))
         return len(self.objects)
 
     def dump(self):
@@ -177,9 +173,7 @@ class ResultCollection(Collection):
             text += "Modified files:\n"
             text += "{}\n".format("".ljust(79, "-"))
             for path, modified_by in self.modified_files:
-                text += "#{{reset_all}}{} #{{cyan}}<- {}\n".format(
-                    path, ", ".join(modified_by)
-                )
+                text += "#{{reset_all}}{} #{{cyan}}<- {}\n".format(path, ", ".join(modified_by))
 
         return text
 
@@ -209,16 +203,12 @@ class ResultCollection(Collection):
                 errors=errors,
             )
 
-            testcase = ElementTree.SubElement(
-                testsuite, "testcase", time=str(round(result.execution_time, 2))
-            )
+            testcase = ElementTree.SubElement(testsuite, "testcase", time=str(round(result.execution_time, 2)))
             testcase.attrib["name"] = result.process.name
 
             if result.is_failure or result.is_error:
                 if result.is_failure:
-                    element = ElementTree.SubElement(
-                        testcase, "failure", type="failure"
-                    )
+                    element = ElementTree.SubElement(testcase, "failure", type="failure")
                 else:
                     element = ElementTree.SubElement(testcase, "error", type="error")
 

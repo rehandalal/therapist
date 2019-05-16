@@ -38,9 +38,7 @@ class TestInstall(object):
     def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.install)
-        assert (
-            "Not a git repository (or any of the parent directories)" in result.output
-        )
+        assert "Not a git repository (or any of the parent directories)" in result.output
         assert result.exception
         assert result.exit_code == 1
 
@@ -61,9 +59,7 @@ class TestInstall(object):
             old_hash = project.hash(".git/hooks/pre-commit")
 
             result = cli_runner.invoke(cli.install, ["--fix"])
-            assert (
-                "The pre-commit hook has already been installed." not in result.output
-            )
+            assert "The pre-commit hook has already been installed." not in result.output
             assert not result.exception
             assert result.exit_code == 0
             new_hash = project.hash(".git/hooks/pre-commit")
@@ -77,10 +73,7 @@ class TestInstall(object):
             hook = project.read(".git/hooks/pre-commit")
             hook_hash = read_hook_hash(project.abspath(".git/hooks/pre-commit"))
 
-            project.write(
-                ".git/hooks/pre-commit",
-                hook.replace("# THERAPIST {}".format(hook_hash), "# THERAPIST hash"),
-            )
+            project.write(".git/hooks/pre-commit", hook.replace("# THERAPIST {}".format(hook_hash), "# THERAPIST hash"))
 
             result = cli_runner.invoke(cli.install)
             assert "Installing pre-commit hook..." in result.output
@@ -173,20 +166,14 @@ class TestUninstall(object):
             assert project.exists(".git/hooks/pre-commit")
 
             result = cli_runner.invoke(cli.uninstall, input="y")
-            assert (
-                "Are you sure you want to uninstall the current pre-commit hook?"
-                in result.output
-            )
+            assert "Are you sure you want to uninstall the current pre-commit hook?" in result.output
             assert not result.exception
             assert result.exit_code == 0
 
     def test_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.uninstall)
-            assert (
-                "Not a git repository (or any of the parent directories)"
-                in result.output
-            )
+            assert "Not a git repository (or any of the parent directories)" in result.output
             assert result.exception
             assert result.exit_code == 1
 
@@ -212,10 +199,7 @@ class TestUninstall(object):
             project.write(".git/hooks/pre-commit")
 
             result = cli_runner.invoke(cli.uninstall)
-            assert (
-                "The current pre-commit hook is not the Therapist pre-commit hook."
-                in result.output
-            )
+            assert "The current pre-commit hook is not the Therapist pre-commit hook." in result.output
             assert result.exception
             assert result.exit_code == 1
 
@@ -271,10 +255,7 @@ class TestUninstall(object):
             project.write(".git/hooks/pre-commit.legacy", "# legacy")
 
             result = cli_runner.invoke(cli.uninstall, ["-f"])
-            assert (
-                "Are you sure you want to uninstall the current pre-commit hook?"
-                not in result.output
-            )
+            assert "Are you sure you want to uninstall the current pre-commit hook?" not in result.output
             assert "There is a legacy pre-commit hook present." not in result.output
             assert "Copying `pre-commit.legacy` to `pre-commit`..." not in result.output
             assert "Removing `pre-commit.legacy`..." in result.output
@@ -292,10 +273,7 @@ class TestUninstall(object):
             project.write(".git/hooks/pre-commit.legacy", "# legacy")
 
             result = cli_runner.invoke(cli.uninstall, ["-f", "--restore-legacy"])
-            assert (
-                "Are you sure you want to uninstall the current pre-commit hook?"
-                not in result.output
-            )
+            assert "Are you sure you want to uninstall the current pre-commit hook?" not in result.output
             assert "There is a legacy pre-commit hook present." not in result.output
             assert "Copying `pre-commit.legacy` to `pre-commit`..." in result.output
             assert "Removing `pre-commit.legacy`..." not in result.output
@@ -340,9 +318,7 @@ class TestRun(object):
     def test_use_git_outside_repo(self, cli_runner, tmpdir):
         with chdir(tmpdir.strpath):
             result = cli_runner.invoke(cli.run, ["-g"])
-        assert (
-            "Not a git repository (or any of the parent directories)" in result.output
-        )
+        assert "Not a git repository (or any of the parent directories)" in result.output
         assert result.exception
         assert result.exit_code == 1
 
@@ -373,11 +349,7 @@ class TestRun(object):
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ["-a", "lint", "--fix", "-g"])
             assert re.search(r"Linting.+?\[SUCCESS]", result.output)
-            assert re.search(
-                r"Modified files:.+?pass.py.+?<- Linting",
-                result.output,
-                flags=re.DOTALL,
-            )
+            assert re.search(r"Modified files:.+?pass.py.+?<- Linting", result.output, flags=re.DOTALL)
             assert not result.exception
             assert result.exit_code == 0
             assert project.read("pass.py") == "FIXED"
@@ -391,11 +363,7 @@ class TestRun(object):
         with chdir(project.path):
             result = cli_runner.invoke(cli.run, ["-a", "lint", "--fix", "pass.py"])
             assert re.search(r"Linting.+?\[SUCCESS]", result.output)
-            assert re.search(
-                r"Modified files:.+?pass.py.+?<- Linting",
-                result.output,
-                flags=re.DOTALL,
-            )
+            assert re.search(r"Modified files:.+?pass.py.+?<- Linting", result.output, flags=re.DOTALL)
             assert not result.exception
             assert result.exit_code == 0
             assert project.read("pass.py") == "FIXED"
@@ -407,15 +375,9 @@ class TestRun(object):
         assert project.read("pass.py") == "UNFIXED"
 
         with chdir(project.path):
-            result = cli_runner.invoke(
-                cli.run, ["-a", "lint", "--fix", "--stage-modified-files", "-g"]
-            )
+            result = cli_runner.invoke(cli.run, ["-a", "lint", "--fix", "--stage-modified-files", "-g"])
             assert re.search(r"Linting.+?\[SUCCESS]", result.output)
-            assert re.search(
-                r"Modified files:.+?pass.py.+?<- Linting",
-                result.output,
-                flags=re.DOTALL,
-            )
+            assert re.search(r"Modified files:.+?pass.py.+?<- Linting", result.output, flags=re.DOTALL)
             assert not result.exception
             assert result.exit_code == 0
             assert project.read("pass.py") == "FIXED"
@@ -591,9 +553,7 @@ class TestRun(object):
         project.write("fail.py")
 
         with chdir(project.path):
-            result = cli_runner.invoke(
-                cli.run, ["--use-tracked-files", "--include-untracked", "-g"]
-            )
+            result = cli_runner.invoke(cli.run, ["--use-tracked-files", "--include-untracked", "-g"])
             assert re.search(r"Linting.+?\[FAILURE]", result.output)
             assert result.exception
             assert result.exit_code == 2
@@ -676,12 +636,7 @@ class TestRun(object):
             hook = project.read(".git/hooks/pre-commit")
             project.write(
                 ".git/hooks/pre-commit",
-                re.sub(
-                    r"^# THERAPIST(.+?)v[0-9]+?$",
-                    "# THERAPIST\1v1",
-                    hook,
-                    flags=re.MULTILINE,
-                ),
+                re.sub(r"^# THERAPIST(.+?)v[0-9]+?$", "# THERAPIST\1v1", hook, flags=re.MULTILINE),
             )
 
             result = cli_runner.invoke(cli.run)
@@ -696,12 +651,7 @@ class TestRun(object):
             hook = project.read(".git/hooks/pre-commit")
             project.write(
                 ".git/hooks/pre-commit",
-                re.sub(
-                    r"^# THERAPIST(.+?)v[0-9]+?$",
-                    "# THERAPIST\1",
-                    hook,
-                    flags=re.MULTILINE,
-                ),
+                re.sub(r"^# THERAPIST(.+?)v[0-9]+?$", "# THERAPIST\1", hook, flags=re.MULTILINE),
             )
 
             result = cli_runner.invoke(cli.run)
@@ -725,10 +675,7 @@ class TestUse(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.use, ["lint"])
-            assert (
-                "$ therapist run --action lint --include-untracked --use-git"
-                in result.output
-            )
+            assert "$ therapist run --action lint --include-untracked --use-git" in result.output
             assert re.search(r"Linting.+?\[SUCCESS]", result.output)
             assert not result.exception
             assert result.exit_code == 0
@@ -740,16 +687,9 @@ class TestUse(object):
 
         with chdir(project.path):
             result = cli_runner.invoke(cli.use, ["fix"])
-            assert (
-                "$ therapist run --action lint --fix --include-untracked --use-git"
-                in result.output
-            )
+            assert "$ therapist run --action lint --fix --include-untracked --use-git" in result.output
             assert re.search(r"Linting.+?\[SUCCESS]", result.output)
-            assert re.search(
-                r"Modified files:.+?pass.py.+?<- Linting",
-                result.output,
-                flags=re.DOTALL,
-            )
+            assert re.search(r"Modified files:.+?pass.py.+?<- Linting", result.output, flags=re.DOTALL)
             assert not result.exception
             assert result.exit_code == 0
             assert project.read("pass.py") == "FIXED"
@@ -765,11 +705,7 @@ class TestUse(object):
             message = "$ therapist run --action lint --fix --include-untracked --use-git --use-tracked-files"
             assert message in result.output
             assert re.search(r"Linting.+?\[SUCCESS]", result.output)
-            assert re.search(
-                r"Modified files:.+?pass.py.+?<- Linting",
-                result.output,
-                flags=re.DOTALL,
-            )
+            assert re.search(r"Modified files:.+?pass.py.+?<- Linting", result.output, flags=re.DOTALL)
             assert not result.exception
             assert result.exit_code == 0
             assert project.read("pass.py") == "FIXED"
@@ -837,9 +773,7 @@ class TestHook(object):
             cli_runner.invoke(cli.install)
         assert project.exists(".git/hooks/pre-commit")
 
-        project.write(
-            ".git/hooks/pre-commit.legacy", '#!/usr/bin/env bash\necho "LEGACY"'
-        )
+        project.write(".git/hooks/pre-commit.legacy", '#!/usr/bin/env bash\necho "LEGACY"')
         project.chmod(".git/hooks/pre-commit.legacy", 0o775)
 
         project.write("pass.py")
@@ -886,9 +820,7 @@ class TestHook(object):
         project.git.add(".")
 
         out, err, code = project.git.commit(m="Add a file.")
-        assert re.search(
-            r"Modified files:.+?pass.py.+?<- Linting", err, flags=re.DOTALL
-        )
+        assert re.search(r"Modified files:.+?pass.py.+?<- Linting", err, flags=re.DOTALL)
         assert "[SUCCESS]" in err
 
         out, err, code = project.git.status(porcelain=True)
@@ -909,9 +841,7 @@ class TestHook(object):
         project.git.add(".")
 
         out, err, code = project.git.commit(m="Add a file.")
-        assert re.search(
-            r"Modified files:.+?pass.py.+?<- Linting", err, flags=re.DOTALL
-        )
+        assert re.search(r"Modified files:.+?pass.py.+?<- Linting", err, flags=re.DOTALL)
         assert "[SUCCESS]" in err
 
         out, err, code = project.git.status(porcelain=True)

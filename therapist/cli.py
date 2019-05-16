@@ -98,20 +98,10 @@ def cli(version):
     help="Force installation of the hook. This will replace any existing hook "
     "unless you also use the --preserve-legacy option.",
 )
-@click.option(
-    "--fix",
-    is_flag=True,
-    help="The hook will automatically fix problems where possible.",
-)
-@click.option(
-    "--no-stage-modified-files",
-    is_flag=True,
-    help="Disables the staging of files modified by the hook.",
-)
+@click.option("--fix", is_flag=True, help="The hook will automatically fix problems where possible.")
+@click.option("--no-stage-modified-files", is_flag=True, help="Disables the staging of files modified by the hook.")
 @click.option("--no-color", is_flag=True, help="Disables colors and other rich output.")
-@click.option(
-    "--preserve-legacy", is_flag=True, help="Preserves any existing pre-commit hook."
-)
+@click.option("--preserve-legacy", is_flag=True, help="Preserves any existing pre-commit hook.")
 def install(**kwargs):
     """Install the pre-commit hook."""
     force = kwargs.get("force")
@@ -130,9 +120,7 @@ def install(**kwargs):
 
     hook_options = {
         "fix": "--fix" if kwargs.get("fix") else "",
-        "stage_modified_files": ""
-        if kwargs.get("no_stage_modified_files")
-        else "--stage-modified-files",
+        "stage_modified_files": "" if kwargs.get("no_stage_modified_files") else "--stage-modified-files",
         "therapist_bin": therapist_bin,
     }
 
@@ -152,9 +140,7 @@ def install(**kwargs):
         else:
             if not force and not preserve_legacy:
                 print(EXISTING_HOOK_MSG)
-                preserve_legacy = click.confirm(
-                    CONFIRM_PRESERVE_LEGACY_HOOK_MSG, default=True
-                )
+                preserve_legacy = click.confirm(CONFIRM_PRESERVE_LEGACY_HOOK_MSG, default=True)
 
             if preserve_legacy:
                 output(COPYING_HOOK_MSG, end="")
@@ -185,9 +171,7 @@ def install(**kwargs):
     "--restore-legacy option.",
 )
 @click.option("--no-color", is_flag=True, help="Disables colors and other rich output.")
-@click.option(
-    "--restore-legacy", is_flag=True, help="Restores any legacy pre-commit hook."
-)
+@click.option("--restore-legacy", is_flag=True, help="Restores any legacy pre-commit hook.")
 def uninstall(**kwargs):
     """Uninstall the current pre-commit hook."""
     force = kwargs.get("force")
@@ -223,9 +207,7 @@ def uninstall(**kwargs):
     if os.path.isfile(legacy_hook_path):
         if not force and not restore_legacy:
             output(LEGACY_HOOK_EXISTS_MSG)
-            restore_legacy = click.confirm(
-                CONFIRM_RESTORE_LEGACY_HOOK_MSG, default=True
-            )
+            restore_legacy = click.confirm(CONFIRM_RESTORE_LEGACY_HOOK_MSG, default=True)
         if restore_legacy:
             output(COPYING_LEGACY_HOOK_MSG, end="")
             shutil.copy2(legacy_hook_path, hook_path)
@@ -233,9 +215,7 @@ def uninstall(**kwargs):
             output(DONE_COPYING_LEGACY_HOOK_MSG)
             exit(0)
         else:
-            if force or click.confirm(
-                "Would you like to remove the legacy hook?", default=False
-            ):
+            if force or click.confirm("Would you like to remove the legacy hook?", default=False):
                 output(REMOVING_LEGACY_HOOK_MSG, end="")
                 os.remove(legacy_hook_path)
                 output(DONE_REMOVING_LEGACY_HOOK_MSG)
@@ -247,40 +227,18 @@ def uninstall(**kwargs):
 
 @cli.command()
 @click.argument("paths", nargs=-1)
-@click.option(
-    "--action", "-a", default=None, help="A name of a specific action to be run."
-)
-@click.option(
-    "--fix", is_flag=True, help="Automatically fixes problems where possible."
-)
+@click.option("--action", "-a", default=None, help="A name of a specific action to be run.")
+@click.option("--fix", is_flag=True, help="Automatically fixes problems where possible.")
 @click.option("--include-unstaged", is_flag=True, help="Include unstaged files.")
-@click.option(
-    "--include-unstaged-changes",
-    is_flag=True,
-    help="Include unstaged changes to staged files.",
-)
+@click.option("--include-unstaged-changes", is_flag=True, help="Include unstaged changes to staged files.")
 @click.option("--include-untracked", is_flag=True, help="Include untracked files.")
-@click.option(
-    "--junit-xml",
-    default=None,
-    help="Create a junit-xml style report file at the given path.",
-)
+@click.option("--junit-xml", default=None, help="Create a junit-xml style report file at the given path.")
 @click.option("--no-color", is_flag=True, help="Disables colors and other rich output.")
-@click.option(
-    "--plugin", "-p", default=None, help="A name of a specific plugin to be run."
-)
-@click.option(
-    "--stage-modified-files",
-    is_flag=True,
-    help="Files that are modified by any actions should be staged.",
-)
+@click.option("--plugin", "-p", default=None, help="A name of a specific plugin to be run.")
+@click.option("--stage-modified-files", is_flag=True, help="Files that are modified by any actions should be staged.")
 @click.option("--use-git", "-g", is_flag=True, help="Run in git-aware mode.")
-@click.option(
-    "--use-tracked-files", is_flag=True, help="Runs actions against all tracked files."
-)
-@click.option(
-    "--quiet", "-q", is_flag=True, help="Suppress all output, unless an error occurs."
-)
+@click.option("--use-tracked-files", is_flag=True, help="Runs actions against all tracked files.")
+@click.option("--quiet", "-q", is_flag=True, help="Suppress all output, unless an error occurs.")
 def run(**kwargs):
     """Run the Therapist suite."""
     paths = kwargs.pop("paths", ())
@@ -347,9 +305,7 @@ def run(**kwargs):
         output(UNSTAGED_CHANGES_MSG, end="\n\n")
 
     processes = list(config.actions) + list(config.plugins)
-    processes.sort(
-        key=lambda x: x.name
-    )  # Sort the list of processes for consistent results
+    processes.sort(key=lambda x: x.name)  # Sort the list of processes for consistent results
 
     if plugin:
         try:
@@ -384,11 +340,7 @@ def run(**kwargs):
 
     if not quiet:
         output(results.dump())
-        output(
-            "#{{bright}}{}\nCompleted in: {}s".format(
-                "".ljust(79, "-"), round(results.execution_time, 2)
-            )
-        )
+        output("#{{bright}}{}\nCompleted in: {}s".format("".ljust(79, "-"), round(results.execution_time, 2)))
 
     if results.has_error:
         exit(1)

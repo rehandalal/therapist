@@ -23,25 +23,15 @@ class Action(Process):
 
             try:
                 pipes = subprocess.Popen(
-                    command_with_args,
-                    shell=True,
-                    cwd=kwargs.get("cwd"),
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
+                    command_with_args, shell=True, cwd=kwargs.get("cwd"), stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
             except OSError as err:
-                result.mark_complete(
-                    status=Result.ERROR, error="OSError {}".format(str(err))
-                )
+                result.mark_complete(status=Result.ERROR, error="OSError {}".format(str(err)))
             else:
                 std_out, std_err = pipes.communicate()
 
                 status = Result.SUCCESS if pipes.returncode == 0 else Result.FAILURE
-                result.mark_complete(
-                    status=status,
-                    output=std_out.decode("utf-8"),
-                    error=std_err.decode("utf-8"),
-                )
+                result.mark_complete(status=status, output=std_out.decode("utf-8"), error=std_err.decode("utf-8"))
 
         return result
 

@@ -36,8 +36,6 @@ class Collection(object):
         object_class = getattr(self.Meta, "object_class", object)
 
         if not isinstance(v, object_class):
-            raise TypeError(
-                "Expected an instance of `{}`.".format(object_class.__name__)
-            )
+            raise TypeError("Expected an instance of `{}`.".format(object_class.__name__))
 
         self._objects.append(v)

@@ -33,9 +33,7 @@ class Project(object):
         if blank:
             os.makedirs(self.path)
         else:
-            sample_path = os.path.join(
-                os.path.abspath(os.path.dirname(__file__)), "sample_project"
-            )
+            sample_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "sample_project")
             shutil.copytree(sample_path, self.path)
 
         # Initialize a git repo and configure
