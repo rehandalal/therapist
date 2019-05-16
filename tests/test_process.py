@@ -8,9 +8,7 @@ class TestProcess(object):
         assert p.description is None
         assert p.config == {}
 
-        p = Process(
-            "my-process", description="Process description", setting="my-setting"
-        )
+        p = Process("my-process", description="Process description", setting="my-setting")
         assert p.name == "my-process"
         assert p.description == "Process description"
         assert p.config == {"setting": "my-setting"}

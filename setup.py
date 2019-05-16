@@ -11,13 +11,7 @@ from setuptools import find_packages, setup
 from setuptools.command.install import install
 
 
-DEPENDENCIES = [
-    "click >= 6.7",
-    "colorama >= 0.3.7",
-    "pathspec >= 0.5.0",
-    "PyYAML >= 3.12",
-    "six >= 1.10.0",
-]
+DEPENDENCIES = ["click >= 6.7", "colorama >= 0.3.7", "pathspec >= 0.5.0", "PyYAML >= 3.12", "six >= 1.10.0"]
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -33,9 +27,7 @@ class VerifyVersionCommand(install):
         tag = os.getenv("CIRCLE_TAG")
 
         if tag != "v{}".format(version):
-            info = "Git tag: {0} does not match the version of this app: {1}".format(
-                tag, version
-            )
+            info = "Git tag: {0} does not match the version of this app: {1}".format(tag, version)
             sys.exit(info)
 
 

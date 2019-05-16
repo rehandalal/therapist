@@ -29,9 +29,7 @@ class Runner(object):
 
             if self.git:
                 untracked_files = "all" if include_untracked else "no"
-                out, err, code = self.git.status(
-                    porcelain=True, untracked_files=untracked_files
-                )
+                out, err, code = self.git.status(porcelain=True, untracked_files=untracked_files)
 
                 for line in out.splitlines():
                     file_status = Status(line)
@@ -41,11 +39,7 @@ class Runner(object):
                         self.unstaged_changes = True
 
                     # Skip unstaged files if the `unstaged` flag is False
-                    if (
-                        not file_status.is_staged
-                        and not include_unstaged
-                        and not include_untracked
-                    ):
+                    if not file_status.is_staged and not include_unstaged and not include_untracked:
                         continue
 
                     # Skip deleted files
@@ -81,11 +75,7 @@ class Runner(object):
 
                     # Make sure the file is one of the files that was processed
                     if file_status.path in self.files and file_status.is_modified:
-                        mtime = (
-                            os.path.getmtime(file_status.path)
-                            if os.path.exists(file_status.path)
-                            else 0
-                        )
+                        mtime = os.path.getmtime(file_status.path) if os.path.exists(file_status.path) else 0
                         if mtime > self.file_mtimes.get(file_status.path, 0):
                             self.file_mtimes[file_status.path] = mtime
                             result.add_modified_file(file_status.path)

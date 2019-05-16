@@ -26,13 +26,10 @@ NO_HOOK_INSTALLED_MSG = "There is no pre-commit hook currently installed."
 
 UNINSTALL_ABORTED_MSG = "Uninstallation aborted."
 
-CONFIRM_UNINSTALL_HOOK_MSG = (
-    "Are you sure you want to uninstall the current pre-commit hook?"
-)
+CONFIRM_UNINSTALL_HOOK_MSG = "Are you sure you want to uninstall the current pre-commit hook?"
 
 CURRENT_HOOK_NOT_THERAPIST_MSG = (
-    "#{yellow}The current pre-commit hook is not the Therapist pre-commit hook.\n"
-    "#{reset_all}Uninstallation aborted."
+    "#{yellow}The current pre-commit hook is not the Therapist pre-commit hook.\n" "#{reset_all}Uninstallation aborted."
 )
 
 LEGACY_HOOK_EXISTS_MSG = "#{yellow}There is a legacy pre-commit hook present."
