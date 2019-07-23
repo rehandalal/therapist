@@ -4,9 +4,9 @@
 exitcode=0
 
 # Get the current working directory
-pushd "$(dirname "$0")" > /dev/null
+pushd "$(dirname "$0")" > /dev/null || exit 2
 CWD=$(pwd)
-popd > /dev/null
+popd > /dev/null || exit 2
 
 # Run the legacy pre-commit if it exists
 if [ -x "$CWD"/pre-commit.legacy ]; then
