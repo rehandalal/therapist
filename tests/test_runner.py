@@ -319,7 +319,7 @@ class TestRunner(object):
         assert "AM pass.txt" in out
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True)
+        r = Runner(c.cwd, enable_git=True)
         result, message = r.run_process(c.actions.get("lint"))
 
         assert result.is_failure
@@ -333,7 +333,7 @@ class TestRunner(object):
         project.write("fail.txt")
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True, include_untracked=True)
+        r = Runner(c.cwd, enable_git=True, include_untracked=True)
         result, message = r.run_process(c.actions.get("lint"))
         assert result.is_failure
 
@@ -351,7 +351,7 @@ class TestRunner(object):
         project.write("fail.txt", "x")
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True, include_unstaged=True)
+        r = Runner(c.cwd, enable_git=True, include_unstaged=True)
         result, message = r.run_process(c.actions.get("lint"))
         assert result.is_failure
 
@@ -370,7 +370,7 @@ class TestRunner(object):
         assert "AM pass.txt" in out
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True, include_unstaged_changes=True)
+        r = Runner(c.cwd, enable_git=True, include_unstaged_changes=True)
         result, message = r.run_process(c.actions.get("lint"))
         assert result.is_success
 
@@ -381,7 +381,7 @@ class TestRunner(object):
 
     def test_run_action_does_not_exist(self, project):
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True)
+        r = Runner(c.cwd, enable_git=True)
 
         with pytest.raises(c.actions.DoesNotExist):
             r.run_process(c.actions.get("notanaction"))
@@ -430,7 +430,7 @@ class TestRunner(object):
         project.git.add(".")
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True)
+        r = Runner(c.cwd, enable_git=True)
         result, message = r.run_process(c.actions.get("lint"))
         assert result.is_error
 
@@ -446,7 +446,7 @@ class TestRunner(object):
         project.git.rm("pass.py")
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True)
+        r = Runner(c.cwd, enable_git=True)
         r.run_process(c.actions.get("lint"))
 
         assert len(r.files) == 0
@@ -459,7 +459,7 @@ class TestRunner(object):
         project.git.add(".")
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True)
+        r = Runner(c.cwd, enable_git=True)
         result, message = r.run_process(c.actions.get("norun"))
 
         assert "pass.py" in r.files
@@ -475,7 +475,7 @@ class TestRunner(object):
         project.git.add(".")
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True)
+        r = Runner(c.cwd, enable_git=True)
         result, message = r.run_process(c.actions.get("runissue"))
         assert result.is_failure
 
@@ -490,7 +490,7 @@ class TestRunner(object):
         project.git.add(".")
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True)
+        r = Runner(c.cwd, enable_git=True)
         result, message = r.run_process(c.actions.get("lint"))
 
         assert "fail.js" in r.files
@@ -504,7 +504,7 @@ class TestRunner(object):
         project.git.add(".")
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True)
+        r = Runner(c.cwd, enable_git=True)
         result, message = r.run_process(c.actions.get("lint"))
 
         assert ".ignore.fail.txt" in r.files
@@ -518,7 +518,7 @@ class TestRunner(object):
         project.write("pass.py", "changed")
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True)
+        r = Runner(c.cwd, enable_git=True)
 
         def raise_exc():
             raise Exception
@@ -535,7 +535,7 @@ class TestRunner(object):
         project.git.add(".")
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True)
+        r = Runner(c.cwd, enable_git=True)
         result, message = r.run_process(c.actions.get("lint"))
 
         assert result.is_failure
@@ -554,7 +554,7 @@ class TestRunner(object):
         project.git.add(".")
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True)
+        r = Runner(c.cwd, enable_git=True)
         result, message = r.run_process(c.actions.get("no-settings"))
 
         assert "pass.py" in r.files
@@ -575,7 +575,7 @@ class TestRunner(object):
         assert out.startswith("stash@{0}")
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True)
+        r = Runner(c.cwd, enable_git=True)
         result, message = r.run_process(c.actions.get("lint"))
         out, err, code = project.git.stash.list()
 
@@ -593,7 +593,7 @@ class TestRunner(object):
         project.git.add(".")
 
         c = Config(project.path)
-        r = Runner(c.cwd, use_git=True)
+        r = Runner(c.cwd, enable_git=True)
         result, message = r.run_process(c.actions.get("lint"))
 
         assert result.is_failure

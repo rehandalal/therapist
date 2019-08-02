@@ -95,7 +95,7 @@ def get_config(disable_git=False):
         report_misconfigured_and_exit(err)
     else:
         if not disable_git and git_root == root_dir:
-            extra_kw["use_git"] = True
+            extra_kw["enable_git"] = True
 
     return config, extra_kw
 
@@ -247,6 +247,7 @@ def uninstall(**kwargs):
 @click.argument("paths", nargs=-1)
 @click.option("--action", "-a", default=None, help="A name of a specific action to be run.")
 @click.option("--disable-git", is_flag=True, help="Disable git-aware features.")
+@click.option("--enable-git", is_flag=True, help="Enable git-aware features.")
 @click.option("--fix", is_flag=True, help="Automatically fixes problems where possible.")
 @click.option("--include-unstaged", is_flag=True, help="Include unstaged files.")
 @click.option("--include-unstaged-changes", is_flag=True, help="Include unstaged changes to staged files.")

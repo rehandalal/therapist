@@ -9,7 +9,7 @@ class Runner(object):
         fix = kwargs.get("fix", False)
 
         # Git related options
-        use_git = kwargs.get("use_git", False)
+        enable_git = kwargs.get("enable_git", False)
         include_unstaged = kwargs.get("include_unstaged", False)
         include_untracked = kwargs.get("include_untracked", False)
         include_unstaged_changes = kwargs.get("include_unstaged_changes", False)
@@ -18,7 +18,7 @@ class Runner(object):
         self.cwd = os.path.abspath(cwd)
         self.unstaged_changes = False
 
-        self.git = Git(repo_path=self.cwd) if use_git else None
+        self.git = Git(repo_path=self.cwd) if enable_git else None
         self.include_unstaged_changes = include_unstaged_changes or include_unstaged
         self.fix = fix
         self.stage_modified_files = stage_modified_files
