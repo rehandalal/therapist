@@ -1,7 +1,5 @@
 status = [
   "ci/circleci: lint",
-  "ci/circleci: test-py27",
-  "ci/circleci: test-py34",
   "ci/circleci: test-py35",
   "ci/circleci: test-py36",
   "ci/circleci: test-py37",

@@ -34,7 +34,7 @@ jobs:
 
   test: &test-defaults
     docker:
-      - image: circleci/python:2.7
+      - image: circleci/python:3.7
 
     steps:
       - checkout
@@ -59,16 +59,6 @@ jobs:
       - codecov/upload:
           file: coverage.xml
 
-  test-py27:
-    <<: *test-defaults
-    docker:
-      - image: circleci/python:2.7
-
-  test-py34:
-    <<: *test-defaults
-    docker:
-      - image: circleci/python:3.4
-
   test-py35:
     <<: *test-defaults
     docker:
@@ -86,7 +76,7 @@ jobs:
 
   deploy:
     docker:
-      - image: circleci/python:3.6
+      - image: circleci/python:3.7
 
     steps:
       - checkout
@@ -139,14 +129,6 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-      - test-py27:
-          filters:
-            tags:
-              only: /^v.*/
-      - test-py34:
-          filters:
-            tags:
-              only: /^v.*/
       - test-py35:
           filters:
             tags:
@@ -162,8 +144,6 @@ workflows:
       - deploy:
           requires:
             - lint
-            - test-py27
-            - test-py34
             - test-py35
             - test-py36
             - test-py37
