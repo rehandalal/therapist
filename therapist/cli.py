@@ -47,7 +47,7 @@ from therapist.utils.git import Git
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-HOOK_VERSION = 1
+HOOK_VERSION = 2
 
 git = Git()
 
