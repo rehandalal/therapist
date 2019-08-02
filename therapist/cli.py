@@ -47,24 +47,9 @@ from therapist.utils.git import Git
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+HOOK_VERSION = 1
 
 git = Git()
-
-
-def get_config(path):
-    try:
-        config = Config(path)
-    except Config.Misconfigured as err:
-        output(MISCONFIGURED_MSG.format(err.message))
-
-        if err.code == Config.Misconfigured.PLUGIN_NOT_INSTALLED:
-            output("Installed plugins:")
-            for p in list_plugins():
-                output(p)
-
-        exit(1)
-    else:
-        return config
 
 
 def output(message, **kwargs):
@@ -80,6 +65,47 @@ def output(message, **kwargs):
     message, count = re.subn("#{(.+?)}", repl, message)
     message = colorama.Style.RESET_ALL + message + colorama.Style.RESET_ALL
     print_(message, **kwargs)
+
+
+def report_misconfigured_and_exit(err):
+    output(MISCONFIGURED_MSG.format(err.message))
+
+    if err.code == Config.Misconfigured.PLUGIN_NOT_INSTALLED:
+        output("Installed plugins:")
+        for p in list_plugins():
+            output(p)
+
+    exit(1)
+
+
+def get_config(ignore_git=False):
+    git_dir = current_git_dir()
+    root_dir = current_root()
+    extra_kw = {}
+
+    git_root = os.path.dirname(git_dir) if git_dir else None
+
+    if root_dir is None:
+        output(NO_THERAPIST_CONFIG_FILE_MSG)
+        exit(1)
+
+    try:
+        config = Config(root_dir)
+    except Config.Misconfigured as err:
+        if not ignore_git and git_root is not None:
+            try:
+                config = Config(git_root)
+            except Config.Misconfigured as err:
+                report_misconfigured_and_exit(err)
+            else:
+                extra_kw["use_git"] = True
+        else:
+            report_misconfigured_and_exit(err)
+    else:
+        if not ignore_git and git_root == root_dir:
+            extra_kw["use_git"] = True
+
+    return config, extra_kw
 
 
 @click.group(invoke_without_command=True)
@@ -229,6 +255,7 @@ def uninstall(**kwargs):
 @click.argument("paths", nargs=-1)
 @click.option("--action", "-a", default=None, help="A name of a specific action to be run.")
 @click.option("--fix", is_flag=True, help="Automatically fixes problems where possible.")
+@click.option("--ignore-git", is_flag=True, help="Do not attempt to use git-aware features.")
 @click.option("--include-unstaged", is_flag=True, help="Include unstaged files.")
 @click.option("--include-unstaged-changes", is_flag=True, help="Include unstaged changes to staged files.")
 @click.option("--include-untracked", is_flag=True, help="Include untracked files.")
@@ -236,7 +263,6 @@ def uninstall(**kwargs):
 @click.option("--no-color", is_flag=True, help="Disables colors and other rich output.")
 @click.option("--plugin", "-p", default=None, help="A name of a specific plugin to be run.")
 @click.option("--stage-modified-files", is_flag=True, help="Files that are modified by any actions should be staged.")
-@click.option("--use-git", "-g", is_flag=True, help="Run in git-aware mode.")
 @click.option("--use-tracked-files", is_flag=True, help="Runs actions against all tracked files.")
 @click.option("--quiet", "-q", is_flag=True, help="Suppress all output, unless an error occurs.")
 def run(**kwargs):
@@ -247,32 +273,23 @@ def run(**kwargs):
     junit_xml = kwargs.pop("junit_xml")
     use_tracked_files = kwargs.pop("use_tracked_files")
     quiet = kwargs.pop("quiet")
+    ignore_git = kwargs.pop("ignore_git")
 
     colorama.init(strip=kwargs.pop("no_color"))
 
     git_dir = current_git_dir()
+    root_dir = current_root()
+    config, extra_kw = get_config(ignore_git=ignore_git)
+    kwargs.update(extra_kw)
 
     # Validate any installed hook is the minimum required version
     if git_dir:
         hook_path = os.path.join(git_dir, "hooks", "pre-commit")
         if os.path.isfile(hook_path):
             hook_version = read_hook_version(hook_path)
-            if hook_version and hook_version < 2:
+            if hook_version and hook_version < HOOK_VERSION:
                 output(UPGRADE_HOOK_MSG)
                 exit(1)
-
-    if kwargs.get("use_git"):
-        if git_dir is None:
-            output(NOT_GIT_REPO_MSG)
-            exit(1)
-
-        root_dir = os.path.dirname(git_dir)
-    else:
-        root_dir = current_root()
-
-        if root_dir is None:
-            output(NO_THERAPIST_CONFIG_FILE_MSG)
-            exit(1)
 
     files = []
     if paths:
@@ -297,7 +314,6 @@ def run(**kwargs):
     if files or paths:
         kwargs["files"] = files
 
-    config = get_config(root_dir)
     runner = Runner(config.cwd, **kwargs)
     results = ResultCollection()
 
@@ -354,13 +370,7 @@ def run(**kwargs):
 @click.pass_context
 def use(ctx, shortcut, paths):
     """Use a shortcut."""
-    root_dir = current_root()
-
-    if root_dir is None:
-        output(NO_THERAPIST_CONFIG_FILE_MSG)
-        exit(1)
-
-    config = get_config(root_dir)
+    config, _ = get_config()
 
     try:
         use_shortcut = config.shortcuts.get(shortcut)
