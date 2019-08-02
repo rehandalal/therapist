@@ -15,7 +15,7 @@ if [ -x "$CWD"/pre-commit.legacy ]; then
     fi
 fi
 
-if ! %therapist_bin% run --use-git %stage_modified_files% %fix%; then
+if ! %therapist_bin% run %stage_modified_files% %fix%; then
     exitcode=1
 fi
 
