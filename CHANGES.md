@@ -1,5 +1,18 @@
 # Changelog
 
+### v2.0.0
+
+- **Therapist no longer requires Git.**
+  - To maintain backwards compatibility Therapist will behave as it
+    previously did if the folder with the `.therapist.yml` file is the
+    root of a Git repo.
+  - A new `--disable-git` flag can be used to disable git-aware behavior
+    when using Therapist in a Git repo.
+  - A new `--enable-git` flag can be used to enable git-aware behavior.
+- **Dropped support for Python 2.7 and 3.4.**
+- The hook is now versioned and Therapist will complain about outdated
+  hooks.
+
 ### v1.6.0
 
 - **MAJOR BUG FIX**: Therapist now handles copied file correctly.
