@@ -92,15 +92,7 @@ def get_config(disable_git=False):
     try:
         config = Config(root_dir)
     except Config.Misconfigured as err:
-        if not disable_git and git_root is not None:
-            try:
-                config = Config(git_root)
-            except Config.Misconfigured as err:
-                report_misconfigured_and_exit(err)
-            else:
-                extra_kw["use_git"] = True
-        else:
-            report_misconfigured_and_exit(err)
+        report_misconfigured_and_exit(err)
     else:
         if not disable_git and git_root == root_dir:
             extra_kw["use_git"] = True
