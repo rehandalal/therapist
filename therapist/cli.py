@@ -78,7 +78,7 @@ def report_misconfigured_and_exit(err):
     exit(1)
 
 
-def get_config(ignore_git=False):
+def get_config(disable_git=False):
     git_dir = current_git_dir()
     root_dir = current_root()
     extra_kw = {}
@@ -92,7 +92,7 @@ def get_config(ignore_git=False):
     try:
         config = Config(root_dir)
     except Config.Misconfigured as err:
-        if not ignore_git and git_root is not None:
+        if not disable_git and git_root is not None:
             try:
                 config = Config(git_root)
             except Config.Misconfigured as err:
@@ -102,7 +102,7 @@ def get_config(ignore_git=False):
         else:
             report_misconfigured_and_exit(err)
     else:
-        if not ignore_git and git_root == root_dir:
+        if not disable_git and git_root == root_dir:
             extra_kw["use_git"] = True
 
     return config, extra_kw
@@ -254,8 +254,8 @@ def uninstall(**kwargs):
 @cli.command()
 @click.argument("paths", nargs=-1)
 @click.option("--action", "-a", default=None, help="A name of a specific action to be run.")
+@click.option("--disable-git", is_flag=True, help="Disable git-aware features.")
 @click.option("--fix", is_flag=True, help="Automatically fixes problems where possible.")
-@click.option("--ignore-git", is_flag=True, help="Do not attempt to use git-aware features.")
 @click.option("--include-unstaged", is_flag=True, help="Include unstaged files.")
 @click.option("--include-unstaged-changes", is_flag=True, help="Include unstaged changes to staged files.")
 @click.option("--include-untracked", is_flag=True, help="Include untracked files.")
@@ -273,13 +273,13 @@ def run(**kwargs):
     junit_xml = kwargs.pop("junit_xml")
     use_tracked_files = kwargs.pop("use_tracked_files")
     quiet = kwargs.pop("quiet")
-    ignore_git = kwargs.pop("ignore_git")
+    disable_git = kwargs.pop("disable_git")
 
     colorama.init(strip=kwargs.pop("no_color"))
 
     git_dir = current_git_dir()
     root_dir = current_root()
-    config, extra_kw = get_config(ignore_git=ignore_git)
+    config, extra_kw = get_config(disable_git=disable_git)
     kwargs.update(extra_kw)
 
     # Validate any installed hook is the minimum required version
