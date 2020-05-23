@@ -643,6 +643,16 @@ class TestRun(object):
             assert result.exception
             assert result.exit_code == 1
 
+    def test_deleted_files_skipped_when_using_tracked_files(self, cli_runner, project):
+        with chdir(project.path):
+            project.write("test.txt", "testing")
+            project.git.add(".")
+            project.git.commit(m="Add file")
+            project.remove("test.txt")
+
+            result = cli_runner.invoke(cli.run, ["--include-unstaged", "--include-untracked", "--use-tracked-files"])
+            assert result.exit_code == 0
+
 
 class TestUse(object):
     def test_outside_repo(self, cli_runner, tmpdir):
