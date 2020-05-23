@@ -1,5 +1,10 @@
 # Changelog
 
+### v2.0.1
+
+- Fixes an issue where deleted files were passed to actions when the
+  `use-tracked-files` flag was used with the CLI.
+
 ### v2.0.0
 
 - **Therapist no longer requires Git.**
