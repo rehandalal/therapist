@@ -6,8 +6,6 @@ import subprocess
 import click
 import colorama
 
-from six import iteritems, print_
-
 from therapist import __version__
 from therapist.config import Config
 from therapist.messages import (
@@ -64,7 +62,7 @@ def output(message, **kwargs):
 
     message, count = re.subn("#{(.+?)}", repl, message)
     message = colorama.Style.RESET_ALL + message + colorama.Style.RESET_ALL
-    print_(message, **kwargs)
+    print(message, **kwargs)
 
 
 def report_misconfigured_and_exit(err):
@@ -172,7 +170,7 @@ def install(**kwargs):
     output(INSTALLING_HOOK_MSG, end="")
     with open(dsthook_path, "w+") as f:
         srchook = srchook.replace("%hash%", srchook_hash)
-        for k, v in iteritems(hook_options):
+        for k, v in hook_options.items():
             srchook = srchook.replace("%{}%".format(k), v)
         f.write(srchook)
     os.chmod(dsthook_path, 0o775)
@@ -389,7 +387,7 @@ def use(ctx, shortcut, paths):
             options[flag.replace("-", "_")] = True
 
         options_string = ""
-        for k, v in sorted(iteritems(options)):
+        for k, v in sorted(options.items()):
             options_string += " --{}".format(k.replace("_", "-"))
             if v is not True:
                 options_string += " {}".format(v)

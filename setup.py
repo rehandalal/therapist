@@ -11,9 +11,11 @@ from setuptools import find_packages, setup
 from setuptools.command.install import install
 
 
-DEPENDENCIES = ["click >= 6.7", "colorama >= 0.3.7", "pathspec >= 0.5.0", "PyYAML >= 3.12", "six >= 1.10.0"]
-
 ROOT = os.path.abspath(os.path.dirname(__file__))
+
+with open(os.path.join(ROOT, "requirements.txt"), "r") as f:
+    DEPENDENCIES = f.read().splitlines()
+    print(DEPENDENCIES)
 
 version = __import__("therapist").__version__
 
@@ -59,6 +61,7 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Topic :: Software Development :: Build Tools",
         "Topic :: Software Development :: Quality Assurance",
         "Topic :: Software Development :: Testing",

@@ -1,7 +1,5 @@
 import hashlib
 
-from six import iterkeys
-
 
 def read_hook_hash(path):
     """Verify that the file at path is the therapist hook and return the hash"""
@@ -28,6 +26,6 @@ def calculate_hook_hash(path, options):
     """Hash a hook file"""
     with open(path, "r") as f:
         data = f.read()
-        for key in sorted(iterkeys(options)):
+        for key in sorted(options.keys()):
             data += "\n#{}={}".format(key, options.get(key))
         return hashlib.md5(data.encode()).hexdigest()

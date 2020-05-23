@@ -4,7 +4,6 @@ import shutil
 
 from contextlib import contextmanager
 
-import six
 import yaml
 
 from therapist.plugins import Plugin
@@ -58,7 +57,7 @@ class Project(object):
 
     def set_config_data(self, data, commit=True):
         with open(self.config_file, "w+") as f:
-            f.write(six.u(yaml.dump(data, default_flow_style=False)))
+            f.write(yaml.dump(data, default_flow_style=False))
 
         if commit:
             # Commit changes to the config file

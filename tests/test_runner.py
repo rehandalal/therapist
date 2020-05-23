@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-import six
 
 from therapist.config import Config
 from therapist.runner import Runner
@@ -542,7 +541,7 @@ class TestRunner(object):
 
         assert "fail.txt" in r.files
 
-        assert isinstance(message, six.text_type)
+        assert isinstance(message, str)
         assert 'b"' not in message
         assert "b'" not in message
 
