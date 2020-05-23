@@ -300,6 +300,12 @@ def run(**kwargs):
         out, err, code = git.ls_files()
         files = out.splitlines()
 
+        # Filter out any files that have been deleted
+        out, err, code = git.status(porcelain=True)
+        for line in out.splitlines():
+            if line[0] == "D" or line[1] == "D":
+                files.remove(line[3:])
+
         if kwargs.get("include_untracked"):
             out, err, code = git.ls_files(o=True, exclude_standard=True)
             files += out.splitlines()
