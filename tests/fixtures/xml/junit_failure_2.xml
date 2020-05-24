@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="therapist" time="1.0" tests="1" failures="1" errors="0"><testsuite id="flake8" name="flake8" time="1.0" tests="1" failures="1" errors="0"><testcase time="1.0" name="flake8"><failure type="failure">ERR!</failure></testcase></testsuite></testsuites>

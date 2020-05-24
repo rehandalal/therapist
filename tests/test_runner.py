@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import os
 import pytest
-import six
+
+from xml.etree import ElementTree as ET
 
 from therapist.config import Config
 from therapist.runner import Runner
@@ -9,6 +11,17 @@ from therapist.runner.action import Action, ActionCollection
 from therapist.runner.result import Result, ResultCollection
 
 from . import Project
+
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+
+def equivalent_xml(xmlstring, fixture_path):
+    eta = ET.fromstring(xmlstring)
+    etb = ET.parse(fixture_path)
+    xmlsa = ET.tostring(eta, encoding="utf-8", method="xml")
+    xmlsb = ET.tostring(etb.getroot(), encoding="utf-8", method="xml")
+    return xmlsa == xmlsb
 
 
 class TestAction(object):
@@ -221,14 +234,7 @@ class TestResultCollection(object):
         r = Result(a, status=Result.SUCCESS)
         r.end_time = r.start_time + 1
         rs = ResultCollection([r])
-        assert rs.dump_junit() == (
-            '<?xml version="1.0" encoding="UTF-8"?>\n'
-            '<testsuites errors="0" failures="0" name="therapist" tests="1" time="1.0">'
-            '<testsuite errors="0" failures="0" id="flake8" name="flake8" tests="1" time="1.0">'
-            '<testcase name="flake8" time="1.0" />'
-            "</testsuite>"
-            "</testsuites>"
-        )
+        assert equivalent_xml(rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_success.xml"))
 
     def test_dump_junit_failure(self):
         a = Action("flake8", run="flake8 {files}")
@@ -236,44 +242,19 @@ class TestResultCollection(object):
         r.mark_complete(output="Failed!")
         r.end_time = r.start_time + 1
         rs = ResultCollection([r])
-        assert rs.dump_junit() == (
-            '<?xml version="1.0" encoding="UTF-8"?>\n'
-            '<testsuites errors="0" failures="1" name="therapist" tests="1" time="1.0">'
-            '<testsuite errors="0" failures="1" id="flake8" name="flake8" tests="1" time="1.0">'
-            '<testcase name="flake8" time="1.0">'
-            '<failure type="failure">Failed!</failure>'
-            "</testcase>"
-            "</testsuite>"
-            "</testsuites>"
-        )
+        assert equivalent_xml(rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_failure_1.xml"))
 
         r = Result(a, status=Result.FAILURE)
         r.mark_complete(error="ERR!", output="Failed!")
         r.end_time = r.start_time + 1
         rs = ResultCollection([r])
-        assert rs.dump_junit() == (
-            '<?xml version="1.0" encoding="UTF-8"?>\n'
-            '<testsuites errors="0" failures="1" name="therapist" tests="1" time="1.0">'
-            '<testsuite errors="0" failures="1" id="flake8" name="flake8" tests="1" time="1.0">'
-            '<testcase name="flake8" time="1.0">'
-            '<failure type="failure">ERR!</failure>'
-            "</testcase>"
-            "</testsuite>"
-            "</testsuites>"
-        )
+        assert equivalent_xml(rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_failure_2.xml"))
 
     def test_dump_junit_skip(self):
         a = Action("flake8", run="flake8 {files}")
         r = Result(a)
         rs = ResultCollection([r])
-        assert rs.dump_junit() == (
-            '<?xml version="1.0" encoding="UTF-8"?>\n'
-            '<testsuites errors="0" failures="0" name="therapist" tests="1" time="0.0">'
-            '<testsuite errors="0" failures="0" id="flake8" name="flake8" tests="1" time="0.0">'
-            '<testcase name="flake8" time="0.0" />'
-            "</testsuite>"
-            "</testsuites>"
-        )
+        assert equivalent_xml(rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_skip.xml"))
 
     def test_dump_junit_error(self):
         a = Action("flake8", run="flake8 {files}")
@@ -281,31 +262,13 @@ class TestResultCollection(object):
         r.mark_complete(output="Error!")
         r.end_time = r.start_time + 1
         rs = ResultCollection([r])
-        assert rs.dump_junit() == (
-            '<?xml version="1.0" encoding="UTF-8"?>\n'
-            '<testsuites errors="1" failures="0" name="therapist" tests="1" time="1.0">'
-            '<testsuite errors="1" failures="0" id="flake8" name="flake8" tests="1" time="1.0">'
-            '<testcase name="flake8" time="1.0">'
-            '<error type="error">Error!</error>'
-            "</testcase>"
-            "</testsuite>"
-            "</testsuites>"
-        )
+        assert equivalent_xml(rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_error_1.xml"))
 
         r = Result(a, status=Result.ERROR)
         r.mark_complete(error="ERR!", output="Error!")
         r.end_time = r.start_time + 1
         rs = ResultCollection([r])
-        assert rs.dump_junit() == (
-            '<?xml version="1.0" encoding="UTF-8"?>\n'
-            '<testsuites errors="1" failures="0" name="therapist" tests="1" time="1.0">'
-            '<testsuite errors="1" failures="0" id="flake8" name="flake8" tests="1" time="1.0">'
-            '<testcase name="flake8" time="1.0">'
-            '<error type="error">ERR!</error>'
-            "</testcase>"
-            "</testsuite>"
-            "</testsuites>"
-        )
+        assert equivalent_xml(rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_error_2.xml"))
 
 
 class TestRunner(object):
@@ -542,7 +505,7 @@ class TestRunner(object):
 
         assert "fail.txt" in r.files
 
-        assert isinstance(message, six.text_type)
+        assert isinstance(message, str)
         assert 'b"' not in message
         assert "b'" not in message
 

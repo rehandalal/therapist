@@ -1,6 +1,5 @@
 import time
 
-from six import iterkeys
 from xml.etree import ElementTree
 
 from therapist.collection import Collection
@@ -135,7 +134,7 @@ class ResultCollection(Collection):
                         modified_files[path] = []
                     modified_files[path].append(str(result.process))
 
-        return [(path, modified_files[path]) for path in sorted(iterkeys(modified_files))]
+        return [(path, modified_files[path]) for path in sorted(modified_files.keys())]
 
     def count(self, **kwargs):
         if "status" in kwargs:
