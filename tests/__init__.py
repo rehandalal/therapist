@@ -112,7 +112,10 @@ class Project(object):
         """Copy a file from one path to another"""
         src = os.path.join(self.path, src)
         dst = os.path.join(self.path, dst)
-        shutil.copy2(src, dst)
+        if os.path.isdir(src):
+            shutil.copytree(src, dst)
+        else:
+            shutil.copy2(src, dst)
 
     def chmod(self, path, mode):
         """Modify file permissions."""

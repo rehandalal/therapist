@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 from therapist.collection import Collection
@@ -19,11 +20,14 @@ class Action(Process):
             command = self.config.get("run")
 
         if command and files:
+            cwd = kwargs.get("cwd")
+            working_dir = os.path.join(cwd, self.config.get("working_dir", ""))
+            files = [os.path.relpath(os.path.join(cwd, f), working_dir) for f in files]
             command_with_args = command.format(files=" ".join(files))
 
             try:
                 pipes = subprocess.Popen(
-                    command_with_args, shell=True, cwd=kwargs.get("cwd"), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                    command_with_args, shell=True, cwd=working_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
             except OSError as err:
                 result.mark_complete(status=Result.ERROR, error="OSError {}".format(str(err)))
