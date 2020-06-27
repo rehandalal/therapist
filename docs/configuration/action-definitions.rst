@@ -29,3 +29,10 @@ are:
     This can be a single string or a list of strings of UNIX filename patterns.
     Files that match *any* of the patterns will never be passed through to the
     command through ``{files}``.
+
+:working_dir:
+    This is a path to a directory that will be used as the working directory
+    when running the action. File paths sent to the action will be rewritten
+    relative to the new working directory. This is useful when the action needs
+    to be run not from the project root (or the directory where
+    ``.therapist.yml`` resides).
