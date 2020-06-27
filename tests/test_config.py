@@ -100,7 +100,9 @@ class TestConfig(object):
         assert config.shortcuts[0].name == "flake8"
 
     def test_shortcut_option_string(self, project):
-        project.write(".therapist.yml", "actions:\n  flake8: ~\nshortcuts:\n  flake8:\n    options: fix")
+        project.write(
+            ".therapist.yml", "actions:\n  flake8: ~\nshortcuts:\n  flake8:\n    options: fix"
+        )
         config = Config(project.path)
         assert config.shortcuts[0].name == "flake8"
         assert config.shortcuts[0].options == {"fix": True}

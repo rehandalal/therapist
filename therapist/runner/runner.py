@@ -75,7 +75,11 @@ class Runner(object):
 
                     # Make sure the file is one of the files that was processed
                     if file_status.path in self.files and file_status.is_modified:
-                        mtime = os.path.getmtime(file_status.path) if os.path.exists(file_status.path) else 0
+                        mtime = (
+                            os.path.getmtime(file_status.path)
+                            if os.path.exists(file_status.path)
+                            else 0
+                        )
                         if mtime > self.file_mtimes.get(file_status.path, 0):
                             self.file_mtimes[file_status.path] = mtime
                             result.add_modified_file(file_status.path)

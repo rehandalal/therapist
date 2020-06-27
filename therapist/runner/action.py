@@ -8,8 +8,23 @@ from therapist.runner.result import Result
 
 
 class Action(Process):
+    def get_working_directory(self, cwd):
+        return os.path.join(cwd, self.config.get("working_dir", ""))
+
+    def filter_files(self, files, **kwargs):
+        files = super().filter_files(files)
+
+        cwd = kwargs.get("cwd")
+        working_dir = self.get_working_directory(cwd)
+
+        # Rewrite the file paths relative to the working directory
+        if working_dir != cwd:
+            files = [os.path.relpath(os.path.join(cwd, f), working_dir) for f in files]
+
+        return files
+
     def execute(self, **kwargs):
-        files = self.filter_files(kwargs.get("files"))
+        files = self.filter_files(kwargs.get("files"), cwd=kwargs.get("cwd"))
         should_fix = kwargs.get("fix")
 
         result = Result(self)
@@ -20,14 +35,15 @@ class Action(Process):
             command = self.config.get("run")
 
         if command and files:
-            cwd = kwargs.get("cwd")
-            working_dir = os.path.join(cwd, self.config.get("working_dir", ""))
-            files = [os.path.relpath(os.path.join(cwd, f), working_dir) for f in files]
             command_with_args = command.format(files=" ".join(files))
 
             try:
                 pipes = subprocess.Popen(
-                    command_with_args, shell=True, cwd=working_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                    command_with_args,
+                    shell=True,
+                    cwd=self.get_working_directory(kwargs.get("cwd")),
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
                 )
             except OSError as err:
                 result.mark_complete(status=Result.ERROR, error="OSError {}".format(str(err)))
@@ -35,7 +51,9 @@ class Action(Process):
                 std_out, std_err = pipes.communicate()
 
                 status = Result.SUCCESS if pipes.returncode == 0 else Result.FAILURE
-                result.mark_complete(status=status, output=std_out.decode("utf-8"), error=std_err.decode("utf-8"))
+                result.mark_complete(
+                    status=status, output=std_out.decode("utf-8"), error=std_err.decode("utf-8")
+                )
 
         return result
 

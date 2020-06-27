@@ -234,7 +234,9 @@ class TestResultCollection(object):
         r = Result(a, status=Result.SUCCESS)
         r.end_time = r.start_time + 1
         rs = ResultCollection([r])
-        assert equivalent_xml(rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_success.xml"))
+        assert equivalent_xml(
+            rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_success.xml")
+        )
 
     def test_dump_junit_failure(self):
         a = Action("flake8", run="flake8 {files}")
@@ -242,19 +244,25 @@ class TestResultCollection(object):
         r.mark_complete(output="Failed!")
         r.end_time = r.start_time + 1
         rs = ResultCollection([r])
-        assert equivalent_xml(rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_failure_1.xml"))
+        assert equivalent_xml(
+            rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_failure_1.xml")
+        )
 
         r = Result(a, status=Result.FAILURE)
         r.mark_complete(error="ERR!", output="Failed!")
         r.end_time = r.start_time + 1
         rs = ResultCollection([r])
-        assert equivalent_xml(rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_failure_2.xml"))
+        assert equivalent_xml(
+            rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_failure_2.xml")
+        )
 
     def test_dump_junit_skip(self):
         a = Action("flake8", run="flake8 {files}")
         r = Result(a)
         rs = ResultCollection([r])
-        assert equivalent_xml(rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_skip.xml"))
+        assert equivalent_xml(
+            rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_skip.xml")
+        )
 
     def test_dump_junit_error(self):
         a = Action("flake8", run="flake8 {files}")
@@ -262,13 +270,17 @@ class TestResultCollection(object):
         r.mark_complete(output="Error!")
         r.end_time = r.start_time + 1
         rs = ResultCollection([r])
-        assert equivalent_xml(rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_error_1.xml"))
+        assert equivalent_xml(
+            rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_error_1.xml")
+        )
 
         r = Result(a, status=Result.ERROR)
         r.mark_complete(error="ERR!", output="Error!")
         r.end_time = r.start_time + 1
         rs = ResultCollection([r])
-        assert equivalent_xml(rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_error_2.xml"))
+        assert equivalent_xml(
+            rs.dump_junit(), os.path.join(BASE_DIR, "fixtures/xml/junit_error_2.xml")
+        )
 
 
 class TestRunner(object):
@@ -302,7 +314,8 @@ class TestRunner(object):
 
         assert "fail.txt" in r.files
         assert message == (
-            "#{bright}Linting ............................................................. " "#{red}[FAILURE]"
+            "#{bright}Linting ............................................................. "
+            "#{red}[FAILURE]"
         )
 
     def test_include_unstaged(self, project):
@@ -320,7 +333,8 @@ class TestRunner(object):
 
         assert "fail.txt" in r.files
         assert message == (
-            "#{bright}Linting ............................................................. " "#{red}[FAILURE]"
+            "#{bright}Linting ............................................................. "
+            "#{red}[FAILURE]"
         )
 
     def test_include_unstaged_changes(self, project):
@@ -359,7 +373,8 @@ class TestRunner(object):
         assert result.is_success
         assert "pass.py" in r.files
         assert message == (
-            "#{bright}Linting ............................................................. " "#{green}[SUCCESS]"
+            "#{bright}Linting ............................................................. "
+            "#{green}[SUCCESS]"
         )
 
     def test_run_process_failure(self, project):
@@ -372,7 +387,8 @@ class TestRunner(object):
 
         assert "fail.txt" in r.files
         assert message == (
-            "#{bright}Linting ............................................................. " "#{red}[FAILURE]"
+            "#{bright}Linting ............................................................. "
+            "#{red}[FAILURE]"
         )
 
     def test_run_process_skipped(self, project):
@@ -384,7 +400,8 @@ class TestRunner(object):
 
         assert ".ignore.pass.py" in r.files
         assert message == (
-            "#{bright}Linting ............................................................. " "#{cyan}[SKIPPED]"
+            "#{bright}Linting ............................................................. "
+            "#{cyan}[SKIPPED]"
         )
 
     def test_run_process_error(self, project):
@@ -399,7 +416,8 @@ class TestRunner(object):
 
         assert len(r.files) == 1000
         assert message == (
-            "#{bright}Linting ............................................................. " "#{red}[ERROR!!]"
+            "#{bright}Linting ............................................................. "
+            "#{red}[ERROR!!]"
         )
 
     def test_run_process_skips_deleted(self, project):
@@ -427,11 +445,16 @@ class TestRunner(object):
 
         assert "pass.py" in r.files
         assert message == (
-            "#{bright}Skips ............................................................... " "#{cyan}[SKIPPED]"
+            "#{bright}Skips ............................................................... "
+            "#{cyan}[SKIPPED]"
         )
 
     def test_action_run_issue(self, tmpdir):
-        config_data = {"actions": {"runissue": {"description": "Should fail", "run": "not-a-real-command {files}"}}}
+        config_data = {
+            "actions": {
+                "runissue": {"description": "Should fail", "run": "not-a-real-command {files}"}
+            }
+        }
         project = Project(tmpdir.strpath, config_data=config_data)
 
         project.write("pass.py")
@@ -444,7 +467,8 @@ class TestRunner(object):
 
         assert "pass.py" in r.files
         assert message == (
-            "#{bright}Should fail ......................................................... " "#{red}[FAILURE]"
+            "#{bright}Should fail ......................................................... "
+            "#{red}[FAILURE]"
         )
 
     def test_action_filter_include(self, project):
@@ -458,7 +482,8 @@ class TestRunner(object):
 
         assert "fail.js" in r.files
         assert message == (
-            "#{bright}Linting ............................................................. " "#{green}[SUCCESS]"
+            "#{bright}Linting ............................................................. "
+            "#{green}[SUCCESS]"
         )
 
     def test_action_filter_exclude(self, project):
@@ -472,7 +497,8 @@ class TestRunner(object):
 
         assert ".ignore.fail.txt" in r.files
         assert message == (
-            "#{bright}Linting ............................................................. " "#{green}[SUCCESS]"
+            "#{bright}Linting ............................................................. "
+            "#{green}[SUCCESS]"
         )
 
     def test_unstash_on_error(self, project, monkeypatch):
@@ -522,7 +548,8 @@ class TestRunner(object):
 
         assert "pass.py" in r.files
         assert message == (
-            "#{bright}no-settings ......................................................... " "#{cyan}[SKIPPED]"
+            "#{bright}no-settings ......................................................... "
+            "#{cyan}[SKIPPED]"
         )
 
     def test_user_stashed_files_are_not_unstashed(self, project):
@@ -567,7 +594,9 @@ class TestRunner(object):
         project.copy("scripts", "working/scripts")
         project.git.add(".")
 
-        config = {"actions": {"lint": {"run": "./scripts/lint.py {files}", "working_dir": "working"}}}
+        config = {
+            "actions": {"lint": {"run": "./scripts/lint.py {files}", "working_dir": "working"}}
+        }
         project.set_config_data(config, commit=False)
 
         project.write("fail.txt")

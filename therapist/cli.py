@@ -114,8 +114,14 @@ def cli(version):
     help="Force installation of the hook. This will replace any existing hook "
     "unless you also use the --preserve-legacy option.",
 )
-@click.option("--fix", is_flag=True, help="The hook will automatically fix problems where possible.")
-@click.option("--no-stage-modified-files", is_flag=True, help="Disables the staging of files modified by the hook.")
+@click.option(
+    "--fix", is_flag=True, help="The hook will automatically fix problems where possible."
+)
+@click.option(
+    "--no-stage-modified-files",
+    is_flag=True,
+    help="Disables the staging of files modified by the hook.",
+)
 @click.option("--no-color", is_flag=True, help="Disables colors and other rich output.")
 @click.option("--preserve-legacy", is_flag=True, help="Preserves any existing pre-commit hook.")
 def install(**kwargs):
@@ -136,7 +142,9 @@ def install(**kwargs):
 
     hook_options = {
         "fix": "--fix" if kwargs.get("fix") else "",
-        "stage_modified_files": "" if kwargs.get("no_stage_modified_files") else "--stage-modified-files",
+        "stage_modified_files": ""
+        if kwargs.get("no_stage_modified_files")
+        else "--stage-modified-files",
         "therapist_bin": therapist_bin,
     }
 
@@ -248,12 +256,20 @@ def uninstall(**kwargs):
 @click.option("--enable-git", is_flag=True, help="Enable git-aware features.")
 @click.option("--fix", is_flag=True, help="Automatically fixes problems where possible.")
 @click.option("--include-unstaged", is_flag=True, help="Include unstaged files.")
-@click.option("--include-unstaged-changes", is_flag=True, help="Include unstaged changes to staged files.")
+@click.option(
+    "--include-unstaged-changes", is_flag=True, help="Include unstaged changes to staged files."
+)
 @click.option("--include-untracked", is_flag=True, help="Include untracked files.")
-@click.option("--junit-xml", default=None, help="Create a junit-xml style report file at the given path.")
+@click.option(
+    "--junit-xml", default=None, help="Create a junit-xml style report file at the given path."
+)
 @click.option("--no-color", is_flag=True, help="Disables colors and other rich output.")
 @click.option("--plugin", "-p", default=None, help="A name of a specific plugin to be run.")
-@click.option("--stage-modified-files", is_flag=True, help="Files that are modified by any actions should be staged.")
+@click.option(
+    "--stage-modified-files",
+    is_flag=True,
+    help="Files that are modified by any actions should be staged.",
+)
 @click.option("--use-tracked-files", is_flag=True, help="Runs actions against all tracked files.")
 @click.option("--quiet", "-q", is_flag=True, help="Suppress all output, unless an error occurs.")
 def run(**kwargs):
@@ -353,7 +369,11 @@ def run(**kwargs):
 
     if not quiet:
         output(results.dump())
-        output("#{{bright}}{}\nCompleted in: {}s".format("".ljust(79, "-"), round(results.execution_time, 2)))
+        output(
+            "#{{bright}}{}\nCompleted in: {}s".format(
+                "".ljust(79, "-"), round(results.execution_time, 2)
+            )
+        )
 
     if results.has_error:
         exit(1)
