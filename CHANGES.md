@@ -1,5 +1,12 @@
 # Changelog
 
+### v2.1.0
+
+- Residual support for Python 2 removed and added official support for
+  Python 3.8.
+- Add `working_dir` configuration option for actions.
+- Add `files_root` configuration option for actions.
+
 ### v2.0.1
 
 - Fixes an issue where deleted files were passed to actions when the
