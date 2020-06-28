@@ -202,7 +202,9 @@ class ResultCollection(Collection):
                 errors=errors,
             )
 
-            testcase = ElementTree.SubElement(testsuite, "testcase", time=str(round(result.execution_time, 2)))
+            testcase = ElementTree.SubElement(
+                testsuite, "testcase", time=str(round(result.execution_time, 2))
+            )
             testcase.attrib["name"] = result.process.name
 
             if result.is_failure or result.is_error:

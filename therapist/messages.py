@@ -4,8 +4,8 @@ HOOK_ALREADY_INSTALLED_MSG = "The pre-commit hook has already been installed."
 
 EXISTING_HOOK_MSG = (
     "#{yellow}There is an existing pre-commit hook.\n"
-    "#{reset_all}Therapist can preserve this legacy hook and run it before the Therapist pre-commit "
-    "hook."
+    "#{reset_all}Therapist can preserve this legacy hook and run it before the Therapist "
+    "pre-commit hook."
 )
 
 CONFIRM_PRESERVE_LEGACY_HOOK_MSG = "Would you like to preserve this legacy hook?"
@@ -29,7 +29,8 @@ UNINSTALL_ABORTED_MSG = "Uninstallation aborted."
 CONFIRM_UNINSTALL_HOOK_MSG = "Are you sure you want to uninstall the current pre-commit hook?"
 
 CURRENT_HOOK_NOT_THERAPIST_MSG = (
-    "#{yellow}The current pre-commit hook is not the Therapist pre-commit hook.\n" "#{reset_all}Uninstallation aborted."
+    "#{yellow}The current pre-commit hook is not the Therapist pre-commit hook.\n"
+    "#{reset_all}Uninstallation aborted."
 )
 
 LEGACY_HOOK_EXISTS_MSG = "#{yellow}There is a legacy pre-commit hook present."

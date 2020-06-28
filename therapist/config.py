@@ -40,17 +40,22 @@ class Config(object):
             with open(os.path.join(self.cwd, ".therapist.yml"), "r") as f:
                 config = yaml.safe_load(f)
         except IOError:
-            raise self.Misconfigured("Missing configuration file.", code=self.Misconfigured.NO_CONFIG_FILE)
+            raise self.Misconfigured(
+                "Missing configuration file.", code=self.Misconfigured.NO_CONFIG_FILE
+            )
         else:
             if config is None:
-                raise self.Misconfigured("Empty configuration file.", code=self.Misconfigured.EMPTY_CONFIG)
+                raise self.Misconfigured(
+                    "Empty configuration file.", code=self.Misconfigured.EMPTY_CONFIG
+                )
 
             if "actions" in config:
                 try:
                     actions = config["actions"]
                 except TypeError:
                     raise self.Misconfigured(
-                        "`actions` was not configured correctly.", code=self.Misconfigured.ACTIONS_WRONGLY_CONFIGURED
+                        "`actions` was not configured correctly.",
+                        code=self.Misconfigured.ACTIONS_WRONGLY_CONFIGURED,
                     )
                 else:
                     if not isinstance(actions, dict):
@@ -70,7 +75,8 @@ class Config(object):
                     plugins = config["plugins"]
                 except TypeError:
                     raise self.Misconfigured(
-                        "`plugins` was not configured correctly.", code=self.Misconfigured.PLUGINS_WRONGLY_CONFIGURED
+                        "`plugins` was not configured correctly.",
+                        code=self.Misconfigured.PLUGINS_WRONGLY_CONFIGURED,
                     )
                 else:
                     if not isinstance(plugins, dict):
@@ -121,7 +127,11 @@ class Config(object):
             if "requires" in config:
                 self.requires = config["requires"]
 
-                if isinstance(self.requires, str) or isinstance(self.requires, float) or isinstance(self.requires, int):
+                if (
+                    isinstance(self.requires, str)
+                    or isinstance(self.requires, float)
+                    or isinstance(self.requires, int)
+                ):
                     self.requires = {"min": self.requires}
                 elif not isinstance(self.requires, dict):
                     raise self.Misconfigured(
@@ -150,16 +160,19 @@ class Config(object):
                             mismatch_max = ".".join([str(v) for v in parse_version(max_version)])
                 except ValueError:
                     raise self.Misconfigured(
-                        "Invalid version specified in `requires`.", code=self.Misconfigured.REQUIRES_WRONGLY_CONFIGURED
+                        "Invalid version specified in `requires`.",
+                        code=self.Misconfigured.REQUIRES_WRONGLY_CONFIGURED,
                     )
 
                 if mismatch_min:
                     raise self.Misconfigured(
-                        "You require Therapist >= {}.".format(mismatch_min), code=self.Misconfigured.VERSION_MISMATCH
+                        "You require Therapist >= {}.".format(mismatch_min),
+                        code=self.Misconfigured.VERSION_MISMATCH,
                     )
                 elif mismatch_max:
                     raise self.Misconfigured(
-                        "You require Therapist <= {}.".format(mismatch_max), code=self.Misconfigured.VERSION_MISMATCH
+                        "You require Therapist <= {}.".format(mismatch_max),
+                        code=self.Misconfigured.VERSION_MISMATCH,
                     )
 
             if not (self.actions or self.plugins):

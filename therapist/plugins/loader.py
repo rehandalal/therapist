@@ -5,7 +5,10 @@ from therapist.plugins.exc import InvalidPlugin, PluginNotInstalled
 
 
 def list_plugins():
-    return [entry_point.name for entry_point in pkg_resources.iter_entry_points(group="therapist.plugin")]
+    return [
+        entry_point.name
+        for entry_point in pkg_resources.iter_entry_points(group="therapist.plugin")
+    ]
 
 
 def load_plugin(name):
