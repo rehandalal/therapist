@@ -15,9 +15,18 @@ class Action(Process):
         files = super().filter_files(files)
 
         cwd = kwargs.get("cwd")
-        working_dir = self.get_working_directory(cwd)
+
+        # Filter by files root
+        files_root = os.path.abspath(os.path.join(cwd, self.config.get("files_root", "")))
+        if files_root:
+
+            def files_root_matches(f):
+                return os.path.abspath(os.path.join(cwd, f)).startswith(files_root)
+
+            files = [f for f in files if files_root_matches(f)]
 
         # Rewrite the file paths relative to the working directory
+        working_dir = self.get_working_directory(cwd)
         if working_dir != cwd:
             files = [os.path.relpath(os.path.join(cwd, f), working_dir) for f in files]
 

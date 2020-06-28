@@ -608,3 +608,25 @@ class TestRunner(object):
 
         assert result.is_failure
         assert project.exists("fail.txt")
+
+    def test_action_files_root(self, project):
+
+        project.copy("scripts", "working/scripts")
+        project.git.add(".")
+
+        config = {
+            "actions": {"lint": {"run": "./scripts/lint.py {files}", "files_root": "working"}}
+        }
+        project.set_config_data(config, commit=True)
+
+        project.makedirs("working")
+        project.write("working/pass.txt")
+        project.write("fail.txt")
+        project.git.add(".")
+
+        c = Config(project.path)
+        r = Runner(c.cwd, enable_git=True)
+        result, message = r.run_process(c.actions.get("lint"))
+
+        assert result.is_success
+        assert project.exists("fail.txt")

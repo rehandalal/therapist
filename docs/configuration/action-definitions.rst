@@ -35,4 +35,9 @@ are:
     when running the action. File paths sent to the action will be rewritten
     relative to the new working directory. This is useful when the action needs
     to be run not from the project root (or the directory where
-    ``.therapist.yml`` resides).
+    ``.therapist.yml`` resides). Make sure any path of your action is relative
+    to the new working directory.
+
+:files_root:
+    This is a path used to filter down the files passed to the action. Only
+    files that are contained within this new root are passed to the action.
