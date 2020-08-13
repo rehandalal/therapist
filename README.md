@@ -13,3 +13,9 @@ A lint suite runner with Git-aware capabilities and a smart pre-commit hook.
 
 Full documentation for this tool is available at: 
 http://therapist.readthedocs.io/
+
+## Supporters
+
+<a href="https://www.jetbrains.com/?from=Therapist" target="_blank">
+  <img src="https://raw.githubusercontent.com/rehandalal/therapist/main/docs/assets/supporters-jb.png" alt="JetBrains" width="96" />
+</a>
