@@ -15,7 +15,7 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 
 def drop_minor_versions(line):
     parts = line.split(".")
-    if parts.length > 2:
+    if len(parts) > 2:
         parts.pop()
     return ".".join(parts)
 
