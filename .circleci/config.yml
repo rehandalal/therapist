@@ -134,10 +134,6 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-      - test-py35:
-          filters:
-            tags:
-              only: /^v.*/
       - test-py36:
           filters:
             tags:
@@ -147,6 +143,10 @@ workflows:
             tags:
               only: /^v.*/
       - test-py38:
+          filters:
+            tags:
+              only: /^v.*/
+      - test-py39:
           filters:
             tags:
               only: /^v.*/
