@@ -1,5 +1,10 @@
 # Changelog
 
+### v2.1.1
+
+- Drops support for Python 3.5.
+- Added support for Python 3.9.
+
 ### v2.1.0
 
 - Residual support for Python 2 removed and added official support for
