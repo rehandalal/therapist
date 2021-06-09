@@ -4,7 +4,7 @@ orbs:
 jobs:
   lint:
     docker:
-      - image: circleci/python:3.8
+      - image: circleci/python:3.9
 
     steps:
       - checkout
@@ -34,7 +34,7 @@ jobs:
 
   test: &test-defaults
     docker:
-      - image: circleci/python:3.8
+      - image: circleci/python:3.9
 
     steps:
       - checkout
@@ -59,11 +59,6 @@ jobs:
       - codecov/upload:
           file: coverage.xml
 
-  test-py35:
-    <<: *test-defaults
-    docker:
-      - image: circleci/python:3.5
-
   test-py36:
     <<: *test-defaults
     docker:
@@ -79,9 +74,14 @@ jobs:
     docker:
       - image: circleci/python:3.8
 
+  test-py39:
+    <<: *test-defaults
+    docker:
+      - image: circleci/python:3.9
+
   deploy:
     docker:
-      - image: circleci/python:3.8
+      - image: circleci/python:3.9
 
     steps:
       - checkout
@@ -153,10 +153,10 @@ workflows:
       - deploy:
           requires:
             - lint
-            - test-py35
             - test-py36
             - test-py37
             - test-py38
+            - test-py39
           filters:
             branches:
               ignore: /.*/

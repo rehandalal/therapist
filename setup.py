@@ -13,9 +13,14 @@ from setuptools.command.install import install
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
+def drop_minor_versions(line):
+    parts = line.split(".")
+    if parts.length > 2:
+        parts.pop()
+    return ".".join(parts)
+
 with open(os.path.join(ROOT, "requirements.txt"), "r") as f:
-    DEPENDENCIES = f.read().splitlines()
-    print(DEPENDENCIES)
+    DEPENDENCIES = [drop_minor_versions(l) for l in f.read().splitlines()]
 
 version = __import__("therapist").__version__
 
@@ -58,10 +63,10 @@ setup(
         "Operating System :: MacOS",
         "Operating System :: Unix",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Topic :: Software Development :: Build Tools",
         "Topic :: Software Development :: Quality Assurance",
         "Topic :: Software Development :: Testing",
