@@ -13,14 +13,16 @@ from setuptools.command.install import install
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
+
 def drop_minor_versions(line):
     parts = line.split(".")
     if len(parts) > 2:
         parts.pop()
     return ".".join(parts)
 
+
 with open(os.path.join(ROOT, "requirements.txt"), "r") as f:
-    DEPENDENCIES = [drop_minor_versions(l) for l in f.read().splitlines()]
+    DEPENDENCIES = [drop_minor_versions(line) for line in f.read().splitlines()]
 
 version = __import__("therapist").__version__
 
