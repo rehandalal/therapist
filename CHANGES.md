@@ -1,5 +1,9 @@
 # Changelog
 
+### v2.1.2
+
+- Fixes an issue with dependencies during setup 
+
 ### v2.1.1
 
 - Drops support for Python 3.5.
