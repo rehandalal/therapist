@@ -1,5 +1,10 @@
 # Changelog
 
+### v2.2.0
+
+- Revamped parser for Git status which fixes some edge case issues in 
+  old parser.
+
 ### v2.1.2
 
 - Fixes an issue with dependencies during setup 
