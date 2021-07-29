@@ -9,6 +9,8 @@ BASE_DIR = os.path.abspath(os.curdir)
 def check(f):
     if not os.path.exists(f):
         exit(1)
+    if "error" in f:
+        raise Exception()
     with open(f, "r") as fp:
         if "fail" in f or fp.read().upper() == "FAIL":
             print("FAIL!  {}".format(f))

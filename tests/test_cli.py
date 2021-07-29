@@ -612,7 +612,7 @@ class TestRun(object):
             assert junit_xml.startswith('<?xml version="1.0" encoding="UTF-8"?>')
 
     def test_errors(self, cli_runner, project):
-        for i in range(1000):
+        for i in range(10000):
             project.write("pass{}.txt".format(str(i).ljust(200, "_")))
         project.git.add(".")
 
