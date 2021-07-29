@@ -22,12 +22,12 @@ class Status(object):
 
     @property
     def is_staged(self):
-        return self.x not in (' ', '?', '!')
+        return self.x not in (" ", "?", "!")
 
     @property
     def is_untracked(self):
-        return self.x == '?'
+        return self.x == "?"
 
     @property
     def is_ignored(self):
-        return self.x == '!'
+        return self.x == "!"
