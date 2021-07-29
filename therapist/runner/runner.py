@@ -35,7 +35,7 @@ class Runner(object):
                     file_status = Status(line)
 
                     # Check if staged files were modified since being staged
-                    if file_status.is_staged and file_status.is_modified:
+                    if file_status.is_staged and file_status.y in ("M", "D", "R", "C"):
                         self.unstaged_changes = True
 
                     # Skip unstaged files if the `unstaged` flag is False
@@ -43,7 +43,7 @@ class Runner(object):
                         continue
 
                     # Skip deleted files
-                    if file_status.is_deleted:
+                    if file_status.x == "D" or (include_unstaged and file_status.y == "D"):
                         continue
 
                     files.append(file_status.path)
@@ -74,7 +74,7 @@ class Runner(object):
                     file_status = Status(line)
 
                     # Make sure the file is one of the files that was processed
-                    if file_status.path in self.files and file_status.is_modified:
+                    if file_status.path in self.files and file_status.y == "M":
                         mtime = (
                             os.path.getmtime(file_status.path)
                             if os.path.exists(file_status.path)

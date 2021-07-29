@@ -405,7 +405,7 @@ class TestRunner(object):
         )
 
     def test_run_process_error(self, project):
-        for i in range(1000):
+        for i in range(10000):
             project.write("pass{}.txt".format(str(i).ljust(200, "_")))
         project.git.add(".")
 
@@ -414,7 +414,7 @@ class TestRunner(object):
         result, message = r.run_process(c.actions.get("lint"))
         assert result.is_error
 
-        assert len(r.files) == 1000
+        assert len(r.files) == 10000
         assert message == (
             "#{bright}Linting ............................................................. "
             "#{red}[ERROR!!]"
@@ -610,7 +610,6 @@ class TestRunner(object):
         assert project.exists("fail.txt")
 
     def test_action_files_root(self, project):
-
         project.copy("scripts", "working/scripts")
         project.git.add(".")
 
@@ -630,3 +629,15 @@ class TestRunner(object):
 
         assert result.is_success
         assert project.exists("fail.txt")
+
+    def test_skips_staged_file_deleted_in_working_tree_with_include_unstaged(self, project):
+        project.write("pass.txt")
+        project.git.add("pass.txt")
+        project.remove("pass.txt")
+
+        c = Config(project.path)
+        r = Runner(c.cwd, enable_git=True, include_unstaged=True)
+        result, message = r.run_process(c.actions.get("lint"))
+
+        assert result.is_skip
+        assert not project.exists("pass.txt")
