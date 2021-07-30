@@ -412,8 +412,8 @@ class TestRunner(object):
         c = Config(project.path)
         r = Runner(c.cwd, enable_git=True)
         result, message = r.run_process(c.actions.get("lint"))
-        assert result.is_error
 
+        assert result.is_error
         assert len(r.files) == 10000
         assert message == (
             "#{bright}Linting ............................................................. "
@@ -428,8 +428,9 @@ class TestRunner(object):
 
         c = Config(project.path)
         r = Runner(c.cwd, enable_git=True)
-        r.run_process(c.actions.get("lint"))
+        result, message = r.run_process(c.actions.get("lint"))
 
+        assert result.is_skip
         assert len(r.files) == 0
 
     def test_action_no_run(self, tmpdir):
@@ -639,5 +640,6 @@ class TestRunner(object):
         r = Runner(c.cwd, enable_git=True, include_unstaged=True)
         result, message = r.run_process(c.actions.get("lint"))
 
+        assert len(r.files) == 0
         assert result.is_skip
         assert not project.exists("pass.txt")

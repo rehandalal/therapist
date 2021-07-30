@@ -3,7 +3,7 @@ import re
 
 class Status(object):
     def __init__(self, status):
-        matches = re.search(r"^((?:[MADRCU ?!]){2}) (.+?)(?: -> (.+?))?$", status)
+        matches = re.search(r"^([MADRCU ?!]{2}) (.+?)(?: -> (.+?))?$", status)
         self.x = matches[1][0]
         self.y = matches[1][1]
         self.path = matches[3] if matches[3] else matches[2]
